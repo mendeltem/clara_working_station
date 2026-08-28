@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Clara Working Station</title><style>
+ :root{--bg:#080c0f;--panel:#0f1a20;--line:#22363f;--ink:#e8f1f3;--muted:#7d99a2;
+       --accent:#f0a830;--accent2:#33c6b6}
+ *{box-sizing:border-box;margin:0;padding:0}
+ body{background:var(--bg);color:var(--ink);font-family:ui-monospace,monospace;
+      font-size:14px;line-height:1.55;padding:36px 22px;max-width:880px;margin:0 auto}
+ h1{font-size:26px;font-weight:800;letter-spacing:-.02em}h1 .a{color:var(--accent)}
+ .sub{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+      margin:6px 0 26px}
+ h2{font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
+    margin:32px 0 12px;border-bottom:1px solid var(--line);padding-bottom:6px}
+ .k{display:block;border:1px solid var(--line);border-radius:11px;padding:15px 17px;
+    margin-bottom:11px;text-decoration:none;color:inherit;background:var(--panel);
+    transition:border-color .12s}
+ .k:hover{border-color:var(--accent2)}
+ .k .t{font-weight:800;font-size:15px;color:var(--accent2);margin-bottom:4px}
+ .k .d{color:var(--muted);font-size:12.5px}
+ .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:9px}
+ .g a{border:1px solid var(--line);border-radius:9px;padding:9px 12px;text-decoration:none;
+      color:var(--ink);font-size:12.5px;background:var(--panel)}
+ .g a:hover{border-color:var(--accent2)}
+ .g a span{display:block;color:var(--muted);font-size:10.5px;margin-top:2px}
+ p.f{color:var(--muted);font-size:11.5px;margin-top:34px;border-top:1px solid var(--line);
+     padding-top:15px}
+ p.f b{color:var(--ink)}
+ a.gh{color:var(--accent2);text-decoration:none}a.gh:hover{text-decoration:underline}
+</style></head><body>
+<h1>Clara <span class="a">Working Station</span></h1>
+<div class="sub">eine Adresse statt vieler · one place instead of many</div>
+<h2>In dieser Werkstatt</h2><a class="k" href="qc-wmh-verfahren/"><div class="t">WMH — elf Verfahren im Vergleich</div><div class="d">Je Patient eine Seite mit FLAIR, Referenzmaske und bis zu elf Segmentierungen übereinander, multiplanar und als 3D-Rendering. Dazu eine Seite je Verfahren und ein gestaffelter Vergleich mit gepaarten Tests.</div></a><a class="k" href="qc-unet-wmh/"><div class="t">WMH — U-Net, erste Fassung</div><div class="d">Der erste QC: drei Schnitte je Fall, 170 Fälle in einer Datei. Bleibt als Vergleichspunkt stehen.</div></a>
+<h2>Weitere Seiten (14)</h2><div class="g"><a href="https://mendeltem.github.io/local_models/">local_models<span></span></a><a href="https://mendeltem.github.io/qc-unet-wmh/">qc-unet-wmh<span>QC page for unet-wmh — self-contained, no external requests</span></a><a href="https://mendeltem.github.io/Test/">Test<span>this ist a test repostistory for a demonstartion</span></a><a href="https://mendeltem.github.io/AI_Companys/">AI_Companys<span></span></a><a href="https://mendeltem.github.io/menschenlesen/">menschenlesen<span>Vierzig Minuten für einen Fremden — ein Spiel über das Lesen v</span></a><a href="https://mendeltem.github.io/ai_use_cases_overview/">ai_use_cases_overview<span></span></a><a href="https://mendeltem.github.io/Supply_Atlas3D/">Supply_Atlas3D<span>Interactive 3D Environment: Users can freely orbit, zoom, and </span></a><a href="https://mendeltem.github.io/">mendeltem.github.io<span></span></a><a href="https://mendeltem.github.io/EEG/">EEG<span>Tutorial</span></a><a href="https://mendeltem.github.io/local-reference-manager/">local-reference-manager<span>Single-file, offline reference manager</span></a><a href="https://mendeltem.github.io/mrt-atlas-trainer/">mrt-atlas-trainer<span>This is a game for neuroscience students to learn brain anatom</span></a><a href="https://mendeltem.github.io/3D-Body-Workshop/">3D-Body-Workshop<span>A Math learning tool to be able to understand 3 D Objects</span></a><a href="https://mendeltem.github.io/mrt-contrat-trainer/">mrt-contrat-trainer<span>Interactive, offline browser tools for learning MRI: see how T</span></a><a href="https://mendeltem.github.io/Die-Robotik-Revolution-beobachten/">Die-Robotik-Revolution-beobachten<span>Jeder Roboter und jede Drohne braucht Augen. Diese Augen sind </span></a></div>
+<p class="f"><b>Was hier nicht liegt.</b> Patientendaten und Ergebnisse auf eigenen
+Kohorten bleiben auf der Maschine. Veröffentlicht wird nur, was auf öffentlichen
+Datensätzen gerechnet wurde — der QC oben läuft auf der
+<i>WMH Segmentation Challenge</i> (Utrecht, Singapore, Amsterdam).<br><br>
+<i>Patient data and results on in-house cohorts stay on the machine. Only work on
+public datasets is published here.</i><br><br>
+Quelltext und die vollständige Projektliste:
+<a class="gh" href="https://github.com/mendeltem/clara_working_station">GitHub</a> ·
+das lokale System: <a class="gh" href="https://mendeltem.github.io/local_models/">local_models</a>
+</p></body></html>

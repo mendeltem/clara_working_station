@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8"><title>QC — monai-unet</title><style>
+ :root{--bg:#080c0f;--panel:#0f1a20;--line:#22363f;--ink:#e8f1f3;--muted:#7d99a2;
+       --accent:#f0a830;--accent2:#33c6b6;--warn:#ff6b4a}
+ *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+ body{background:var(--bg);color:var(--ink);font-family:ui-monospace,monospace;
+      height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px}
+ header{border-bottom:1px solid var(--line);padding:10px 15px}
+ h1{font-size:18px;font-weight:800}h1 .a{color:var(--accent)}
+ .sub{font-size:9.5px;color:var(--muted);letter-spacing:.13em;text-transform:uppercase;margin-top:4px}
+ main{flex:1;display:grid;grid-template-columns:400px 1fr;min-height:0}
+ aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+ .list{flex:1;overflow:auto}
+ iframe{width:100%;height:100%;border:0;display:block;background:#000}
+ .row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 12px;
+      border-bottom:1px solid rgba(34,54,63,.5);cursor:pointer}
+ .row:hover{background:rgba(51,198,182,.08)}
+ .row.on{background:rgba(240,168,48,.14);border-left:3px solid var(--accent);padding-left:9px}
+ .sid{font-weight:700}.dc{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+ .meta{font-size:10px;color:var(--muted);grid-column:1/-1}
+ .schlecht{color:var(--warn)}
+ button{font:inherit;font-size:9px;background:var(--panel);color:var(--ink);
+        border:1px solid var(--line);border-radius:6px;padding:3px 7px;cursor:pointer}
+ button.on{background:rgba(240,168,48,.18);border-color:var(--accent)}
+ input[type=search]{width:100%;font:inherit;font-size:12px;background:var(--panel);
+      color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:5px 8px}
+ .kopf{padding:9px 12px;border-bottom:1px solid var(--line);display:flex;gap:5px;
+       align-items:center;flex-wrap:wrap}
+  nav{margin-top:7px;display:flex;gap:5px;flex-wrap:wrap;font-size:10px}
+ nav a{color:var(--muted);text-decoration:none;border:1px solid var(--line);
+       border-radius:6px;padding:2px 7px}
+ nav a:hover{border-color:var(--accent2);color:var(--ink)}
+ nav a.on{background:rgba(240,168,48,.18);border-color:var(--accent);color:var(--ink)}
+ .leer{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)}
+</style></head><body>
+<header><h1>QC — monai-unet</h1>
+ <div class="sub">monai-unet · 20 Fälle · Median Dice 0.717 · 1 unter 0,5</div>
+ <nav><a href="index.html">alle</a> <a href="verfahren.html">Verfahren vergleichen</a> <a href="verfahren-bianca-n201-t85.html">bianca-n201-t85</a> <a href="verfahren-bianca-n201-t85c3.html">bianca-n201-t85c3</a> <a href="verfahren-bianca-n201-t90.html">bianca-n201-t90</a> <a href="verfahren-bianca-n201-t90c3.html">bianca-n201-t90c3</a> <a href="verfahren-bianca-n201.html">bianca-n201</a> <a href="verfahren-monai-attentionunet.html">monai-attentionunet</a> <a href="verfahren-monai-segresnet.html">monai-segresnet</a> <a href="verfahren-monai-swinunetr.html">monai-swinunetr</a> <a href="verfahren-monai-unet.html" class="on">monai-unet</a></nav></header>
+<main>
+ <aside>
+  <div class="kopf"><input id="q" type="search" placeholder="Fall filtern …"></div>
+  <div class="kopf"><span style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted)">sortieren</span>
+   <button data-k="best" class="on">Dice</button>
+   <button data-k="sub">Name</button><button data-k="n">Verfahren</button></div>
+  <div class="list" id="list"></div>
+ </aside>
+ <section><iframe id="v" title="Viewer"></iframe></section>
+</main>
+<script>
+const DATA=[{"sub": "sub-068", "datei": "qc_sub-068.html#v=monai-unet", "mb": 1.9, "n": 11, "best": null, "bestName": null, "wert": 0.3909}, {"sub": "sub-074", "datei": "qc_sub-074.html#v=monai-unet", "mb": 2.5, "n": 11, "best": null, "bestName": null, "wert": 0.8855}, {"sub": "sub-078", "datei": "qc_sub-078.html#v=monai-unet", "mb": 2.5, "n": 11, "best": null, "bestName": null, "wert": 0.5556}, {"sub": "sub-084", "datei": "qc_sub-084.html#v=monai-unet", "mb": 2.4, "n": 11, "best": null, "bestName": null, "wert": 0.6107}, {"sub": "sub-086", "datei": "qc_sub-086.html#v=monai-unet", "mb": 2.5, "n": 11, "best": null, "bestName": null, "wert": 0.5958}, {"sub": "sub-090", "datei": "qc_sub-090.html#v=monai-unet", "mb": 2.5, "n": 11, "best": null, "bestName": null, "wert": 0.5964}, {"sub": "sub-091", "datei": "qc_sub-091.html#v=monai-unet", "mb": 2.4, "n": 11, "best": null, "bestName": null, "wert": 0.5392}, {"sub": "sub-094", "datei": "qc_sub-094.html#v=monai-unet", "mb": 2.5, "n": 11, "best": null, "bestName": null, "wert": 0.7822}, {"sub": "sub-097", "datei": "qc_sub-097.html#v=monai-unet", "mb": 2.5, "n": 11, "best": null, "bestName": null, "wert": 0.5454}, {"sub": "sub-101", "datei": "qc_sub-101.html#v=monai-unet", "mb": 4.2, "n": 11, "best": null, "bestName": null, "wert": 0.7669}, {"sub": "sub-113", "datei": "qc_sub-113.html#v=monai-unet", "mb": 2.6, "n": 11, "best": null, "bestName": null, "wert": 0.8734}, {"sub": "sub-124", "datei": "qc_sub-124.html#v=monai-unet", "mb": 2.8, "n": 11, "best": null, "bestName": null, "wert": 0.69}, {"sub": "sub-125", "datei": "qc_sub-125.html#v=monai-unet", "mb": 2.5, "n": 11, "best": null, "bestName": null, "wert": 0.813}, {"sub": "sub-128", "datei": "qc_sub-128.html#v=monai-unet", "mb": 2.4, "n": 11, "best": null, "bestName": null, "wert": 0.8602}, {"sub": "sub-135", "datei": "qc_sub-135.html#v=monai-unet", "mb": 2.3, "n": 11, "best": null, "bestName": null, "wert": 0.7831}, {"sub": "sub-140", "datei": "qc_sub-140.html#v=monai-unet", "mb": 2.3, "n": 11, "best": null, "bestName": null, "wert": 0.6835}, {"sub": "sub-141", "datei": "qc_sub-141.html#v=monai-unet", "mb": 1.8, "n": 11, "best": null, "bestName": null, "wert": 0.6374}, {"sub": "sub-144", "datei": "qc_sub-144.html#v=monai-unet", "mb": 2.0, "n": 11, "best": null, "bestName": null, "wert": 0.8406}, {"sub": "sub-153", "datei": "qc_sub-153.html#v=monai-unet", "mb": 1.9, "n": 11, "best": null, "bestName": null, "wert": 0.8879}, {"sub": "sub-154", "datei": "qc_sub-154.html#v=monai-unet", "mb": 2.7, "n": 11, "best": null, "bestName": null, "wert": 0.7448}];
+let key='best',richtung=1,aktiv=null;
+const list=document.getElementById('list'),v=document.getElementById('v'),q=document.getElementById('q');
+function zeichne(){
+ const t=q.value.trim().toLowerCase();
+ let l=DATA.filter(d=>!t||d.sub.toLowerCase().includes(t));
+ l.sort((a,b)=>{ if(key==='sub')return richtung*a.sub.localeCompare(b.sub);
+  const x=key==='n'?a.n:(a.wert??a.best??-1), y=key==='n'?b.n:(b.wert??b.best??-1); return richtung*(x-y);});
+ list.innerHTML=l.map(d=>`<div class="row${d.datei===aktiv?' on':''}" data-f="${d.datei}">
+  <div class="sid">${d.sub}</div>
+  <div class="dc ${(d.wert??d.best)!==null&&(d.wert??d.best)<0.5?'schlecht':''}">${(d.wert??d.best)===null?'—':(d.wert??d.best).toFixed(3)}</div>
+  <div class="meta">${d.n} Verfahren${d.bestName?' · bestes '+d.bestName:''} · ${d.mb} MB</div></div>`).join('');
+ list.querySelectorAll('.row').forEach(r=>r.onclick=()=>{
+  aktiv=r.dataset.f; v.src=aktiv; document.querySelectorAll('.row').forEach(x=>x.classList.remove('on'));
+  r.classList.add('on');});}
+q.oninput=zeichne;
+document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+ if(key===b.dataset.k)richtung*=-1; else {key=b.dataset.k;richtung=key==='sub'?1:-1;}
+ document.querySelectorAll('[data-k]').forEach(x=>x.classList.remove('on'));
+ b.classList.add('on'); zeichne();});
+zeichne();
+if(DATA.length){aktiv=DATA[0].datei;v.src=aktiv;zeichne();}
+</script></body></html>
