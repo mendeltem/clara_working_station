@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de"><head><meta charset="UTF-8"><title>QC WMH — alle Verfahren je Patient</title><style>
+<html lang="de"><head><meta charset="UTF-8"><title>WMH QC — all methods per patient</title><style>
  :root{--bg:#080c0f;--panel:#0f1a20;--line:#22363f;--ink:#e8f1f3;--muted:#7d99a2;
        --accent:#f0a830;--accent2:#33c6b6;--warn:#ff6b4a}
  *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
@@ -33,16 +33,16 @@
  nav a.on{background:rgba(240,168,48,.18);border-color:var(--accent);color:var(--ink)}
  .leer{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)}
 </style></head><body>
-<header><h1>QC WMH — alle Verfahren je Patient</h1>
- <div class="sub">20 Patienten · Median bester Dice 0.782 · 49 MB</div>
- <nav><a href="index.html" class="on">alle</a> <a href="verfahren.html">Verfahren vergleichen</a></nav></header>
+<header><h1>WMH QC — all methods per patient</h1>
+ <div class="sub">20 patients · median best Dice 0.782 · 49 MB</div>
+ <nav><a href="index.html" class="on">all cases</a> <a href="verfahren.html">compare methods</a> <a href="vergleich.html">tiered comparison</a> <a href="verfahren-bianca-n201-t85.html">bianca-n201-t85</a> <a href="verfahren-bianca-n201-t85c3.html">bianca-n201-t85c3</a> <a href="verfahren-bianca-n201-t90.html">bianca-n201-t90</a> <a href="verfahren-bianca-n201-t90c3.html">bianca-n201-t90c3</a> <a href="verfahren-bianca-n201.html">bianca-n201</a> <a href="verfahren-monai-attentionunet.html">monai-attentionunet</a> <a href="verfahren-monai-segresnet.html">monai-segresnet</a> <a href="verfahren-monai-swinunetr.html">monai-swinunetr</a> <a href="verfahren-monai-unet.html">monai-unet</a> <a href="verfahren-unet-eigen.html">unet-eigen</a> <a href="verfahren-unet-vorhersage.html">unet-vorhersage</a></nav></header>
 <main>
  <aside>
-  <div class="kopf"><input id="q" type="search" placeholder="Fall filtern …"></div>
+  <div class="kopf"><input id="q" type="search" placeholder="filter cases …"></div>
   <div class="kopf"><span style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--muted)">sortieren</span>
-   <button data-k="best" class="on">bester Dice</button>
-   <button data-k="sub">Name</button><button data-k="n">Verfahren</button></div>
+    color:var(--muted)">sort by</span>
+   <button data-k="best" class="on">best Dice</button>
+   <button data-k="sub">name</button><button data-k="n">methods</button></div>
   <div class="list" id="list"></div>
  </aside>
  <section><iframe id="v" title="Viewer"></iframe></section>
@@ -59,7 +59,7 @@ function zeichne(){
  list.innerHTML=l.map(d=>`<div class="row${d.datei===aktiv?' on':''}" data-f="${d.datei}">
   <div class="sid">${d.sub}</div>
   <div class="dc ${(d.wert??d.best)!==null&&(d.wert??d.best)<0.5?'schlecht':''}">${(d.wert??d.best)===null?'—':(d.wert??d.best).toFixed(3)}</div>
-  <div class="meta">${d.n} Verfahren${d.bestName?' · bestes '+d.bestName:''} · ${d.mb} MB</div></div>`).join('');
+  <div class="meta">${d.n} methods${d.bestName?' · best '+d.bestName:''} · ${d.mb} MB</div></div>`).join('');
  list.querySelectorAll('.row').forEach(r=>r.onclick=()=>{
   aktiv=r.dataset.f; v.src=aktiv; document.querySelectorAll('.row').forEach(x=>x.classList.remove('on'));
   r.classList.add('on');});}
