@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WMH-Arena: QC (N=30)</title>
+<style>
+:root { color-scheme: dark; }
+body { margin: 0; font-family: system-ui, -apple-system, sans-serif;
+       background: #0f1115; color: #e8eaed; }
+a { color: #8ab4f8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.kopf { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start;
+        padding: 14px 18px 6px; }
+.kopf h1 { font-size: 19px; margin: 0 14px 0 0; font-weight: 600;
+           white-space: nowrap; }
+.karten { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+.karte { background: #1a1d24; border: 1px solid #2c3140; border-radius: 8px;
+         padding: 7px 12px; font-size: 12.5px; line-height: 1.5;
+         min-width: 148px; }
+.karte b { display: block; font-size: 12px; margin-bottom: 2px; }
+.karte .p { color: #9aa0a6; font-size: 11.5px; }
+.karte span { margin-right: 10px; white-space: nowrap; }
+#viewer { width: 100%; height: 74vh; min-height: 430px; display: block; }
+.anleitung { padding: 4px 18px 14px; font-size: 12px; color: #9aa0a6; }
+
+#liste { position: absolute; top: 0; left: 0; bottom: 0; width: 340px;
+          overflow-y: auto; background: #14171d; border-right: 1px solid #2c3140;
+          padding: 14px; }
+#seite { position: absolute; top: 0; left: 340px; right: 0; bottom: 0;
+          border: none; background: #0f1115; }
+table.faelle { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+table.faelle td { padding: 5px 6px; border-bottom: 1px solid #22262f;
+                   cursor: pointer; white-space: nowrap; }
+table.faelle td:hover { background: #1d222c; }
+table.faelle td.zahl { text-align: right; color: #9aa0a6; }
+h2 { font-size: 16px; margin: 0 0 4px; }
+.gruppe { color: #9aa0a6; font-size: 11px; text-transform: uppercase;
+           letter-spacing: .08em; padding: 10px 6px 2px; }
+</style>
+</head>
+<body>
+<div id="liste">
+  <h2>WMH-Arena QC (N=30)</h2>
+  <div style="font-size:12px;color:#9aa0a6;margin-bottom:8px">
+  <a href="vergleich.html">Vergleich aller Verfahren &rarr;</a></div>
+  <div class='gruppe'>Die 10 schlechtesten Faelle nach Dice (monai-attentionunet2d)</div><tr class='fall' data-seite='qc_sub-064.html'><td>sub-064</td><td class='zahl'>0.514</td><td class='zahl'>1.8 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-077.html'><td>sub-077</td><td class='zahl'>0.577</td><td class='zahl'>3.4 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-078.html'><td>sub-078</td><td class='zahl'>0.517</td><td class='zahl'>2.0 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-081.html'><td>sub-081</td><td class='zahl'>0.572</td><td class='zahl'>3.5 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-109.html'><td>sub-109</td><td class='zahl'>0.553</td><td class='zahl'>1.2 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-114.html'><td>sub-114</td><td class='zahl'>0.573</td><td class='zahl'>1.9 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-143.html'><td>sub-143</td><td class='zahl'>0.584</td><td class='zahl'>1.5 ml</td><td class='zahl'>Utrecht</td></tr><tr class='fall' data-seite='qc_sub-162.html'><td>sub-162</td><td class='zahl'>0.460</td><td class='zahl'>1.2 ml</td><td class='zahl'>Utrecht</td></tr><tr class='fall' data-seite='qc_sub-167.html'><td>sub-167</td><td class='zahl'>0.447</td><td class='zahl'>1.7 ml</td><td class='zahl'>Utrecht</td></tr><tr class='fall' data-seite='qc_sub-168.html'><td>sub-168</td><td class='zahl'>0.473</td><td class='zahl'>2.1 ml</td><td class='zahl'>Utrecht</td></tr><div class='gruppe'>Die 10 mittleren Faelle</div><tr class='fall' data-seite='qc_sub-061.html'><td>sub-061</td><td class='zahl'>0.779</td><td class='zahl'>4.8 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-070.html'><td>sub-070</td><td class='zahl'>0.780</td><td class='zahl'>31.7 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-076.html'><td>sub-076</td><td class='zahl'>0.784</td><td class='zahl'>9.7 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-095.html'><td>sub-095</td><td class='zahl'>0.791</td><td class='zahl'>10.9 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-108.html'><td>sub-108</td><td class='zahl'>0.791</td><td class='zahl'>15.9 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-111.html'><td>sub-111</td><td class='zahl'>0.772</td><td class='zahl'>7.4 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-120.html'><td>sub-120</td><td class='zahl'>0.786</td><td class='zahl'>7.6 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-124.html'><td>sub-124</td><td class='zahl'>0.773</td><td class='zahl'>4.7 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-149.html'><td>sub-149</td><td class='zahl'>0.783</td><td class='zahl'>21.0 ml</td><td class='zahl'>Utrecht</td></tr><tr class='fall' data-seite='qc_sub-166.html'><td>sub-166</td><td class='zahl'>0.771</td><td class='zahl'>21.9 ml</td><td class='zahl'>Utrecht</td></tr><div class='gruppe'>Die 10 besten Faelle</div><tr class='fall' data-seite='qc_sub-074.html'><td>sub-074</td><td class='zahl'>0.913</td><td class='zahl'>39.3 ml</td><td class='zahl'>Amsterdam</td></tr><tr class='fall' data-seite='qc_sub-112.html'><td>sub-112</td><td class='zahl'>0.911</td><td class='zahl'>25.4 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-113.html'><td>sub-113</td><td class='zahl'>0.912</td><td class='zahl'>85.1 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-122.html'><td>sub-122</td><td class='zahl'>0.909</td><td class='zahl'>43.2 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-128.html'><td>sub-128</td><td class='zahl'>0.888</td><td class='zahl'>20.3 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-136.html'><td>sub-136</td><td class='zahl'>0.884</td><td class='zahl'>18.0 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-137.html'><td>sub-137</td><td class='zahl'>0.891</td><td class='zahl'>61.4 ml</td><td class='zahl'>Singapore</td></tr><tr class='fall' data-seite='qc_sub-152.html'><td>sub-152</td><td class='zahl'>0.901</td><td class='zahl'>59.3 ml</td><td class='zahl'>Utrecht</td></tr><tr class='fall' data-seite='qc_sub-153.html'><td>sub-153</td><td class='zahl'>0.903</td><td class='zahl'>39.2 ml</td><td class='zahl'>Utrecht</td></tr><tr class='fall' data-seite='qc_sub-165.html'><td>sub-165</td><td class='zahl'>0.905</td><td class='zahl'>41.4 ml</td><td class='zahl'>Utrecht</td></tr>
+</div>
+<iframe id="seite" src="qc_sub-064.html"></iframe>
+<script>
+document.querySelectorAll("tr.fall").forEach(function (tr) {
+  tr.addEventListener("click", function () {
+    document.getElementById("seite").src = tr.dataset.seite;
+  });
+});
+</script>
+</body>
+</html>
