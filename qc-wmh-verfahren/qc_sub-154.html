@@ -102,9 +102,10 @@ async function starte(){
 document.getElementById('op').oninput=e=>{state.op=e.target.value/100;
  document.getElementById('opv').textContent=e.target.value+'%'; sicht(); dreiSicht();};
 // --- Dreier-Ansicht: drei axiale Fenster, gleiche Schicht, je ein Verfahren ---------------
-// Jedes Fenster hat eine eigene NiiVue-Instanz (FLAIR + Ground truth + EIN Verfahren); die
-// drei sind ueber broadcastTo gekoppelt, Klick oder Scrollen in einem bewegt alle.
-const drei={nvs:[],wahl:[],an:false};
+// Jedes Fenster hat eine eigene NiiVue-Instanz; die drei sind ueber broadcastTo gekoppelt,
+// Klick oder Scrollen in einem bewegt alle. Seit we1 (10.09.): links FLAIR + NUR Ground truth
+// (an/aus), rechts zwei Fenster mit FLAIR + je EINEM Verfahren -- Vergleich zweier Modelle.
+const drei={nvs:[],wahl:[],an:false,gt:true};
 const methoden=()=>D.ebenen.slice(1);
 async function lade(n,e){const v=await niivue.NVImage.loadFromBase64({base64:e.b64,name:e.datei+'.nii.gz'});
  v.colormap='qc'+D.ebenen.indexOf(e); v.cal_min=.5; v.cal_max=1.0; v.opacity=state.op; n.addVolume(v); return v;}
@@ -112,29 +113,32 @@ function kennz(e){return (e.dice!==null?`<b>${e.dice.toFixed(3)}</b>`:'')+
  (e.praez!==null?` P ${e.praez.toFixed(2)}`:'')+(e.sens!==null?` S ${e.sens.toFixed(2)}`:'')+(e.ml!==null?` ${e.ml} ml`:'');}
 async function dreiStart(){
  if(drei.nvs.length)return;
- const box=document.getElementById('drei');
- // Vorbelegung: die drei besten Verfahren nach Dice
+ const box=document.getElementById('drei'), gt=D.ebenen[0];
+ // Vorbelegung rechts: die zwei besten Verfahren nach Dice
  const rang=methoden().slice().sort((a,b)=>(b.dice??-1)-(a.dice??-1));
- drei.wahl=[0,1,2].map(i=>(rang[i]||rang[0]).datei);
- box.innerHTML=[0,1,2].map(i=>`<div class="feld"><div class="kopf">
-   <select data-i="${i}">${methoden().map(e=>`<option value="${e.datei}"${e.datei===drei.wahl[i]?' selected':''}>${e.name}</option>`).join('')}</select>
-   <span class="kz" id="kz${i}"></span></div><div class="cv"><canvas id="gl${i}"></canvas></div></div>`).join('');
+ drei.wahl=[0,1].map(i=>(rang[i]||rang[0]).datei);
+ const kopfGT=`<label><input type="checkbox" id="gtan" checked> Ground truth</label>
+   <span class="kz" id="kzgt">${gt.ml!==null?`<span style="color:${gt.farbe}">GT</span> ${gt.ml} ml`:''}</span>`;
+ const kopfV=i=>`<select data-i="${i}">${methoden().map(e=>`<option value="${e.datei}"${e.datei===drei.wahl[i]?' selected':''}>${e.name}</option>`).join('')}</select>
+   <span class="kz" id="kz${i+1}"></span>`;
+ box.innerHTML=[kopfGT,kopfV(0),kopfV(1)].map((k,i)=>`<div class="feld"><div class="kopf">${k}</div><div class="cv"><canvas id="gl${i}"></canvas></div></div>`).join('');
  for(let i=0;i<3;i++){
   const n=new niivue.Niivue({backColor:[0,0,0,1],crosshairColor:[.94,.66,.19,1]});
   n.attachTo('gl'+i);
   const f=await niivue.NVImage.loadFromBase64({base64:D.flair,name:'flair.nii.gz'}); f.colormap='gray'; n.addVolume(f);
-  await lade(n,D.ebenen[0]);                                  // Ground truth, Kanal 1
-  await lade(n,D.ebenen.find(e=>e.datei===drei.wahl[i]));     // Verfahren, Kanal 2
+  await lade(n,i===0?gt:D.ebenen.find(e=>e.datei===drei.wahl[i-1]));   // Kanal 1: links GT, rechts EIN Verfahren
   n.setSliceType(n.sliceTypeAxial); drei.nvs.push(n);}
  drei.nvs.forEach((n,i)=>n.broadcastTo(drei.nvs.filter((_,j)=>j!==i),{'2d':true,'3d':true}));
+ document.getElementById('gtan').onchange=e=>{drei.gt=e.target.checked; dreiSicht();};
  box.querySelectorAll('select').forEach(sel=>sel.onchange=async()=>{
-  const i=+sel.dataset.i, n=drei.nvs[i]; drei.wahl[i]=sel.value;
-  if(n.volumes.length>2)n.removeVolume(n.volumes[2]);
+  const i=+sel.dataset.i, n=drei.nvs[i+1]; drei.wahl[i]=sel.value;
+  if(n.volumes.length>1)n.removeVolume(n.volumes[1]);          // das Verfahren ist Kanal 1 (keine GT-Ebene mehr)
   await lade(n,D.ebenen.find(e=>e.datei===sel.value)); dreiKennz();});
  dreiKennz();}
 function dreiKennz(){drei.wahl.forEach((k,i)=>{const e=D.ebenen.find(x=>x.datei===k);
- document.getElementById('kz'+i).innerHTML=kennz(e)+(D.ebenen[0].ml!==null?` · <span style="color:${D.ebenen[0].farbe}">GT</span> ${D.ebenen[0].ml} ml`:'');});}
-function dreiSicht(){drei.nvs.forEach(n=>{n.volumes.slice(1).forEach(v=>v.opacity=state.op); n.updateGLVolume();});}
+ document.getElementById('kz'+(i+1)).innerHTML=kennz(e);});}
+// Deckkraft-Regler: eine abgewaehlte GT bleibt unsichtbar
+function dreiSicht(){drei.nvs.forEach((n,i)=>{n.volumes.slice(1).forEach(v=>v.opacity=(i===0&&!drei.gt)?0:state.op); n.updateGLVolume();});}
 function dreiAn(an){drei.an=an; document.getElementById('drei').classList.toggle('an',an);
  document.getElementById('gl').style.display=an?'none':'block'; if(an)dreiStart();}
 const SICHT={multi:()=>{nv.setSliceType(nv.sliceTypeMultiplanar);gitter3d();},
