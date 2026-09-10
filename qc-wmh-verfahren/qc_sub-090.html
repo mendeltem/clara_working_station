@@ -40,10 +40,8 @@
  <h1>QC <span class="a">sub-090</span></h1>
  <span class="m">132×256×83 · 1.2×0.9766×3 mm</span>
  <div class="grp"><span class="lbl">View</span>
-  <button data-v="multi" class="on">2×2+3D</button><button data-v="ax">Ax</button>
-  <button data-v="cor">Cor</button><button data-v="sag">Sag</button>
-  <button data-v="render">3D</button>
-  <button data-v="drei" title="three methods side by side, same slice">Ax ×3</button></div>
+  <button data-v="drei" title="three methods side by side, same slice" class="on">Ax ×3</button>
+  <button data-v="ax" title="one axial pane, methods via chips">Ax</button></div>
  <div class="grp"><span class="lbl">Opacity</span>
   <input type="range" id="op" min="0" max="100" value="60"><span id="opv" class="m">60%</span></div>
  <div class="grp" id="chips" style="flex-basis:100%"></div>
@@ -57,29 +55,36 @@ const msg=document.getElementById('msg');
 let nv=null; const state={op:.60,an:{}};
 const solid=(r,g,b)=>({R:[0,r],G:[0,g],B:[0,b],A:[0,255],I:[0,255]});
 const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
-function sicht(){
+function sicht(){ if(!nv)return;
  D.ebenen.forEach(e=>{const v=nv.volumes.find(x=>(x.name||'').startsWith(e.datei+'.'));
   if(v)v.opacity=state.an[e.datei]?state.op:0;});
  nv.updateGLVolume();}
 function gitter3d(){try{
- const SR=(window.niivue&&niivue.SHOW_RENDER)?niivue.SHOW_RENDER.ALWAYS:1;
+ const SR=(window.niivue&&niivue.SHOW_RENDER)?niivue.SHOW_RENDER.NEVER:0;
  const ML=(window.niivue&&niivue.MULTIPLANAR_TYPE)?niivue.MULTIPLANAR_TYPE.GRID:2;
- nv.opts.multiplanarShowRender=SR; nv.opts.multiplanarForceRender=true;
+ nv.opts.multiplanarShowRender=SR; nv.opts.multiplanarForceRender=false;
  if(typeof nv.setMultiplanarLayout==='function')nv.setMultiplanarLayout(ML);
  else nv.opts.multiplanarLayout=ML;
  nv.drawScene();}catch(e){}}
-async function starte(){
+// Der schwere Multiplanar-Viewer (FLAIR + ALLE Verfahren, 3D) wird ERST geladen,
+// wenn man eine seiner Ansichten anwaehlt -- zwoelf Volumen auf einmal kippen WebGL
+// (dann verschwindet das Bild). Standard ist die Dreier-Ansicht (nur axial, leicht).
+let naviGeladen=false;
+async function naviStart(){
+ if(naviGeladen)return; naviGeladen=true;
  nv=new niivue.Niivue({backColor:[0,0,0,1],show3Dcrosshair:true,
                        crosshairColor:[.94,.66,.19,1]});
  nv.attachTo('gl');
  D.ebenen.forEach((e,i)=>nv.addColormap('qc'+i,solid(...hex(e.farbe))));
- msg.textContent='decoding volumes …';
+ msg.textContent='decoding volumes …'; msg.style.display='flex';
  const f=await niivue.NVImage.loadFromBase64({base64:D.flair,name:'flair.nii.gz'});
  f.colormap='gray'; nv.addVolume(f);
  for(let i=0;i<D.ebenen.length;i++){const e=D.ebenen[i];
   const v=await niivue.NVImage.loadFromBase64({base64:e.b64,name:e.datei+'.nii.gz'});
-  v.colormap='qc'+i; v.cal_min=.5; v.cal_max=1.0; nv.addVolume(v);
-  state.an[e.datei]=(i<2);}                       // ground truth + first method
+  v.colormap='qc'+i; v.cal_min=.5; v.cal_max=1.0; nv.addVolume(v);}
+ sicht(); msg.style.display='none';}
+async function starte(){
+ D.ebenen.forEach((e,i)=>state.an[e.datei]=(i<2));   // GT + erstes Verfahren
  // Kommt der Aufruf von einer Verfahrensseite (#v=name), dann NUR die Ground
  // truth und genau dieses Verfahren zeigen -- sonst sucht man es unter zwoelf.
  const w=decodeURIComponent((location.hash.match(/v=([^&]*)/)||[])[1]||'');
@@ -94,11 +99,12 @@ async function starte(){
     ${e.ml!==null?`<span class="m">${e.ml} ml</span>`:''}</span>`).join('');
  ch.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
   const k=c.dataset.k; state.an[k]=!state.an[k]; c.classList.toggle('on',state.an[k]); sicht();});
- nv.setSliceType(nv.sliceTypeMultiplanar); gitter3d(); sicht();
  msg.style.display='none';
- // #view=drei (oder ax/cor/sag/render) waehlt die Ansicht beim Laden
+ // Standard: Dreier-Ansicht (nur axial). Ein #view= im Link gewinnt und laedt
+ // bei multi/ax/cor/sag/render den Multiplanar-Viewer nach.
  const v0=(location.hash.match(/view=([a-z]+)/)||[])[1];
- if(v0&&SICHT[v0]){const b=document.querySelector('[data-v="'+v0+'"]'); if(b)b.click();}}
+ if(v0&&SICHT[v0]){const b=document.querySelector('[data-v="'+v0+'"]'); if(b){b.click(); return;}}
+ dreiAn(true);}
 document.getElementById('op').oninput=e=>{state.op=e.target.value/100;
  document.getElementById('opv').textContent=e.target.value+'%'; sicht(); dreiSicht();};
 // --- Dreier-Ansicht: drei axiale Fenster, gleiche Schicht, je ein Verfahren ---------------
@@ -114,9 +120,14 @@ function kennz(e){return (e.dice!==null?`<b>${e.dice.toFixed(3)}</b>`:'')+
 async function dreiStart(){
  if(drei.nvs.length)return;
  const box=document.getElementById('drei'), gt=D.ebenen[0];
- // Vorbelegung rechts: die zwei besten Verfahren nach Dice
+ // Vorbelegung rechts: kommt der Aufruf von einer Verfahrensseite (#v=name),
+ // steht dieses Verfahren vorn, sonst die zwei besten nach Dice.
+ const w=decodeURIComponent((location.hash.match(/v=([^&]*)/)||[])[1]||'');
  const rang=methoden().slice().sort((a,b)=>(b.dice??-1)-(a.dice??-1));
- drei.wahl=[0,1].map(i=>(rang[i]||rang[0]).datei);
+ let vor=rang.map(e=>e.datei);
+ const wk=w?methoden().find(e=>e.name===w):null;
+ if(wk)vor=[wk.datei,...vor.filter(d=>d!==wk.datei)];
+ drei.wahl=[0,1].map(i=>vor[i]||vor[0]);
  const kopfGT=`<label><input type="checkbox" id="gtan" checked> Ground truth</label>
    <span class="kz" id="kzgt">${gt.ml!==null?`<span style="color:${gt.farbe}">GT</span> ${gt.ml} ml`:''}</span>`;
  const kopfV=i=>`<select data-i="${i}">${methoden().map(e=>`<option value="${e.datei}"${e.datei===drei.wahl[i]?' selected':''}>${e.name}</option>`).join('')}</select>
@@ -145,9 +156,11 @@ const SICHT={multi:()=>{nv.setSliceType(nv.sliceTypeMultiplanar);gitter3d();},
  ax:()=>nv.setSliceType(nv.sliceTypeAxial),cor:()=>nv.setSliceType(nv.sliceTypeCoronal),
  sag:()=>nv.setSliceType(nv.sliceTypeSagittal),render:()=>nv.setSliceType(nv.sliceTypeRender),
  drei:()=>dreiAn(true)};
-document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=async()=>{
  document.querySelectorAll('[data-v]').forEach(x=>x.classList.remove('on'));
- b.classList.add('on'); if(b.dataset.v!=='drei')dreiAn(false); SICHT[b.dataset.v]();});
+ b.classList.add('on');
+ if(b.dataset.v==='drei'){dreiAn(true); return;}
+ dreiAn(false); await naviStart(); SICHT[b.dataset.v]();});   // Multiplanar erst hier laden
 (function(){
  const q=["niivue.umd.js",
   "https://cdn.jsdelivr.net/npm/@niivue/niivue@0.44.2/dist/niivue.umd.js",
