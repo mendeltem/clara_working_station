@@ -88,7 +88,6 @@ institution.
 | | |
 |---|---|
 | **[WMH: eleven methods compared](https://mendeltem.github.io/clara_working_station/qc-wmh-verfahren/)** | One page per patient with FLAIR, reference mask and up to eleven segmentations overlaid, multiplanar and as a 3D rendering. Plus one page per method and a staged comparison with paired tests. |
-| **[WMH: U-Net, first version](https://mendeltem.github.io/clara_working_station/qc-unet-wmh/)** | The first QC: three slices per case, 170 cases in one file. Kept as a point of comparison. |
 
 ---
 
