@@ -219,6 +219,21 @@ entries in 27 areas and 16 tools, this project's topics and others.
 | `updates/LOG.md` | one line per change: date, which agent, which files, what and why |
 | `templates/` | the templates every entry and tool follows |
 
+**Why a wiki next to a local agent.** A session forgets; the wiki does not.
+Clara's own README, which she reads at startup, tells her to visit the wiki: it
+is where knowledge is exchanged for the long term. It also connects agents that
+work outside the workstation, such as Claude sessions and chat projects, to the
+same state, and it is where the meta information and the deeper material live:
+
+- findings and long-term experience, with source and date;
+- guidelines, for example how a QC page must be built
+  ([conventions](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/mri_qc_viewers/rules/qc-slice-viewer-conventions.md),
+  [every number explains itself on hover](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/mri_qc_viewers/rules/qc-pages-explain-every-number-on-hover.md))
+  and what data may go where
+  ([data classes](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md));
+- a growing literature list: 403 distinct DOIs and 115 arXiv papers cited in
+  the entries and in each tool's `PAPERS.md`.
+
 **How an agent uses it.** It reads the README and `INDEX.md`, then only the
 `SUMMARY.md` of the areas its task touches, and goes deeper only when needed.
 It compares with its own project, reuses what is there, and files what it
