@@ -85,6 +85,10 @@ institution.
 
 ## Results
 
+![Mean Dice per method on 20 public WMH Challenge test cases with 95 % bootstrap intervals; MONAI Attention U-Net leads with 0.738, BIANCA variants trail at 0.595 to 0.646; the 2017 challenge winner reached 0.80 on all 110 test cases](results.svg)
+
+Bars: mean over the same 20 cases; whiskers: 95 % bootstrap interval over cases (`results_chart.py`). The dashed line is the 2017 winner on all 110 test cases, which are not the same cases. `bianca-n201` and `bianca-n201-t90` gave identical masks and are shown as one row.
+
 | | |
 |---|---|
 | **[WMH: eleven methods compared](https://mendeltem.github.io/clara_working_station/qc-wmh-verfahren/)** | One page per patient with FLAIR, reference mask and up to eleven segmentations overlaid, multiplanar and as a 3D rendering. Plus one page per method and a staged comparison with paired tests. |
