@@ -233,6 +233,12 @@ same state, and it is where the meta information and the deeper material live:
   ([data classes](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md));
 - a growing literature list: 403 distinct DOIs and 115 arXiv papers cited in
   the entries and in each tool's `PAPERS.md`.
+- prefills: each area's `SUMMARY.md` is written to be loaded as a prefill
+  (23 of 27 say so), so an agent can start with the state of its topic already
+  in context, or keep it precomputed as a saved prompt-cache prefix. Measured
+  on Alita: a warm prefix answered in 0.4 s against 4.4 s cold, within an agent
+  turn of 29–34 s; a cache built from cohort-bound text keeps that text's class
+  ([entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/findings/derived-artifacts-carry-their-source-class.md)).
 
 **How an agent uses it.** It reads the README and `INDEX.md`, then only the
 `SUMMARY.md` of the areas its task touches, and goes deeper only when needed.
