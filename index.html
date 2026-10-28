@@ -24,6 +24,15 @@
      padding-top:15px}
  p.f b{color:var(--ink)}
  a.gh{color:var(--accent2);text-decoration:none}a.gh:hover{text-decoration:underline}
+ .tw{overflow-x:auto;margin:6px 0 10px}
+ table{border-collapse:collapse;width:100%;font-size:12px}
+ td{border-top:1px solid var(--line);padding:8px 8px 8px 0;vertical-align:top;color:var(--muted)}
+ td:last-child{color:var(--ink);white-space:nowrap;padding-right:0}
+ td a{color:var(--accent2);text-decoration:none}td a:hover{text-decoration:underline}
+ ul.s{color:var(--muted);font-size:12.5px;margin:8px 0 0 18px}
+ ul.s li{margin-bottom:6px}
+ code{color:var(--accent);font-size:12px}
+ @media (max-width:560px){td:last-child{white-space:normal}}
 </style></head><body>
 <h1>Clara <span class="a">Working Station</span></h1>
 <div class="sub">Alita · lokaler Agent, ohne Netz</div>
@@ -31,17 +40,44 @@
 veröffentlicht ist. Ein Arbeitsplatz, kein Portfolio.<br>
 <i>Work computed here by the local agent — a workbench, not a portfolio.</i></p>
 <h2>Ergebnisse</h2><a class="k" href="qc-wmh-verfahren/"><div class="t">WMH — elf Verfahren im Vergleich</div><div class="d">Je Patient eine Seite mit FLAIR, Referenzmaske und bis zu elf Segmentierungen übereinander, multiplanar und als 3D-Rendering. Dazu eine Seite je Verfahren und ein gestaffelter Vergleich mit gepaarten Tests.</div></a><a class="k" href="qc-unet-wmh/"><div class="t">WMH — U-Net, erste Fassung</div><div class="d">Der erste QC: drei Schnitte je Fall, 170 Fälle in einer Datei. Bleibt als Vergleichspunkt stehen.</div></a>
+<h2>Was die WMH-Linie gelernt hat</h2>
+<p class="s">Gemessen auf den 110 öffentlichen Testfällen der WMH Segmentation Challenge 2017
+(<a class="gh" href="https://doi.org/10.1109/TMI.2019.2905770">Kuijf et al. 2019</a>), offizielle
+Auswertung, gepaart über Fälle mit Bootstrap-Intervall. Eigenmessungen, keine Platzierungen.
+Jede Zeile verweist auf ihren Eintrag im Agenten-Wiki.<br>
+<i>Measured on the 110 public test cases, paired with bootstrap intervals.</i></p>
+<div class="tw"><table>
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/brain-mask-is-part-of-the-model.md">Die Hirnmaske ist Teil des Modells.</a> Zwei HD-BET-Läufe, sonst alles gleich: die z-Normierung innerhalb der Maske verschiebt das ganze Eingangsbild.</td><td>Dice 0,688 gegen 0,719</td></tr>
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/second-bias-correction-helps-on-mixed-scanners.md">Eine zweite Bias-Korrektur hilft</a>, obwohl die Daten schon korrigiert sind: <code>fast -B</code> gleicht die Intensität über Scanner an.</td><td>ohne sie Dice −0,011,<br>Läsions-Recall −0,037</td></tr>
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/official-label-2-rule-deletes-the-prediction.md">Die offizielle Auswertung löscht Vorhersagen auf Label 2</a>, statt sie als Fehlalarm zu zählen.</td><td>strengere Zählung<br>0,005–0,007 Dice zu tief</td></tr>
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/unseen-scanners-are-not-the-weak-spot.md">Ungesehene Scanner sind nicht die Schwachstelle.</a> Fünf Geräte statt drei Standorte; alle Fälle unter Dice 0,5 liegen auf bekannten Geräten.</td><td>20 Fälle ungesehen,<br>0 Ausfälle</td></tr>
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/architecture-package-brought-no-gain.md">Ein als Paket geändertes Netz brachte nichts.</a> Der scheinbare Gewinn von +0,032 Dice war das Maskenartefakt aus der ersten Zeile.</td><td>Dice −0,001,<br>Läsions-Recall −0,038</td></tr>
+</table></div>
+<p class="s">Daraus folgt für jeden Modellvergleich: Maskenherkunft und Auswertungsfunktion
+mitprotokollieren, Bausteine einzeln ändern.</p>
 <h2>Das System dahinter</h2>
 <p class="s">Clara ist ein lokales Modell auf einer einzelnen Workstation, ohne
 Netzzugang. Werkzeuge, Messungen und Betriebsregeln stehen getrennt in
 <a class="gh" href="https://mendeltem.github.io/local_models/">local_models</a> —
 darunter <a class="gh" href="https://github.com/mendeltem/local_models/blob/main/docs/05-scaffolding.md">das
-modellunabhängige Gerüst</a>, das beschreibt, was einen Agenten fertig werden lässt.</p>
+modellunabhängige Gerüst</a>, das beschreibt, was einen Agenten fertig werden lässt.
+Was die Agenten unterwegs gelernt haben, sammelt das Wiki
+<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki">blackbeard_wikki</a>.</p>
+<ul class="s">
+<li>RTX A5000 mit 24 GB (Ampere), i9-12900K, 62 GiB RAM, Ubuntu 24.04, Treiber 550 (CUDA 12.4). Stand Oktober 2026.</li>
+<li>Claras Modell ist Qwen3.8-27B in Q4 über llama.cpp. Gegen Nemotron 3.5 Bolt 74B-A9B auf derselben Karte:
+100 % gegen 88,5 % auf einem 13-Aufgaben-Test. Bolt erzeugt 66–69 tok/s gegen rund 30, denkt aber länger.
+<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/nemotron-bolt-74b-on-ampere-24gb.md">Eintrag</a></li>
+<li>Der Modellserver entlädt sich im Leerlauf: 21 770 MiB VRAM im Betrieb, 1 618 MiB danach,
+Aufwachen in 11,4 s. Die Karte bleibt so für Training frei.</li>
+</ul>
 <p class="f"><b>Was hier nicht liegt.</b> Patientendaten und Ergebnisse auf eigenen
 Kohorten bleiben auf der Maschine. Veröffentlicht wird nur, was auf öffentlichen
 Datensätzen gerechnet wurde — der QC oben läuft auf der
 <i>WMH Segmentation Challenge</i> (Utrecht, Singapore, Amsterdam). Vor jedem Push
-geprüft: jeder Datensatz braucht eine ausdrückliche Freigabe.<br><br>
+geprüft: jeder Datensatz braucht eine ausdrückliche Freigabe. Abgeleitetes erbt die
+Klasse seiner Quelle (<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md">Regel</a>),
+deshalb fehlen hier die Vergleiche auf dem gemischten Pool aus Challenge und eigenen Kohorten.<br><br>
 <i>Patient data and results on in-house cohorts stay on the machine. Only work on
 public datasets is published here.</i><br><br>
 <a class="gh" href="https://github.com/mendeltem/clara_working_station">Quelltext</a>
