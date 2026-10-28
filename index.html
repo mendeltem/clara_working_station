@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de"><head><meta charset="UTF-8">
+<html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Clara Working Station</title><style>
  :root{--bg:#080c0f;--panel:#0f1a20;--line:#22363f;--ink:#e8f1f3;--muted:#7d99a2;
@@ -19,66 +19,120 @@
  .k:hover{border-color:var(--accent2)}
  .k .t{font-weight:800;font-size:15.5px;color:var(--accent2);margin-bottom:5px}
  .k .d{color:var(--muted);font-size:12.5px}
- p.s{color:var(--muted);font-size:12.5px}
+ p.s{color:var(--muted);font-size:12.5px;margin-bottom:9px}
+ p.s b{color:var(--ink)}
  p.f{color:var(--muted);font-size:11.5px;margin-top:34px;border-top:1px solid var(--line);
      padding-top:15px}
  p.f b{color:var(--ink)}
  a.gh{color:var(--accent2);text-decoration:none}a.gh:hover{text-decoration:underline}
+ .fig{display:block;margin:4px 0 14px;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+ .fig img{display:block;width:100%;height:auto}
+ ol.s,ul.s{color:var(--muted);font-size:12.5px;margin:8px 0 10px 20px}
+ ol.s li,ul.s li{margin-bottom:6px}
+ ol.s b{color:var(--ink)}
  .tw{overflow-x:auto;margin:6px 0 10px}
  table{border-collapse:collapse;width:100%;font-size:12px}
+ th{text-align:left;font-weight:600;color:var(--ink);padding:0 8px 6px 0;font-size:11px}
  td{border-top:1px solid var(--line);padding:8px 8px 8px 0;vertical-align:top;color:var(--muted)}
- td:last-child{color:var(--ink);white-space:nowrap;padding-right:0}
  td a{color:var(--accent2);text-decoration:none}td a:hover{text-decoration:underline}
- ul.s{color:var(--muted);font-size:12.5px;margin:8px 0 0 18px}
- ul.s li{margin-bottom:6px}
+ table.r td:last-child{color:var(--ink);white-space:nowrap;padding-right:0}
+ table.p td:first-child{color:var(--ink);font-weight:700;white-space:nowrap}
  code{color:var(--accent);font-size:12px}
- @media (max-width:560px){td:last-child{white-space:normal}}
+ @media (max-width:560px){table.r td:last-child{white-space:normal}}
 </style></head><body>
 <h1>Clara <span class="a">Working Station</span></h1>
-<div class="sub">Alita · lokaler Agent, ohne Netz</div>
-<p class="intro">Was auf dieser Maschine gerechnet wird, und was daraus
-veröffentlicht ist. Ein Arbeitsplatz, kein Portfolio.<br>
-<i>Work computed here by the local agent — a workbench, not a portfolio.</i></p>
-<h2>Ergebnisse</h2><a class="k" href="qc-wmh-verfahren/"><div class="t">WMH — elf Verfahren im Vergleich</div><div class="d">Je Patient eine Seite mit FLAIR, Referenzmaske und bis zu elf Segmentierungen übereinander, multiplanar und als 3D-Rendering. Dazu eine Seite je Verfahren und ein gestaffelter Vergleich mit gepaarten Tests.</div></a><a class="k" href="qc-unet-wmh/"><div class="t">WMH — U-Net, erste Fassung</div><div class="d">Der erste QC: drei Schnitte je Fall, 170 Fälle in einer Datei. Bleibt als Vergleichspunkt stehen.</div></a>
-<h2>Was die WMH-Linie gelernt hat</h2>
-<p class="s">Gemessen auf den 110 öffentlichen Testfällen der WMH Segmentation Challenge 2017
-(<a class="gh" href="https://doi.org/10.1109/TMI.2019.2905770">Kuijf et al. 2019</a>), offizielle
-Auswertung, gepaart über Fälle mit Bootstrap-Intervall. Eigenmessungen, keine Platzierungen.
-Jede Zeile verweist auf ihren Eintrag im Agenten-Wiki.<br>
-<i>Measured on the 110 public test cases, paired with bootstrap intervals.</i></p>
-<div class="tw"><table>
-<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/brain-mask-is-part-of-the-model.md">Die Hirnmaske ist Teil des Modells.</a> Zwei HD-BET-Läufe, sonst alles gleich: die z-Normierung innerhalb der Maske verschiebt das ganze Eingangsbild.</td><td>Dice 0,688 gegen 0,719</td></tr>
-<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/second-bias-correction-helps-on-mixed-scanners.md">Eine zweite Bias-Korrektur hilft</a>, obwohl die Daten schon korrigiert sind: <code>fast -B</code> gleicht die Intensität über Scanner an.</td><td>ohne sie Dice −0,011,<br>Läsions-Recall −0,037</td></tr>
-<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/official-label-2-rule-deletes-the-prediction.md">Die offizielle Auswertung löscht Vorhersagen auf Label 2</a>, statt sie als Fehlalarm zu zählen.</td><td>strengere Zählung<br>0,005–0,007 Dice zu tief</td></tr>
-<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/unseen-scanners-are-not-the-weak-spot.md">Ungesehene Scanner sind nicht die Schwachstelle.</a> Fünf Geräte statt drei Standorte; alle Fälle unter Dice 0,5 liegen auf bekannten Geräten.</td><td>20 Fälle ungesehen,<br>0 Ausfälle</td></tr>
-<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/architecture-package-brought-no-gain.md">Ein als Paket geändertes Netz brachte nichts.</a> Der scheinbare Gewinn von +0,032 Dice war das Maskenartefakt aus der ersten Zeile.</td><td>Dice −0,001,<br>Läsions-Recall −0,038</td></tr>
+<div class="sub">Alita · local agent, no network</div>
+<p class="intro">What is computed on this machine, and what of it is published.
+A workbench, not a portfolio: only what was produced here is listed.</p>
+
+<h2>Workflow</h2>
+<a class="fig" href="workflow.jpg"><img src="workflow.jpg" width="2752" height="878"
+ alt="Workflow: a research request fans out to research agents, their methods become tasks, the harness builds and trains each model on the workstation GPU with public challenge data, and the results are compared with the public leaderboard"></a>
+<p class="s">One request, read left to right, using <i>"I want to create a WMH segmentation
+model, can you research it?"</i> as the example:</p>
+<ol class="s">
+<li><b>Prompt.</b> The researcher states the goal in plain language.</li>
+<li><b>Research agents.</b> Clé (Charité API) splits the question and sends several agents
+to search papers and code for every method and architecture used for the task.</li>
+<li><b>Method shortlist.</b> The findings are merged into candidate methods, such as 2D U-Net,
+3D U-Net, nnU-Net or BIANCA, each turned into tasks with machine-checkable acceptance criteria.</li>
+<li><b>Harness, outer loop.</b> Takes one method at a time from the queue and moves on once it is done.</li>
+<li><b>Harness, inner loop on the workstation GPU.</b> Clara, the local model, writes the code,
+trains on open data (the WMH Segmentation Challenge training set), and an acceptance check counts
+the facts. If the check fails, the task goes back to Clara. The check asks no model.</li>
+<li><b>Evaluation.</b> Every model is scored on the challenge test set with the official metric
+(Dice, lesion F1) and placed next to the public leaderboard, where the 2017 winner reached Dice 0.80.</li>
+<li><b>Result.</b> The best model, a comparison table and a QC page.</li>
+</ol>
+<p class="s">Clara sees the data and has no network access. Clé and the research agents have
+network access and never see the data.</p>
+
+<h2>Why a local workstation</h2>
+<p class="s"><b>Shared GPU time is too slow for this kind of work.</b> On the institute cluster,
+a job asking for a whole GPU was scheduled about 9 hours ahead; only 7 of the cards have 80 GB.
+A small share of a card starts within seconds, but it only fits small trainings
+(<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/hpc-nodes-answer-only-ssh-and-shards-start-at-once.md">measurement, 16 Oct 2026</a>).
+An agent that builds a model, trains it, finds an error and tries again needs dozens of such
+rounds a day. With a queue in between, each round costs hours; on the workstation it costs minutes.</p>
+<p class="s"><b>A local model can look at the patient data; a cloud model cannot.</b> Clara runs on
+the workstation, so the images never leave the machine. That lets her do what a remote model may
+not: open every scan, read every mask, run the model on the whole cohort, and look at the cases
+where it fails. She sees far more of the data than any summary would carry, and she sees it fast.</p>
+<p class="s">Local is a route, not a permission. Whether a dataset may be processed by an AI system
+at all is decided by its data agreement, and a clause that forbids it binds the local model too
+(<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md">rule</a>).
+Where processing is allowed, running it locally keeps the data inside the institution.</p>
+
+<h2>How the parts are used</h2>
+<div class="tw"><table class="p">
+<tr><th>Part</th><th>Runs on</th><th>Patient data</th><th>Network</th><th>Used for</th></tr>
+<tr><td>Clé</td><td>Charité model hub API</td><td>no</td><td>yes</td><td>interpreting the request, splitting it into questions and tasks</td></tr>
+<tr><td>Research agents</td><td>Clé and cloud models</td><td>no</td><td>yes</td><td>searching papers and code for methods and architectures</td></tr>
+<tr><td>Clara</td><td>workstation, Qwen3.8-27B via llama.cpp</td><td>yes</td><td>no</td><td>writing the code, training, running and inspecting models on the data</td></tr>
+<tr><td>Harness</td><td>workstation</td><td>through Clara</td><td>no</td><td>the outer loop over methods and the inner loop until a task passes</td></tr>
+<tr><td>Check</td><td>workstation</td><td>counts only</td><td>no</td><td>acceptance criteria as countable facts; asks no model</td></tr>
+<tr><td>Exit guard</td><td>workstation, port 8899</td><td>blocks it</td><td>checked questions only</td><td>Clara's only way out: technical questions without data reference</td></tr>
+<tr><td>Blackboard</td><td>workstation and repo</td><td>no</td><td>via the repo</td><td>where Clara and the cloud model report progress to each other</td></tr>
 </table></div>
-<p class="s">Daraus folgt für jeden Modellvergleich: Maskenherkunft und Auswertungsfunktion
-mitprotokollieren, Bausteine einzeln ändern.</p>
-<h2>Das System dahinter</h2>
-<p class="s">Clara ist ein lokales Modell auf einer einzelnen Workstation, ohne
-Netzzugang. Werkzeuge, Messungen und Betriebsregeln stehen getrennt in
-<a class="gh" href="https://mendeltem.github.io/local_models/">local_models</a> —
-darunter <a class="gh" href="https://github.com/mendeltem/local_models/blob/main/docs/05-scaffolding.md">das
-modellunabhängige Gerüst</a>, das beschreibt, was einen Agenten fertig werden lässt.
-Was die Agenten unterwegs gelernt haben, sammelt das Wiki
+
+<h2>Results</h2><a class="k" href="qc-wmh-verfahren/"><div class="t">WMH: eleven methods compared</div><div class="d">One page per patient with FLAIR, reference mask and up to eleven segmentations overlaid. Plus one page per method and a staged comparison with paired tests.</div></a><a class="k" href="qc-unet-wmh/"><div class="t">WMH: U-Net, first version</div><div class="d">The first QC: three slices per case, 170 cases in one file. Kept as a point of comparison.</div></a>
+
+<h2>Lessons from the WMH line</h2>
+<p class="s">Measured on the 110 public test cases of the WMH Segmentation Challenge 2017
+(<a class="gh" href="https://doi.org/10.1109/TMI.2019.2905770">Kuijf et al. 2019</a>), official
+evaluation, paired over cases with bootstrap intervals. These are our own measurements, not
+leaderboard placements. Each row links to its entry in the agent wiki.</p>
+<div class="tw"><table class="r">
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/brain-mask-is-part-of-the-model.md">The brain mask is part of the model.</a> Masks from two HD-BET runs, everything else equal: z-normalisation inside the mask shifts the whole input image.</td><td>Dice 0.688 vs 0.719</td></tr>
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/second-bias-correction-helps-on-mixed-scanners.md">A second bias correction helps</a>, although the data are already corrected: <code>fast -B</code> harmonises intensity across scanners.</td><td>without it Dice −0.011,<br>lesion recall −0.037</td></tr>
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/official-label-2-rule-deletes-the-prediction.md">The official evaluation deletes predictions on label 2</a> instead of counting them as false positives.</td><td>stricter counting is<br>0.005–0.007 Dice too low</td></tr>
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/unseen-scanners-are-not-the-weak-spot.md">Unseen scanners are not the weak spot.</a> Five devices, not three sites; every case below Dice 0.5 is on a known device.</td><td>20 cases unseen,<br>0 failures</td></tr>
+<tr><td><a href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/architecture-package-brought-no-gain.md">Changing the network as a package brought nothing.</a> The apparent gain of +0.032 Dice was the mask artefact from the first row.</td><td>Dice −0.001,<br>lesion recall −0.038</td></tr>
+</table></div>
+<p class="s">The consequence for every model comparison: record where the mask came from and which
+evaluation function was used, and change one component at a time.</p>
+
+<h2>The system behind it</h2>
+<p class="s">Tools, measurements and operating rules are kept in
+<a class="gh" href="https://mendeltem.github.io/local_models/">local_models</a>, including
+<a class="gh" href="https://github.com/mendeltem/local_models/blob/main/docs/05-scaffolding.md">the
+model-independent scaffolding</a> that describes what lets an agent finish a task. What the agents
+learned along the way is collected in the wiki
 <a class="gh" href="https://github.com/mendeltem/blackbeard_wikki">blackbeard_wikki</a>.</p>
 <ul class="s">
-<li>RTX A5000 mit 24 GB (Ampere), i9-12900K, 62 GiB RAM, Ubuntu 24.04, Treiber 550 (CUDA 12.4). Stand Oktober 2026.</li>
-<li>Claras Modell ist Qwen3.8-27B in Q4 über llama.cpp. Gegen Nemotron 3.5 Bolt 74B-A9B auf derselben Karte:
-100 % gegen 88,5 % auf einem 13-Aufgaben-Test. Bolt erzeugt 66–69 tok/s gegen rund 30, denkt aber länger.
-<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/nemotron-bolt-74b-on-ampere-24gb.md">Eintrag</a></li>
-<li>Der Modellserver entlädt sich im Leerlauf: 21 770 MiB VRAM im Betrieb, 1 618 MiB danach,
-Aufwachen in 11,4 s. Die Karte bleibt so für Training frei.</li>
+<li>RTX A5000 with 24 GB (Ampere), i9-12900K, 62 GiB RAM, Ubuntu 24.04, NVIDIA driver 550 (CUDA 12.4). As of October 2026.</li>
+<li>Clara's model is Qwen3.8-27B in Q4 via llama.cpp. Against Nemotron 3.5 Bolt 74B-A9B on the same card:
+100 % vs 88.5 % on a 13-task test. Bolt generates 66–69 tok/s against about 30, but reasons longer.
+<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/nemotron-bolt-74b-on-ampere-24gb.md">Entry</a></li>
+<li>The model server unloads when idle: 21,770 MiB VRAM in use, 1,618 MiB after, 11.4 s to wake.
+This keeps the card free for training.</li>
 </ul>
-<p class="f"><b>Was hier nicht liegt.</b> Patientendaten und Ergebnisse auf eigenen
-Kohorten bleiben auf der Maschine. Veröffentlicht wird nur, was auf öffentlichen
-Datensätzen gerechnet wurde — der QC oben läuft auf der
-<i>WMH Segmentation Challenge</i> (Utrecht, Singapore, Amsterdam). Vor jedem Push
-geprüft: jeder Datensatz braucht eine ausdrückliche Freigabe. Abgeleitetes erbt die
-Klasse seiner Quelle (<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md">Regel</a>),
-deshalb fehlen hier die Vergleiche auf dem gemischten Pool aus Challenge und eigenen Kohorten.<br><br>
-<i>Patient data and results on in-house cohorts stay on the machine. Only work on
-public datasets is published here.</i><br><br>
-<a class="gh" href="https://github.com/mendeltem/clara_working_station">Quelltext</a>
+
+<p class="f"><b>What is not here.</b> Patient data and results on in-house cohorts stay on the
+machine. Only work on public datasets is published: the QC above runs on the
+<i>WMH Segmentation Challenge</i> (Utrecht, Singapore, Amsterdam). Checked before every push:
+every dataset needs an explicit release. Anything derived from in-house data inherits its class
+(<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md">rule</a>),
+so the comparisons on the mixed pool of challenge and in-house cohorts are not shown here.<br><br>
+<a class="gh" href="https://github.com/mendeltem/clara_working_station">Source</a>
 </p></body></html>
