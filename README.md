@@ -46,6 +46,8 @@ see the data.
 
 ## Why a local workstation
 
+![Waiting time before a GPU job can start: about 9 hours for a whole GPU on the institute cluster, seconds for a GPU share that fits only small jobs, no queue on the workstation; one training fold on the A5000 takes about 25 minutes](wait.svg)
+
 **Shared GPU time is too slow for this kind of work.** On the institute
 cluster, a job asking for a whole GPU was scheduled about 9 hours ahead; only
 7 of the cards have 80 GB. A small share of a card starts within seconds, but
@@ -91,7 +93,64 @@ Bars: mean over the same 20 cases; whiskers: 95 % bootstrap interval over cases 
 
 | | |
 |---|---|
-| **[WMH: eleven methods compared](https://mendeltem.github.io/clara_working_station/qc-wmh-verfahren/)** | One page per patient with FLAIR, reference mask and up to eleven segmentations overlaid, multiplanar and as a 3D rendering. Plus one page per method and a staged comparison with paired tests. |
+| **[WMH: eleven methods compared](https://mendeltem.github.io/clara_working_station/qc-wmh-verfahren/)** | Axial viewer: reference, method A and method B side by side on the same slice, mouse wheel through the slices. Plus one page per method and a staged comparison with paired tests. |
+
+![Dice against reference lesion volume on 20 public test cases for monai-attentionunet and the best BIANCA setting; both rise with lesion load, below 5 ml mean Dice 0.621 and 0.483, from 5 ml on 0.816 and 0.754](dice_vs_load.svg)
+
+Below 5 ml of reference lesion both methods drop (mean Dice 0.621 and 0.483, n = 8); from 5 ml on they reach 0.816 and 0.754 (n = 12). A mean Dice says as much about the lesion load of the sample as about the method, so compare methods on the same cases and report Dice by load ([entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/same-data-3d-equals-2d-load-drives-dice.md)).
+
+---
+
+## What Clara did on her own
+
+Given one task file with 15 machine-checkable acceptance criteria, Clara wrote
+a 2D U-Net in plain PyTorch (762 lines), cross-validated it over the five given
+folds and evaluated all 170 public WMH Challenge cases, every case predicted by
+the model of the fold that had not seen it.
+
+| Fold | Dice (validation) | Epochs | Time |
+|---|---|---|---|
+| 1 | 0.4427 | 647 | 1,355 s |
+| 2 | 0.7722 | 338 | 1,502 s |
+| 3 | 0.7885 | 365 | 1,505 s |
+| 4 | 0.7932 | 371 | 1,502 s |
+| 5 | 0.7916 | 369 | 1,501 s |
+
+Over all 170 out-of-fold cases: Dice 0.667, median 0.715, sensitivity 0.696,
+precision 0.680, volume difference −1.12 ml. Unasked, she ran a smoke test
+first, wrapped every run in the resource watcher, checked free VRAM before
+touching the GPU, and reported progress to the shared blackboard. Fold 1 lags
+far behind the others. These numbers mix
+challenge training and test cases in the folds, so they are not comparable to
+the leaderboard or to the 20-case chart above
+([source](https://github.com/mendeltem/local_models/tree/main/alita)).
+
+---
+
+## Three failures that looked like success
+
+These had to be fixed before the agent could work unsupervised. Each one was
+silent, and each looked like something else.
+
+1. **A three-character file blocked the agent for two days.** `current-quant`
+   said `q5`. The Q5 model has a 32,768-token context; the agent framework needs
+   64,000 and refused to start. Symptom: rounds of 22, 30 and 9 minutes that
+   produced 63, 0 and 57 bytes of log. Model, data and task were all fine.
+2. **The run watchdog could never bark.** Its GBNF grammar put the alternation
+   bar at the start of a continuation line, which this llama.cpp build rejects
+   with HTTP 400 on every call. Its fallback on any error was "ok, continue", so
+   it would have approved everything forever. Fixed, and "undecided" is now an
+   outcome separate from "ok".
+3. **FreeSurfer was invisible to the agent while the self-test said green.** The
+   agent starts through `sg`, which is setgid, and the dynamic linker drops all
+   `LD_*` variables for setgid programs. `recon-all`, `mri_convert`, `samseg`
+   and `mri_synthseg` died on a missing library although they were on `PATH`;
+   the self-test ran without `sg` and passed. Fixed by setting the variable again
+   after the setgid boundary.
+
+The pattern: **a component fails in a way that looks like success.** A check
+that cannot judge must say so, never fall back to the harmless answer
+([details](https://github.com/mendeltem/local_models/tree/main/alita)).
 
 ---
 
@@ -238,6 +297,22 @@ licence CC BY-NC 4.0.
    systemd user units and checks paths, environments and weights.
 6. Run `system/werkzeuge/werkzeugtest --schnell`. It calls every tool on real
    input, so it says "computes", not just "installed".
+
+---
+
+## Limits
+
+- The method comparison uses 20 of the 110 public test cases, a QC sample, not
+  the full test set. The 2017 winner line is on all 110 cases.
+- Clara's own U-Net numbers come from folds that mix challenge training and test
+  cases; they are not a leaderboard result.
+- The System 1 gate was measured on 154 commands labelled by one rater (the
+  agent, with a rubric written before any model ran); it runs in shadow mode only.
+- The 13-task model test is small; it ranks models for this use, it does not
+  benchmark them.
+- The `cmake` flags in the setup are reconstructed, not copied from the build log.
+- The diagrams are generated illustrations; where they and the tables differ,
+  the tables are right.
 
 ---
 

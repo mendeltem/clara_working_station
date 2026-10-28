@@ -72,6 +72,31 @@ agents, the harness, training and evaluation. Clara sees the data and has no net
 research agents reach the network and Clé, and never see the data.</p>
 
 <h2>Why a local workstation</h2>
+<div class="tw chart"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 314" style="display:block;width:100%;min-width:600px;height:auto" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" role="img" aria-labelledby="wt wd">
+<title id="wt">Waiting time before a GPU job can start</title>
+<desc id="wd">Cluster · whole GPU: ≈ 9 h until scheduled (squeue --start, 16 Oct 2026); Cluster · GPU share: starts within seconds, but only small jobs fit; Workstation: no queue; idle model server wakes in 11.4 s; one training fold on the A5000 takes about 25 minutes</desc>
+<rect width="780" height="314" rx="12" fill="#0f1a20" stroke="#22363f"/>
+<text x="24" y="34" fill="#e8f1f3" font-size="15" font-weight="700">Waiting before a GPU job can start</text>
+<text x="24" y="56" fill="#7d99a2" font-size="11.5">An agent needs dozens of build-train-check rounds a day; the queue is paid on every round</text>
+<text x="24" y="72" fill="#7d99a2" font-size="11.5">Dashed: one training fold of Clara's U-Net on the A5000, ≈ 25 min, for scale</text>
+<line x1="190.0" y1="90" x2="190.0" y2="258" stroke="#22363f"/>
+<text x="190.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">0 h</text>
+<line x1="300.0" y1="90" x2="300.0" y2="258" stroke="#22363f"/>
+<text x="300.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">2 h</text>
+<line x1="410.0" y1="90" x2="410.0" y2="258" stroke="#22363f"/>
+<text x="410.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">4 h</text>
+<line x1="520.0" y1="90" x2="520.0" y2="258" stroke="#22363f"/>
+<text x="520.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">6 h</text>
+<line x1="630.0" y1="90" x2="630.0" y2="258" stroke="#22363f"/>
+<text x="630.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">8 h</text>
+<line x1="740.0" y1="90" x2="740.0" y2="258" stroke="#22363f"/>
+<text x="740.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">10 h</text>
+<line x1="212.9" y1="84" x2="212.9" y2="258" stroke="#e8f1f3" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="4 4"/>
+<g><title>Cluster · whole GPU: ≈ 9 h until scheduled (squeue --start, 16 Oct 2026)</title><text x="180" y="117" fill="#e8f1f3" font-size="12" text-anchor="end">Cluster · whole GPU</text><rect x="190.0" y="104" width="495.0" height="18" rx="3" fill="#c97a2a"/><text x="222.9" y="140" fill="#7d99a2" font-size="11">≈ 9 h until scheduled (squeue --start, 16 Oct 2026)</text></g>
+<g><title>Cluster · GPU share: starts within seconds, but only small jobs fit</title><text x="180" y="171" fill="#e8f1f3" font-size="12" text-anchor="end">Cluster · GPU share</text><rect x="190.0" y="158" width="3.0" height="18" rx="3" fill="#25a294"/><text x="222.9" y="171" fill="#7d99a2" font-size="11">starts within seconds, but only small jobs fit</text></g>
+<g><title>Workstation: no queue; idle model server wakes in 11.4 s</title><text x="180" y="225" fill="#e8f1f3" font-size="12" text-anchor="end">Workstation</text><rect x="190.0" y="212" width="3.0" height="18" rx="3" fill="#25a294"/><text x="222.9" y="225" fill="#7d99a2" font-size="11">no queue; idle model server wakes in 11.4 s</text></g>
+<text x="218.9" y="94" fill="#e8f1f3" font-size="11">25 min</text>
+</svg></div>
 <p class="s"><b>Shared GPU time is too slow for this kind of work.</b> On the institute cluster,
 a job asking for a whole GPU was scheduled about 9 hours ahead; only 7 of the cards have 80 GB.
 A small share of a card starts within seconds, but it only fits small trainings
@@ -134,8 +159,87 @@ Where processing is allowed, running it locally keeps the data inside the instit
 <line x1="610.8" y1="82" x2="610.8" y2="392" stroke="#f0a830" stroke-width="2" stroke-dasharray="5 4"/>
 <text x="616.8" y="80" fill="#e8f1f3" font-size="11">2017 winner 0.80</text>
 </svg></div>
-<a class="k" href="qc-wmh-verfahren/"><div class="t">WMH: eleven methods compared</div><div class="d">One page per patient with FLAIR, reference mask and up to eleven segmentations overlaid. Plus one page per method and a staged comparison with paired tests.</div></a>
+<a class="k" href="qc-wmh-verfahren/"><div class="t">WMH: eleven methods compared</div><div class="d">Axial viewer: reference, method A and method B side by side on the same slice, mouse wheel through the slices. Plus one page per method and a staged comparison with paired tests.</div></a>
 
+<div class="tw chart"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 430" style="display:block;width:100%;min-width:600px;height:auto" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" role="img" aria-labelledby="lt ld">
+<title id="lt">Dice against reference lesion volume, 20 public test cases</title>
+<desc id="ld">sub-068 0.9 ml: monai-attentionunet 0.300, bianca-n201-t90c3 0.316; sub-090 1.88 ml: monai-attentionunet 0.626, bianca-n201-t90c3 0.379; sub-078 1.95 ml: monai-attentionunet 0.568, bianca-n201-t90c3 0.486; sub-140 2.54 ml: monai-attentionunet 0.749, bianca-n201-t90c3 0.609; sub-084 3.2 ml: monai-attentionunet 0.650, bianca-n201-t90c3 0.522; sub-091 3.29 ml: monai-attentionunet 0.608, bianca-n201-t90c3 0.551; sub-141 4.45 ml: monai-attentionunet 0.687, bianca-n201-t90c3 0.447; sub-124 4.67 ml: monai-attentionunet 0.778, bianca-n201-t90c3 0.555; sub-086 6.43 ml: monai-attentionunet 0.614, bianca-n201-t90c3 0.572; sub-097 7.51 ml: monai-attentionunet 0.602, bianca-n201-t90c3 0.498; sub-154 19.76 ml: monai-attentionunet 0.785, bianca-n201-t90c3 0.659; sub-128 20.27 ml: monai-attentionunet 0.892, bianca-n201-t90c3 0.831; sub-125 23.8 ml: monai-attentionunet 0.845, bianca-n201-t90c3 0.775; sub-094 26.52 ml: monai-attentionunet 0.851, bianca-n201-t90c3 0.782; sub-135 29.08 ml: monai-attentionunet 0.820, bianca-n201-t90c3 0.838; sub-153 39.2 ml: monai-attentionunet 0.915, bianca-n201-t90c3 0.709; sub-074 39.27 ml: monai-attentionunet 0.918, bianca-n201-t90c3 0.867; sub-101 49.5 ml: monai-attentionunet 0.835, bianca-n201-t90c3 0.832; sub-144 52.06 ml: monai-attentionunet 0.869, bianca-n201-t90c3 0.851; sub-113 85.15 ml: monai-attentionunet 0.851, bianca-n201-t90c3 0.833</desc>
+<rect width="780" height="430" rx="12" fill="#0f1a20" stroke="#22363f"/>
+<text x="24" y="34" fill="#e8f1f3" font-size="15" font-weight="700">Dice depends on how much lesion there is</text>
+<text x="24" y="56" fill="#7d99a2" font-size="11.5">One case per column, same 20 public test cases; thin line joins the two methods on one case</text>
+<circle cx="30" cy="76" r="5" fill="#25a294"/><text x="42" y="80" fill="#e8f1f3" font-size="11.5">monai-attentionunet</text>
+<rect x="262" y="71" width="10" height="10" rx="2" fill="#c97a2a"/><text x="280" y="80" fill="#e8f1f3" font-size="11.5">bianca-n201-t90c3 (best BIANCA)</text>
+<line x1="70" y1="372.0" x2="750" y2="372.0" stroke="#22363f"/>
+<text x="62" y="376.0" fill="#7d99a2" font-size="11" text-anchor="end">0.0</text>
+<line x1="70" y1="316.8" x2="750" y2="316.8" stroke="#22363f"/>
+<text x="62" y="320.8" fill="#7d99a2" font-size="11" text-anchor="end">0.2</text>
+<line x1="70" y1="261.6" x2="750" y2="261.6" stroke="#22363f"/>
+<text x="62" y="265.6" fill="#7d99a2" font-size="11" text-anchor="end">0.4</text>
+<line x1="70" y1="206.4" x2="750" y2="206.4" stroke="#22363f"/>
+<text x="62" y="210.4" fill="#7d99a2" font-size="11" text-anchor="end">0.6</text>
+<line x1="70" y1="151.2" x2="750" y2="151.2" stroke="#22363f"/>
+<text x="62" y="155.2" fill="#7d99a2" font-size="11" text-anchor="end">0.8</text>
+<line x1="70" y1="96.0" x2="750" y2="96.0" stroke="#22363f"/>
+<text x="62" y="100.0" fill="#7d99a2" font-size="11" text-anchor="end">1.0</text>
+<line x1="70.0" y1="372" x2="70.0" y2="376" stroke="#7d99a2"/>
+<text x="70.0" y="390" fill="#7d99a2" font-size="11" text-anchor="middle">0.5</text>
+<line x1="159.0" y1="372" x2="159.0" y2="376" stroke="#7d99a2"/>
+<text x="159.0" y="390" fill="#7d99a2" font-size="11" text-anchor="middle">1</text>
+<line x1="247.9" y1="372" x2="247.9" y2="376" stroke="#7d99a2"/>
+<text x="247.9" y="390" fill="#7d99a2" font-size="11" text-anchor="middle">2</text>
+<line x1="365.5" y1="372" x2="365.5" y2="376" stroke="#7d99a2"/>
+<text x="365.5" y="390" fill="#7d99a2" font-size="11" text-anchor="middle">5</text>
+<line x1="454.5" y1="372" x2="454.5" y2="376" stroke="#7d99a2"/>
+<text x="454.5" y="390" fill="#7d99a2" font-size="11" text-anchor="middle">10</text>
+<line x1="543.4" y1="372" x2="543.4" y2="376" stroke="#7d99a2"/>
+<text x="543.4" y="390" fill="#7d99a2" font-size="11" text-anchor="middle">20</text>
+<line x1="661.0" y1="372" x2="661.0" y2="376" stroke="#7d99a2"/>
+<text x="661.0" y="390" fill="#7d99a2" font-size="11" text-anchor="middle">50</text>
+<line x1="750.0" y1="372" x2="750.0" y2="376" stroke="#7d99a2"/>
+<text x="750.0" y="390" fill="#7d99a2" font-size="11" text-anchor="middle">100</text>
+<text x="410.0" y="416" fill="#7d99a2" font-size="11" text-anchor="middle">reference lesion volume, ml (log scale)</text>
+<text x="18" y="234.0" fill="#7d99a2" font-size="11" text-anchor="middle" transform="rotate(-90 18 234.0)">Dice</text>
+<g><title>sub-068: 0.9 ml reference; monai-attentionunet 0.300, bianca-n201-t90c3 0.316</title><rect x="138.4" y="96" width="14" height="276" fill="transparent"/><line x1="145.4" y1="289.1" x2="145.4" y2="284.7" stroke="#7d99a2" stroke-width="1"/><rect x="140.4" y="279.7" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="145.4" cy="289.1" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-090: 1.88 ml reference; monai-attentionunet 0.626, bianca-n201-t90c3 0.379</title><rect x="233.0" y="96" width="14" height="276" fill="transparent"/><line x1="240.0" y1="199.2" x2="240.0" y2="267.5" stroke="#7d99a2" stroke-width="1"/><rect x="235.0" y="262.5" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="240.0" cy="199.2" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-078: 1.95 ml reference; monai-attentionunet 0.568, bianca-n201-t90c3 0.486</title><rect x="237.7" y="96" width="14" height="276" fill="transparent"/><line x1="244.7" y1="215.1" x2="244.7" y2="237.7" stroke="#7d99a2" stroke-width="1"/><rect x="239.7" y="232.7" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="244.7" cy="215.1" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-140: 2.54 ml reference; monai-attentionunet 0.749, bianca-n201-t90c3 0.609</title><rect x="271.6" y="96" width="14" height="276" fill="transparent"/><line x1="278.6" y1="165.2" x2="278.6" y2="204.0" stroke="#7d99a2" stroke-width="1"/><rect x="273.6" y="199.0" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="278.6" cy="165.2" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-084: 3.2 ml reference; monai-attentionunet 0.650, bianca-n201-t90c3 0.522</title><rect x="301.2" y="96" width="14" height="276" fill="transparent"/><line x1="308.2" y1="192.7" x2="308.2" y2="227.8" stroke="#7d99a2" stroke-width="1"/><rect x="303.2" y="222.8" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="308.2" cy="192.7" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-091: 3.29 ml reference; monai-attentionunet 0.608, bianca-n201-t90c3 0.551</title><rect x="304.8" y="96" width="14" height="276" fill="transparent"/><line x1="311.8" y1="204.3" x2="311.8" y2="219.8" stroke="#7d99a2" stroke-width="1"/><rect x="306.8" y="214.8" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="311.8" cy="204.3" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-141: 4.45 ml reference; monai-attentionunet 0.687, bianca-n201-t90c3 0.447</title><rect x="343.6" y="96" width="14" height="276" fill="transparent"/><line x1="350.6" y1="182.4" x2="350.6" y2="248.5" stroke="#7d99a2" stroke-width="1"/><rect x="345.6" y="243.5" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="350.6" cy="182.4" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-124: 4.67 ml reference; monai-attentionunet 0.778, bianca-n201-t90c3 0.555</title><rect x="349.8" y="96" width="14" height="276" fill="transparent"/><line x1="356.8" y1="157.2" x2="356.8" y2="218.8" stroke="#7d99a2" stroke-width="1"/><rect x="351.8" y="213.8" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="356.8" cy="157.2" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-086: 6.43 ml reference; monai-attentionunet 0.614, bianca-n201-t90c3 0.572</title><rect x="390.8" y="96" width="14" height="276" fill="transparent"/><line x1="397.8" y1="202.4" x2="397.8" y2="214.2" stroke="#7d99a2" stroke-width="1"/><rect x="392.8" y="209.2" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="397.8" cy="202.4" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-097: 7.51 ml reference; monai-attentionunet 0.602, bianca-n201-t90c3 0.498</title><rect x="410.7" y="96" width="14" height="276" fill="transparent"/><line x1="417.7" y1="205.9" x2="417.7" y2="234.5" stroke="#7d99a2" stroke-width="1"/><rect x="412.7" y="229.5" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="417.7" cy="205.9" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-154: 19.76 ml reference; monai-attentionunet 0.785, bianca-n201-t90c3 0.659</title><rect x="534.9" y="96" width="14" height="276" fill="transparent"/><line x1="541.9" y1="155.4" x2="541.9" y2="190.2" stroke="#7d99a2" stroke-width="1"/><rect x="536.9" y="185.2" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="541.9" cy="155.4" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-128: 20.27 ml reference; monai-attentionunet 0.892, bianca-n201-t90c3 0.831</title><rect x="538.2" y="96" width="14" height="276" fill="transparent"/><line x1="545.2" y1="125.8" x2="545.2" y2="142.7" stroke="#7d99a2" stroke-width="1"/><rect x="540.2" y="137.7" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="545.2" cy="125.8" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-125: 23.8 ml reference; monai-attentionunet 0.845, bianca-n201-t90c3 0.775</title><rect x="558.8" y="96" width="14" height="276" fill="transparent"/><line x1="565.8" y1="138.9" x2="565.8" y2="158.0" stroke="#7d99a2" stroke-width="1"/><rect x="560.8" y="153.0" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="565.8" cy="138.9" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-094: 26.52 ml reference; monai-attentionunet 0.851, bianca-n201-t90c3 0.782</title><rect x="572.7" y="96" width="14" height="276" fill="transparent"/><line x1="579.7" y1="137.1" x2="579.7" y2="156.2" stroke="#7d99a2" stroke-width="1"/><rect x="574.7" y="151.2" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="579.7" cy="137.1" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-135: 29.08 ml reference; monai-attentionunet 0.820, bianca-n201-t90c3 0.838</title><rect x="584.5" y="96" width="14" height="276" fill="transparent"/><line x1="591.5" y1="145.8" x2="591.5" y2="140.8" stroke="#7d99a2" stroke-width="1"/><rect x="586.5" y="135.8" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="591.5" cy="145.8" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-153: 39.2 ml reference; monai-attentionunet 0.915, bianca-n201-t90c3 0.709</title><rect x="622.8" y="96" width="14" height="276" fill="transparent"/><line x1="629.8" y1="119.4" x2="629.8" y2="176.5" stroke="#7d99a2" stroke-width="1"/><rect x="624.8" y="171.5" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="629.8" cy="119.4" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-074: 39.27 ml reference; monai-attentionunet 0.918, bianca-n201-t90c3 0.867</title><rect x="623.0" y="96" width="14" height="276" fill="transparent"/><line x1="630.0" y1="118.5" x2="630.0" y2="132.8" stroke="#7d99a2" stroke-width="1"/><rect x="625.0" y="127.8" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="630.0" cy="118.5" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-101: 49.5 ml reference; monai-attentionunet 0.835, bianca-n201-t90c3 0.832</title><rect x="652.7" y="96" width="14" height="276" fill="transparent"/><line x1="659.7" y1="141.7" x2="659.7" y2="142.3" stroke="#7d99a2" stroke-width="1"/><rect x="654.7" y="137.3" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="659.7" cy="141.7" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-144: 52.06 ml reference; monai-attentionunet 0.869, bianca-n201-t90c3 0.851</title><rect x="659.2" y="96" width="14" height="276" fill="transparent"/><line x1="666.2" y1="132.2" x2="666.2" y2="137.0" stroke="#7d99a2" stroke-width="1"/><rect x="661.2" y="132.0" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="666.2" cy="132.2" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+<g><title>sub-113: 85.15 ml reference; monai-attentionunet 0.851, bianca-n201-t90c3 0.833</title><rect x="722.4" y="96" width="14" height="276" fill="transparent"/><line x1="729.4" y1="137.2" x2="729.4" y2="142.2" stroke="#7d99a2" stroke-width="1"/><rect x="724.4" y="137.2" width="10" height="10" rx="2" fill="#c97a2a" stroke="#0f1a20" stroke-width="2"/><circle cx="729.4" cy="137.2" r="5.5" fill="#25a294" stroke="#0f1a20" stroke-width="2"/></g>
+</svg></div>
+<p class="s">Below 5 ml of reference lesion both methods drop (mean Dice 0.621 and 0.483, n = 8); from 5 ml on they reach 0.816 and 0.754 (n = 12). A mean Dice says as much about the lesion load of the sample as about the method, so compare methods on the same cases and report Dice by load (<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/same-data-3d-equals-2d-load-drives-dice.md">entry</a>).</p>
+<h2>What Clara did on her own</h2>
+<p class="s">Given one task file with 15 machine-checkable acceptance criteria, Clara wrote a 2D U-Net in plain PyTorch (762 lines), cross-validated it over the five given folds and evaluated all 170 public WMH Challenge cases, every case predicted by the model of the fold that had not seen it.</p>
+<div class="tw"><table class="p">
+<tr><th>Fold</th><th>Dice (validation)</th><th>Epochs</th><th>Time</th></tr>
+<tr><td>1</td><td>0.4427</td><td>647</td><td>1,355 s</td></tr>
+<tr><td>2</td><td>0.7722</td><td>338</td><td>1,502 s</td></tr>
+<tr><td>3</td><td>0.7885</td><td>365</td><td>1,505 s</td></tr>
+<tr><td>4</td><td>0.7932</td><td>371</td><td>1,502 s</td></tr>
+<tr><td>5</td><td>0.7916</td><td>369</td><td>1,501 s</td></tr>
+</table></div>
+<p class="s">Over all 170 out-of-fold cases: Dice 0.667, median 0.715, sensitivity 0.696, precision 0.680, volume difference −1.12 ml. Unasked, she ran a smoke test first, wrapped every run in the resource watcher, checked free VRAM before touching the GPU, and reported progress to the shared blackboard. Fold 1 lags far behind the others. These numbers mix challenge training and test cases in the folds, so they are not comparable to the leaderboard or to the 20-case chart above (<a class="gh" href="https://github.com/mendeltem/local_models/tree/main/alita">source</a>).</p>
+<h2>Three failures that looked like success</h2>
+<p class="s">These had to be fixed before the agent could work unsupervised. Each one was silent, and each looked like something else.</p>
+<ol class="s">
+<li><b>A three-character file blocked the agent for two days.</b> <code>current-quant</code> said <code>q5</code>. The Q5 model has a 32,768-token context; the agent framework needs 64,000 and refused to start. Symptom: rounds of 22, 30 and 9 minutes that produced 63, 0 and 57 bytes of log. Model, data and task were all fine.</li>
+<li><b>The run watchdog could never bark.</b> Its GBNF grammar put the alternation bar at the start of a continuation line, which this llama.cpp build rejects with HTTP 400 on every call. Its fallback on any error was "ok, continue", so it would have approved everything forever. Fixed, and "undecided" is now an outcome separate from "ok".</li>
+<li><b>FreeSurfer was invisible to the agent while the self-test said green.</b> The agent starts through <code>sg</code>, which is setgid, and the dynamic linker drops all <code>LD_*</code> variables for setgid programs. <code>recon-all</code>, <code>mri_convert</code>, <code>samseg</code> and <code>mri_synthseg</code> died on a missing library although they were on <code>PATH</code>; the self-test ran without <code>sg</code> and passed. Fixed by setting the variable again after the setgid boundary.</li>
+</ol>
+<p class="s">The pattern: <b>a component fails in a way that looks like success.</b> A check that cannot judge must say so, never fall back to the harmless answer.</p>
 <h2>Lessons from the WMH line</h2>
 <p class="s">Measured on the 110 public test cases of the WMH Segmentation Challenge 2017
 (<a class="gh" href="https://doi.org/10.1109/TMI.2019.2905770">Kuijf et al. 2019</a>), official
@@ -190,6 +294,15 @@ scripts in <a class="gh" href="https://github.com/mendeltem/local_models/tree/ma
 <tr><td>Data</td><td>WMH Segmentation Challenge 2017</td><td>60 training + 110 test cases, CC BY-NC 4.0</td></tr>
 </table></div>
 
+<h2>Limits</h2>
+<ul class="s">
+<li>The method comparison uses 20 of the 110 public test cases, a QC sample, not the full test set. The 2017 winner line is on all 110 cases.</li>
+<li>Clara's own U-Net numbers come from folds that mix challenge training and test cases; they are not a leaderboard result.</li>
+<li>The System 1 gate was measured on 154 commands labelled by one rater (the agent, with a rubric written before any model ran); it runs in shadow mode only.</li>
+<li>The 13-task model test is small; it ranks models for this use, it does not benchmark them.</li>
+<li>The <code>cmake</code> flags in the setup are reconstructed, not copied from the build log.</li>
+<li>The diagrams are generated illustrations; where they and the tables differ, the tables are right.</li>
+</ul>
 <h2>Where data may go</h2>
 <a class="fig" href="data-classes.png"><img src="data-classes.png" width="918" height="550"
  alt="Where data may go: three nested zones. Class 1, open challenge data, may go to public places such as GitHub and the cloud; class 2, data under a data use agreement, may go as far as the institution's Clé model hub; class 3, own patient cohorts, stays on the workstation with Clara, and derived results such as lesion masks keep their class. The exit guard lets only data-free questions out, a System 1 gate checks shell commands, and each task is split: reading the images happens on the workstation, code, method and write-up go to the hub"></a>
