@@ -146,6 +146,7 @@ scripts in <a class="gh" href="https://github.com/mendeltem/local_models/tree/ma
 <tr><td>Clara</td><td>Qwen3.8-27B, GGUF UD-Q4_K_M + vision projector</td><td>llama.cpp CUDA build, ~30 tok/s, 20.8 GiB VRAM</td></tr>
 <tr><td>Beside GPU jobs</td><td>Ternary-Bonsai-2-27B, PQ2_0, 6.8 GB</td><td>45 tok/s</td></tr>
 <tr><td>Embeddings</td><td>bge-m3 Q8_0</td><td>CPU</td></tr>
+<tr><td>System 1 gate</td><td>H2O-Lightning-4B Q8_0 (decider-4b for comparison)</td><td>CPU; approves shell commands at p ≥ 0.8, else asks; shadow mode since 20 Oct 2026</td></tr>
 <tr><td>Clé</td><td>Charité on-premise model hub, OpenAI-compatible</td><td>aliases fast, frontier, eu, light, clea</td></tr>
 <tr><td>Agents</td><td>Hermes Agent v0.21.5, OpenCode 1.18.35</td><td>Hermes gateway takes prompts from the phone</td></tr>
 <tr><td>Training</td><td>PyTorch 2.6.0+cu124, MONAI 1.5.2, nnU-Net 2.8.1</td><td>conda env <code>dl</code></td></tr>

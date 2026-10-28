@@ -179,11 +179,19 @@ October 2026. The full scripts are in
 | Small model beside GPU jobs | Ternary-Bonsai-2-27B | `PQ2_0`, 6.8 GB (PrismML llama.cpp fork) | GPU | 45 tok/s, 92 % on the 13-task test |
 | Embeddings | bge-m3 | GGUF `Q8_0` | CPU, port 8001 | 0.23 GiB RAM |
 | Run watcher | Qwen2.5-0.5B-Instruct | GGUF `Q8_0` | CPU | |
+| System 1: approval gate | H2O-Lightning-4B; decider-4b v2.1 as comparison | GGUF `Q8_0` / `Q4_K_M`, `/v1/systemone` format | CPU, 8 threads | on 154 real shell commands: 0 of 36 approval-needed commands let through at p ≥ 0.8; 1.3–9.5 s per decision on the CPU. Shadow mode since 20 Oct 2026: logs next to the human, approvals stay manual |
 | Clé, planning and research | Charité on-premise model hub, OpenAI-compatible API | aliases `fast` (Qwen 3.8 Flash Next), `frontier` (DeepSeek V4.1 Flash), `eu` (Mistral Small 4), `light`, `clea` | hospital intranet, called from the workstation | 13-task test: `clea` 100 %, `frontier` 96 %, `fast` 92 % at 180 tok/s |
 
 Reasoning models on the hub need `max_tokens` of about 6,000, otherwise the
 hidden reasoning uses up the budget and the answer comes back empty
 ([entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/hospital-model-hub-api-aliases-and-small-benchmark.md)).
+
+The System 1 gate sits in front of Clara's shell commands: fixed rules first
+(remote hosts, publishing, secrets, deletes outside scratch, copies out of
+patient-data locations), then the small model decides "run" at p ≥ 0.8 and
+sends everything else to the human; it never denies on its own. On the CPU a
+decision takes seconds, so a live gate needs the GPU
+([entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/open_checks/system-one-decision-layer-for-agent-harnesses.md)).
 
 ### Software
 
