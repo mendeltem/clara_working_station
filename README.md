@@ -73,7 +73,7 @@ institution.
 | Part | Runs on | Sees patient data | Network | Used for |
 |---|---|---|---|---|
 | **Prompt** | any device: phone app, desktop PC, browser | no | yes | stating the goal; nothing else happens there |
-| **Clé** | model on the Charité model hub, called from the workstation | no | yes | interpreting the request, splitting it into questions and tasks |
+| **Clé** | Charité on-premise model hub (intranet), called from the workstation | no | yes | interpreting the request, splitting it into questions and tasks |
 | **Research agents** | workstation, using Clé | no | yes | searching papers and code for methods and architectures |
 | **Clara** | workstation, Qwen3.8-27B via llama.cpp | yes | no | writing the code, training, running and inspecting models on the data |
 | **Harness** | workstation | through Clara | no | the outer loop over methods and the inner loop until a task passes |
@@ -138,6 +138,93 @@ What the agents learned along the way is collected in the wiki
 - With Secure Boot, a kernel update can disable the NVIDIA driver without any log
   naming it. Before rebooting, check `dkms status` and `mokutil --list-enrolled`.
   [Entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/risks/secure-boot-kernel-update-unloads-nvidia-dkms.md)
+
+---
+
+## Rebuild it: setup
+
+Everything needed to set up the same system on another machine. Numbers are
+measured on Alita unless marked otherwise; versions are those in use in
+October 2026. The full scripts are in
+[local_models/alita](https://github.com/mendeltem/local_models/tree/main/alita).
+
+### Hardware
+
+| Part | On Alita | What matters |
+|---|---|---|
+| GPU | NVIDIA RTX A5000, 24 GB (Ampere, compute capability 8.6) | 24 GB holds the 27B model in Q4 at 80k context (~20.8 GiB); bfloat16 yes, FP8 no |
+| CPU | Intel i9-12900K, 16 cores / 24 threads | embeddings and the run watcher run on the CPU |
+| RAM | 62.6 GiB, 8 GiB swap | `mri_WMHsynthseg` needs ~54 GiB and runs alone |
+| Disk | NVMe, 915 GB | models ~85 GB, public datasets, wheels for offline installs |
+| Board | MSI MS-7D91 | |
+
+### Operating system and drivers
+
+| | |
+|---|---|
+| OS | Ubuntu 24.04.3 LTS, kernel 6.14 |
+| NVIDIA driver | 550.163.01, i.e. CUDA 12.4 at most; PyTorch wheels up to cu126 run on it |
+| Rights | no sudo in daily use: system packages are unpacked with `apt-get download` + `dpkg-deb -x` |
+| Services | systemd user units with `loginctl enable-linger`, all listening on loopback only |
+| Secure Boot | enrol the MOK key, or a kernel update silently unloads the NVIDIA module |
+
+### Models
+
+| Role | Model | Format | Runs on | Measured |
+|---|---|---|---|---|
+| Clara, main agent model | Qwen3.8-27B | GGUF `UD-Q4_K_M`, 16 GB, 80k context | GPU, llama.cpp | ~30–33 tok/s, 20.8 GiB VRAM |
+| Clara's eyes | vision projector for Qwen3.8-27B | `mmproj-F16.gguf`, 885 MB | loaded with `--mmproj`, projector on the CPU | 16,178 MiB VRAM at 8k context; context length, not the projector, decides out-of-memory |
+| Small model beside GPU jobs | Ternary-Bonsai-2-27B | `PQ2_0`, 6.8 GB (PrismML llama.cpp fork) | GPU | 45 tok/s, 92 % on the 13-task test |
+| Embeddings | bge-m3 | GGUF `Q8_0` | CPU, port 8001 | 0.23 GiB RAM |
+| Run watcher | Qwen2.5-0.5B-Instruct | GGUF `Q8_0` | CPU | |
+| Clé, planning and research | Charité on-premise model hub, OpenAI-compatible API | aliases `fast` (Qwen 3.8 Flash Next), `frontier` (DeepSeek V4.1 Flash), `eu` (Mistral Small 4), `light`, `clea` | hospital intranet, called from the workstation | 13-task test: `clea` 100 %, `frontier` 96 %, `fast` 92 % at 180 tok/s |
+
+Reasoning models on the hub need `max_tokens` of about 6,000, otherwise the
+hidden reasoning uses up the budget and the answer comes back empty
+([entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/hospital-model-hub-api-aliases-and-small-benchmark.md)).
+
+### Software
+
+| Layer | What | Version / setting |
+|---|---|---|
+| Inference server | [llama.cpp](https://github.com/ggml-org/llama.cpp), built from source | CUDA build for sm_86 (`cmake -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=86`), commit f64a498 |
+| Server environment | conda `qwen-serve` | Python 3.12, gcc 12, CUDA 12.4 |
+| Training environment | conda `dl` | Python 3.12, PyTorch 2.6.0+cu124, MONAI 1.5.2, nnU-Net 2.8.1, nibabel, scikit-learn |
+| Agent harness | [Hermes Agent](https://github.com/NousResearch/hermes-agent) | v0.21.5; its gateway receives prompts from the phone |
+| Coding agent | [OpenCode](https://github.com/sst/opencode) | 1.18.35, pointed at the local server |
+| Imaging tools | FSL (`bet`, `flirt`, `fast`, `bianca`), HD-BET, FreeSurfer 8.2.0 (`mri_synthseg`, `mri_WMHsynthseg`) | |
+| QC pages | [NiiVue](https://github.com/niivue/niivue) | bundled `niivue.umd.js`, pages work offline |
+
+### Services
+
+| Port | Service | Role |
+|---|---|---|
+| 8000 | `llama-server` | Clara's model |
+| 8001 | `embedding-server` | bge-m3 on the CPU |
+| 8800 | `chat-gui` | chat interface |
+| 8810 | `qc-viewer` | QC pages |
+| 8899 | `guard-daemon` | exit guard, Clara's only way out |
+| – | `dauerlauf` | job queue, runs the agent continuously |
+| – | `hermes-gateway` | receives prompts from the phone |
+
+### Data
+
+[WMH Segmentation Challenge 2017](https://wmh.isi.uu.nl/): 60 training and 110
+test cases (FLAIR + T1, reference masks), [doi:10.34894/AECRSD](https://doi.org/10.34894/AECRSD),
+licence CC BY-NC 4.0.
+
+### Steps
+
+1. Install the NVIDIA driver (550 or newer) and check `nvidia-smi`.
+2. Install Miniconda and create the two environments `qwen-serve` and `dl`.
+3. Build llama.cpp with CUDA in the `qwen-serve` environment (command above).
+4. Download the GGUF files from Hugging Face. On Alita downloads stalled at
+   about 15.9 MB until `HF_HUB_DISABLE_XET=1` was set.
+5. Clone [local_models](https://github.com/mendeltem/local_models) and run
+   `alita/einrichten.sh --pruefen`, then `alita/einrichten.sh`. It creates the
+   systemd user units and checks paths, environments and weights.
+6. Run `system/werkzeuge/werkzeugtest --schnell`. It calls every tool on real
+   input, so it says "computes", not just "installed".
 
 ---
 

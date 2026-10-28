@@ -90,7 +90,7 @@ Where processing is allowed, running it locally keeps the data inside the instit
 <div class="tw"><table class="p">
 <tr><th>Part</th><th>Runs on</th><th>Patient data</th><th>Network</th><th>Used for</th></tr>
 <tr><td>Prompt</td><td>any device: phone app, desktop PC, browser</td><td>no</td><td>yes</td><td>stating the goal; nothing else happens there</td></tr>
-<tr><td>Clé</td><td>model on the Charité model hub, called from the workstation</td><td>no</td><td>yes</td><td>interpreting the request, splitting it into questions and tasks</td></tr>
+<tr><td>Clé</td><td>Charité on-premise model hub (intranet), called from the workstation</td><td>no</td><td>yes</td><td>interpreting the request, splitting it into questions and tasks</td></tr>
 <tr><td>Research agents</td><td>workstation, using Clé</td><td>no</td><td>yes</td><td>searching papers and code for methods and architectures</td></tr>
 <tr><td>Clara</td><td>workstation, Qwen3.8-27B via llama.cpp</td><td>yes</td><td>no</td><td>writing the code, training, running and inspecting models on the data</td></tr>
 <tr><td>Harness</td><td>workstation</td><td>through Clara</td><td>no</td><td>the outer loop over methods and the inner loop until a task passes</td></tr>
@@ -131,6 +131,26 @@ learned along the way is collected in the wiki
 <li>The model server unloads when idle: 21,770 MiB VRAM in use, 1,618 MiB after, 11.4 s to wake.
 This keeps the card free for training.</li>
 </ul>
+
+<h2>Rebuild it: setup</h2>
+<p class="s">What it takes to set up the same system. Measured on Alita, versions as of October 2026.
+Full list, services and steps in the <a class="gh" href="https://github.com/mendeltem/clara_working_station#rebuild-it-setup">README</a>,
+scripts in <a class="gh" href="https://github.com/mendeltem/local_models/tree/main/alita">local_models/alita</a>.</p>
+<div class="tw"><table class="p">
+<tr><th>Part</th><th>What</th><th>Note</th></tr>
+<tr><td>GPU</td><td>NVIDIA RTX A5000, 24 GB (Ampere)</td><td>holds the 27B model in Q4 at 80k context</td></tr>
+<tr><td>CPU / RAM</td><td>i9-12900K, 62.6 GiB RAM</td><td>embeddings and run watcher on the CPU</td></tr>
+<tr><td>OS / driver</td><td>Ubuntu 24.04, NVIDIA 550 (CUDA 12.4)</td><td>no sudo in daily use; services as systemd user units</td></tr>
+<tr><td>Clara</td><td>Qwen3.8-27B, GGUF UD-Q4_K_M + vision projector</td><td>llama.cpp CUDA build, ~30 tok/s, 20.8 GiB VRAM</td></tr>
+<tr><td>Beside GPU jobs</td><td>Ternary-Bonsai-2-27B, PQ2_0, 6.8 GB</td><td>45 tok/s</td></tr>
+<tr><td>Embeddings</td><td>bge-m3 Q8_0</td><td>CPU</td></tr>
+<tr><td>Clé</td><td>Charité on-premise model hub, OpenAI-compatible</td><td>aliases fast, frontier, eu, light, clea</td></tr>
+<tr><td>Agents</td><td>Hermes Agent v0.21.5, OpenCode 1.18.35</td><td>Hermes gateway takes prompts from the phone</td></tr>
+<tr><td>Training</td><td>PyTorch 2.6.0+cu124, MONAI 1.5.2, nnU-Net 2.8.1</td><td>conda env <code>dl</code></td></tr>
+<tr><td>Imaging</td><td>FSL, HD-BET, FreeSurfer 8.2.0</td><td>BIANCA, SynthSeg, WMH-SynthSeg</td></tr>
+<tr><td>QC pages</td><td>NiiVue</td><td>bundled, pages work offline</td></tr>
+<tr><td>Data</td><td>WMH Segmentation Challenge 2017</td><td>60 training + 110 test cases, CC BY-NC 4.0</td></tr>
+</table></div>
 
 <p class="f"><b>What is not here.</b> Patient data and results on in-house cohorts stay on the
 machine. Only work on public datasets is published: the QC above runs on the
