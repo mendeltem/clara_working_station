@@ -11,7 +11,7 @@ portfolio: only what was produced here is listed.*
 
 ## Workflow
 
-![Workflow: a research request fans out to research agents, their methods become tasks, the harness builds and trains each model on the workstation GPU with public challenge data, and the results are compared with the public leaderboard](workflow.png)
+![Workflow: a research request fans out to research agents, their methods become tasks, the harness builds and trains each model on the workstation GPU with public challenge data, and the results are compared with the public leaderboard](workflow.jpg)
 
 One request, read left to right, using "I want to create a WMH segmentation
 model, can you research it?" as the example:
@@ -36,6 +36,44 @@ model, can you research it?" as the example:
 
 Clara sees the data and has no network access. Clé and the research agents
 have network access and never see the data.
+
+---
+
+## Why a local workstation
+
+**Shared GPU time is too slow for this kind of work.** On the institute
+cluster, a job asking for a whole GPU was scheduled about 9 hours ahead; only
+7 of the cards have 80 GB. A small share of a card starts within seconds, but
+it only fits small trainings
+([measurement, 16 Oct 2026](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/hpc-nodes-answer-only-ssh-and-shards-start-at-once.md)).
+An agent that builds a model, trains it, finds an error and tries again needs
+dozens of such rounds a day. With a queue in between, each round costs hours;
+on the workstation it costs minutes.
+
+**A local model can look at the patient data; a cloud model cannot.** Clara
+runs on the workstation, so the images never leave the machine. That lets her
+do what a remote model may not: open every scan, read every mask, run the
+model on the whole cohort, and look at the cases where it fails. She sees far
+more of the data than any summary would carry, and she sees it fast.
+
+Local is a route, not a permission. Whether a dataset may be processed by an
+AI system at all is decided by its data agreement, and a clause that forbids
+it binds the local model too
+([rule](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md)).
+Where processing is allowed, running it locally keeps the data inside the
+institution.
+
+## How the parts are used
+
+| Part | Runs on | Sees patient data | Network | Used for |
+|---|---|---|---|---|
+| **Clé** | Charité model hub API | no | yes | interpreting the request, splitting it into questions and tasks |
+| **Research agents** | Clé and cloud models | no | yes | searching papers and code for methods and architectures |
+| **Clara** | workstation, Qwen3.8-27B via llama.cpp | yes | no | writing the code, training, running and inspecting models on the data |
+| **Harness** | workstation | through Clara | no | the outer loop over methods and the inner loop until a task passes |
+| **Check** | workstation | counts only | no | acceptance criteria as countable facts; asks no model |
+| **Exit guard** | workstation, port 8899 | blocks it | only for checked questions | Clara's only way out: technical questions without data reference |
+| **Blackboard** | workstation and repo | no | via the repo | where Clara and the cloud model report progress to each other |
 
 ---
 
