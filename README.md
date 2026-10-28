@@ -16,10 +16,13 @@ portfolio: only what was produced here is listed.*
 One request, read left to right, using "I want to create a WMH segmentation
 model, can you research it?" as the example:
 
-1. **Prompt.** The researcher states the goal in plain language.
-2. **Research agents.** Clé (Charité API) splits the question and sends several
-   agents to search papers and code for every method and architecture that has
-   been used for the task.
+1. **Prompt.** The researcher states the goal in plain language, from any
+   device: the phone app, a desktop PC or the browser. This is the only step
+   that happens outside the workstation.
+2. **Research agents.** On the workstation, an agent sends the question to Clé
+   (the model on the Charité model hub API), which splits it, and several
+   research agents search papers and code for every method and architecture
+   that has been used for the task.
 3. **Method shortlist.** The findings are merged into candidate methods, for
    example 2D U-Net, 3D U-Net, nnU-Net or BIANCA, each turned into tasks with
    machine-checkable acceptance criteria.
@@ -34,8 +37,10 @@ model, can you research it?" as the example:
    where the 2017 winner reached Dice 0.80.
 7. **Result.** The best model, a comparison table and a QC page.
 
-Clara sees the data and has no network access. Clé and the research agents
-have network access and never see the data.
+Everything after the prompt runs on the workstation: the calls to Clé, the
+research agents, the harness, training and evaluation. Clara sees the data and
+has no network access. The research agents reach the network and Clé, and never
+see the data.
 
 ---
 
@@ -67,8 +72,9 @@ institution.
 
 | Part | Runs on | Sees patient data | Network | Used for |
 |---|---|---|---|---|
-| **Clé** | Charité model hub API | no | yes | interpreting the request, splitting it into questions and tasks |
-| **Research agents** | Clé and cloud models | no | yes | searching papers and code for methods and architectures |
+| **Prompt** | any device: phone app, desktop PC, browser | no | yes | stating the goal; nothing else happens there |
+| **Clé** | model on the Charité model hub, called from the workstation | no | yes | interpreting the request, splitting it into questions and tasks |
+| **Research agents** | workstation, using Clé | no | yes | searching papers and code for methods and architectures |
 | **Clara** | workstation, Qwen3.8-27B via llama.cpp | yes | no | writing the code, training, running and inspecting models on the data |
 | **Harness** | workstation | through Clara | no | the outer loop over methods and the inner loop until a task passes |
 | **Check** | workstation | counts only | no | acceptance criteria as countable facts; asks no model |

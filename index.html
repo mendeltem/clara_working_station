@@ -51,9 +51,11 @@ A workbench, not a portfolio: only what was produced here is listed.</p>
 <p class="s">One request, read left to right, using <i>"I want to create a WMH segmentation
 model, can you research it?"</i> as the example:</p>
 <ol class="s">
-<li><b>Prompt.</b> The researcher states the goal in plain language.</li>
-<li><b>Research agents.</b> Clé (Charité API) splits the question and sends several agents
-to search papers and code for every method and architecture used for the task.</li>
+<li><b>Prompt.</b> The researcher states the goal in plain language, from any device: the phone app,
+a desktop PC or the browser. This is the only step that happens outside the workstation.</li>
+<li><b>Research agents.</b> On the workstation, an agent sends the question to Clé (the model on the
+Charité model hub API), which splits it, and several research agents search papers and code for every
+method and architecture used for the task.</li>
 <li><b>Method shortlist.</b> The findings are merged into candidate methods, such as 2D U-Net,
 3D U-Net, nnU-Net or BIANCA, each turned into tasks with machine-checkable acceptance criteria.</li>
 <li><b>Harness, outer loop.</b> Takes one method at a time from the queue and moves on once it is done.</li>
@@ -64,8 +66,9 @@ the facts. If the check fails, the task goes back to Clara. The check asks no mo
 (Dice, lesion F1) and placed next to the public leaderboard, where the 2017 winner reached Dice 0.80.</li>
 <li><b>Result.</b> The best model, a comparison table and a QC page.</li>
 </ol>
-<p class="s">Clara sees the data and has no network access. Clé and the research agents have
-network access and never see the data.</p>
+<p class="s">Everything after the prompt runs on the workstation: the calls to Clé, the research
+agents, the harness, training and evaluation. Clara sees the data and has no network access. The
+research agents reach the network and Clé, and never see the data.</p>
 
 <h2>Why a local workstation</h2>
 <p class="s"><b>Shared GPU time is too slow for this kind of work.</b> On the institute cluster,
@@ -86,8 +89,9 @@ Where processing is allowed, running it locally keeps the data inside the instit
 <h2>How the parts are used</h2>
 <div class="tw"><table class="p">
 <tr><th>Part</th><th>Runs on</th><th>Patient data</th><th>Network</th><th>Used for</th></tr>
-<tr><td>Clé</td><td>Charité model hub API</td><td>no</td><td>yes</td><td>interpreting the request, splitting it into questions and tasks</td></tr>
-<tr><td>Research agents</td><td>Clé and cloud models</td><td>no</td><td>yes</td><td>searching papers and code for methods and architectures</td></tr>
+<tr><td>Prompt</td><td>any device: phone app, desktop PC, browser</td><td>no</td><td>yes</td><td>stating the goal; nothing else happens there</td></tr>
+<tr><td>Clé</td><td>model on the Charité model hub, called from the workstation</td><td>no</td><td>yes</td><td>interpreting the request, splitting it into questions and tasks</td></tr>
+<tr><td>Research agents</td><td>workstation, using Clé</td><td>no</td><td>yes</td><td>searching papers and code for methods and architectures</td></tr>
 <tr><td>Clara</td><td>workstation, Qwen3.8-27B via llama.cpp</td><td>yes</td><td>no</td><td>writing the code, training, running and inspecting models on the data</td></tr>
 <tr><td>Harness</td><td>workstation</td><td>through Clara</td><td>no</td><td>the outer loop over methods and the inner loop until a task passes</td></tr>
 <tr><td>Check</td><td>workstation</td><td>counts only</td><td>no</td><td>acceptance criteria as countable facts; asks no model</td></tr>

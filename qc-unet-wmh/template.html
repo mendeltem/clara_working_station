@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__</title>
+<meta name="description" content="Interactive quality control of WMH segmentation on public WMH Segmentation Challenge cases, slice by slice.">
+<style>
+ :root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--ink:#c9d1d9;--muted:#8b949e;--ref:#39d353;--pred:#58a6ff;--aqua:#58a6ff}
+ *{box-sizing:border-box;margin:0;padding:0}
+ html,body{height:100%}
+ body{background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,sans-serif;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+ header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:8px 14px;border-bottom:1px solid var(--line)}
+ h1{font-size:16px;font-weight:700}h1 a{color:inherit;text-decoration:none}h1 span{color:var(--aqua)}
+ .grp{display:flex;align-items:center;gap:6px}
+ .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+ button,.chip{font:inherit;font-size:12px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 9px;cursor:pointer;user-select:none}
+ button:hover,.chip:hover{border-color:var(--aqua)}button.on{background:rgba(88,166,255,.18);border-color:var(--aqua)}
+ .chip{display:inline-flex;align-items:center;gap:6px}.chip.off{opacity:.4}.chip i{width:10px;height:10px;border-radius:2px;display:inline-block}
+ input[type=range]{accent-color:var(--aqua);cursor:pointer;width:90px}
+ .hint{margin-left:auto;color:var(--muted);font-size:11px}
+ main{flex:1;display:flex;min-height:0}
+ aside{width:250px;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+ aside .head{padding:8px 12px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}
+ #list{flex:1;overflow:auto;scrollbar-color:#30363d transparent}
+ .case{display:grid;grid-template-columns:1fr auto auto;gap:0 8px;padding:6px 12px;cursor:pointer;border-bottom:1px solid #21262d;font-size:12.5px}
+ .case:hover{background:#1c2128}.case.on{background:rgba(88,166,255,.14);box-shadow:inset 3px 0 0 var(--aqua)}
+ .case small{grid-column:1/-1;color:var(--muted);font-size:11px}
+ .a{color:var(--pred)}.b{color:var(--muted)}
+ select{font:inherit;font-size:12px;width:100%;margin:6px 0 4px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 6px}
+ .cols{display:grid;grid-template-columns:1fr auto auto;gap:0 8px;font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+ #view{flex:1;display:flex;flex-direction:column;min-width:0}
+ #tiles{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;min-height:0;position:relative}
+ .tile{position:relative;background:#000;border-radius:6px;overflow:hidden;min-height:0}
+ .tile canvas{width:100%;height:100%;display:block}
+ .tile .name{position:absolute;left:8px;top:6px;font-size:12px;font-weight:600;padding:2px 7px;border-radius:4px;background:rgba(13,17,23,.75);pointer-events:none}
+ .tile .val{position:absolute;right:8px;bottom:6px;font-size:12px;padding:2px 7px;border-radius:4px;background:rgba(13,17,23,.75);color:var(--muted);pointer-events:none}
+ #foot{display:flex;align-items:center;gap:12px;padding:6px 12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+ #foot input[type=range]{flex:1;width:auto}
+ #foot b{color:var(--ink)}
+ #loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(13,17,23,.6);font-size:13px;color:var(--ink)}
+ #view.busy #loading{display:flex}
+ #info{scrollbar-color:#30363d transparent;position:absolute;right:12px;top:52px;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 70px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 18px;display:none;z-index:5;font-size:13px}
+ #info.on{display:block}#info h2{font-size:14px;margin:12px 0 4px}#info h2:first-child{margin-top:0}#info p{color:var(--ink);margin:4px 0 8px}#info a{color:var(--aqua)}
+ #info table{border-collapse:collapse;margin:6px 0}#info td,#info th{border-bottom:1px solid var(--line);padding:3px 12px 3px 0;text-align:left;font-size:12.5px}
+ kbd{font:11px ui-monospace,monospace;background:#21262d;border:1px solid var(--line);border-radius:4px;padding:0 5px}
+ @media (max-width:860px){
+   aside{width:150px}.case{grid-template-columns:1fr;gap:0}.case .b{display:none}
+   #tiles{grid-template-columns:1fr;grid-auto-rows:1fr}.hint{display:none}
+ }
+</style></head><body>
+<header>
+  <h1><a href="../">Clara Working Station</a> · <span>__TITLE__</span></h1>
+  <div class="grp"><span class="lbl">View</span>
+    <button data-v="ax" class="on">Axial</button><button data-v="cor">Coronal</button><button data-v="sag">Sagittal</button></div>
+  <div class="grp"><span class="lbl">Masks</span>
+    <span class="chip" id="maskChip"><i style="background:var(--ref)"></i>Reference &middot; <i style="background:var(--pred)"></i>__LABEL__</span></div>
+  <div class="grp"><span class="lbl">Opacity</span><input type="range" id="op" min="0" max="100" value="55"><span id="opv" style="font-size:12px;width:34px">55%</span></div>
+  <div class="grp"><button id="cross">Crosshair</button><button id="infoBtn">Numbers &amp; notes</button></div>
+  <span class="hint"><kbd>&uarr;</kbd><kbd>&darr;</kbd> case &middot; wheel / <kbd>&larr;</kbd><kbd>&rarr;</kbd> slice &middot; <kbd>M</kbd> masks off/on &middot; drag = window, right-drag = zoom</span>
+</header>
+<main>
+  <aside>
+    <div class="head"><span id="count"></span> cases &middot; <kbd>&uarr;</kbd><kbd>&darr;</kbd> or click<br>
+      <select id="order" title="Order">
+        <option value="dice">worst Dice first</option>
+        <option value="big">largest lesion load first</option>
+        <option value="small">smallest lesion load first</option>
+        <option value="fold">by fold</option>
+        <option value="name">by case id</option>
+      </select>
+      <div class="cols"><span>Case</span><span class="a">Dice</span><span class="b">ref ml</span></div></div>
+    <div id="list"></div>
+  </aside>
+  <div id="view">
+    <div id="tiles">
+      <div class="tile"><canvas id="c0"></canvas><span class="name" style="color:var(--ref)">Reference</span><span class="val" id="w0"></span></div>
+      <div class="tile"><canvas id="c1"></canvas><span class="name" style="color:var(--pred)">__LABEL__</span><span class="val" id="w1"></span></div>
+      <div class="tile"><canvas id="c2"></canvas><span class="name"><span style="color:var(--ref)">Reference</span> + <span style="color:var(--pred)">__LABEL__</span></span><span class="val" id="w2"></span></div>
+      <div id="loading">Loading case &hellip;</div>
+    </div>
+    <div id="foot">
+      <span id="caseName"></span>
+      <input type="range" id="slice" min="0" max="1" value="0" title="Slice">
+      <span id="sliceText"></span>
+    </div>
+  </div>
+</main>
+<div id="info">
+  <h2>What you see</h2>
+  <p>Three linked views of the same FLAIR, same slice, same grey window: the challenge reference on the left,
+  the __LABEL__ prediction in the middle, and both overlaid on the right (overlap shows as a mixed colour).
+  The mouse wheel moves through the slices, <kbd>&uarr;</kbd><kbd>&darr;</kbd> through the cases.
+  Each case opens at the slice with the largest reference lesion load.</p>
+  <h2 id="numTitle"></h2>
+  <p id="numText"></p>
+  <table id="mtab"></table>
+  <h2>All cases</h2>
+  <table id="tab"></table>
+  <h2>Data source and processing</h2>
+  <p>Only the public <a href="https://wmh.isi.uu.nl/">WMH Segmentation Challenge</a> data:
+  Kuijf, H. J. et al., <i>Standardized Assessment of Automatic Segmentation of White Matter Hyperintensities and Results of the
+  WMH Segmentation Challenge</i>, IEEE TMI 38(11), 2019; data: <a href="https://doi.org/10.34894/AECRSD">doi:10.34894/AECRSD</a>,
+  licence <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a>. The images here are under the same licence
+  and are <b>modified</b>: brain-extracted, cropped to the brain box and windowed to 8 bit (1st to 99th percentile), for viewing,
+  not for computing. Reference masks show label 1. All numbers come from the full volumes under the challenge rule
+  (predictions on label 2 are deleted). No images from non-public cohorts are included.
+  Viewer: <a href="https://github.com/niivue/niivue">NiiVue</a> (BSD-2-Clause), layout after
+  <a href="https://mendeltem.github.io/wmhseg/">wmhseg QC</a>.</p>
+</div>
+
+<script src="niivue.umd.js"></script>
+<script>
+const FAELLE = /*FAELLE*/[];
+const ZAHLEN = /*ZAHLEN*/{};
+const LABEL = '__LABEL__';
+const COLORS = [[57,211,83],[88,166,255]];
+// per tile: which masks to show (index into COLORS) -- reference, prediction, both
+const TILES = [[['ref',0]], [['pred',1]], [['ref',0],['pred',1]]];
+const AXIS = {ax:2, cor:1, sag:0};
+const st = {i:0, view:'ax', opacity:.55, masks:true, cross:false, run:0};
+const NV = [];
+const fmt = (x,n=3) => x==null ? '–' : x.toFixed(n);
+
+function solid(r,g,b){ return {R:[0,r],G:[0,g],B:[0,b],A:[0,255],I:[0,255]}; }
+
+async function start(){
+  for (let k=0;k<3;k++){
+    const nv = new niivue.Niivue({backColor:[0,0,0,1], crosshairColor:[1,1,1,.6], crosshairWidth:0,
+      textHeight:.035, isOrientCube:false, dragAndDropEnabled:false, multiplanarForceRender:false});
+    await nv.attachTo('c'+k);
+    nv.addColormap('qc0', solid(...COLORS[0])); nv.addColormap('qc1', solid(...COLORS[1]));
+    nv.setSliceType(nv.sliceTypeAxial);
+    nv.setInterpolation(true);                 // nearest neighbour: voxels stay voxels
+    nv.opts.dragMode = nv.dragModes.pan;      // right mouse button: zoom / pan
+    nv.onLocationChange = updateSlider;
+    NV.push(nv);
+  }
+  for (let k=0;k<3;k++) NV[k].broadcastTo(NV.filter((_,j)=>j!==k), {'2d':true,'3d':true});
+  buildList(); buildInfo();
+  const h = location.hash.replace('#','');
+  await choose(Math.max(0, FAELLE.findIndex(f=>f.sub===h)));
+}
+
+const ORDER={dice:(a,b)=>(a.dice??-1)-(b.dice??-1), big:(a,b)=>b.ref_ml-a.ref_ml, small:(a,b)=>a.ref_ml-b.ref_ml,
+  fold:(a,b)=>String(a.fold).localeCompare(String(b.fold))||(a.dice??-1)-(b.dice??-1), name:(a,b)=>a.sub.localeCompare(b.sub)};
+function buildList(){
+  const el=document.getElementById('list'); el.innerHTML='';
+  document.getElementById('count').textContent=FAELLE.length;
+  FAELLE.forEach((f,i)=>{
+    const d=document.createElement('div'); d.className='case'; d.dataset.i=i;
+    const where=[f.site, f.fold!==''?'fold '+f.fold:''].filter(Boolean).join(' · ');
+    d.innerHTML=`<span>${f.sub}</span><span class="a">${fmt(f.dice)}</span><span class="b">${f.ref_ml}</span>`+
+      `<small>${where?where+' · ':''}${f.lesions} lesions</small>`;
+    d.addEventListener('click',()=>choose(i));
+    el.appendChild(d);
+  });
+}
+
+function buildInfo(){
+  const z=ZAHLEN;
+  document.getElementById('numTitle').textContent=`All ${z.n} cases`;
+  document.getElementById('numText').innerHTML=`Mean Dice <b>${fmt(z.dice)}</b>, median <b>${fmt(z.dice_median)}</b>; `+
+    `<b>${z.below_05}</b> of ${z.n} cases below Dice 0.5. Each case is predicted by the model of the fold that did not see it.`;
+  const M=[['Dice','dice'],['Sensitivity','sens'],['Precision','prec'],['Lesion recall','lrec'],['Lesion F1','lf1']];
+  document.getElementById('mtab').innerHTML=`<tr><th>Mean over ${z.n} cases<th>${LABEL}</tr>`+
+    M.map(m=>`<tr><td>${m[0]}<td>${fmt(z[m[1]])}</tr>`).join('');
+  document.getElementById('tab').innerHTML='<tr><th>Case<th>Site<th>Fold<th>Dice<th>Ref ml<th>Pred ml<th>Lesion recall<th>Lesion F1</tr>'+
+    FAELLE.map(f=>`<tr><td>${f.sub}<td>${f.site||'–'}<td>${f.fold||'–'}<td>${fmt(f.dice)}<td>${f.ref_ml}<td>${f.pred_ml}<td>${fmt(f.lrec)}<td>${fmt(f.lf1)}</tr>`).join('');
+}
+
+function loadData(sub){
+  if (window.QC_DATEN && window.QC_DATEN[sub]) return Promise.resolve(window.QC_DATEN[sub]);
+  return new Promise((ok,fail)=>{
+    const s=document.createElement('script'); s.src=`daten/${sub}.js`;
+    s.onload=()=>{ s.remove(); window.QC_DATEN&&window.QC_DATEN[sub]?ok(window.QC_DATEN[sub]):fail(new Error('empty '+sub)); };
+    s.onerror=()=>{ s.remove(); fail(new Error('cannot load '+sub)); };
+    document.head.appendChild(s);
+  });
+}
+
+async function choose(i){
+  if (i<0||i>=FAELLE.length) return;
+  st.i=i; const f=FAELLE[i]; const run=++st.run;
+  document.querySelectorAll('.case').forEach(e=>e.classList.toggle('on',+e.dataset.i===i));
+  const cur=document.querySelector('.case.on'); if(cur) cur.scrollIntoView({block:'nearest'});
+  document.getElementById('caseName').innerHTML=`<b>${f.sub}</b>${f.site?' · '+f.site:''}${f.fold!==''?' · fold '+f.fold:''}`;
+  document.getElementById('w0').textContent=`${f.ref_ml} ml · ${f.lesions} lesions`;
+  document.getElementById('w1').textContent=`Dice ${fmt(f.dice)} · ${f.pred_ml} ml`;
+  document.getElementById('w2').textContent=`sens ${fmt(f.sens)} · prec ${fmt(f.prec)}`;
+  history.replaceState(null,'','#'+f.sub);
+  const view=document.getElementById('view'); view.classList.add('busy');
+  let d; try{ d=await loadData(f.sub); }catch(e){ view.classList.remove('busy'); alert(e.message); return; }
+  if (run!==st.run) return;                          // user has moved on meanwhile
+  for (let k=0;k<3;k++){
+    const nv=NV[k];
+    for (const v of nv.volumes.slice()) nv.removeVolume(v);
+    const fl=await niivue.NVImage.loadFromBase64({base64:d.flair,name:'flair.nii.gz'});
+    fl.colormap='gray'; fl.cal_min=0; fl.cal_max=255;
+    const masks=[];
+    for (const [key,c] of TILES[k]){
+      const mk=await niivue.NVImage.loadFromBase64({base64:d[key],name:key+'.nii.gz'});
+      mk.colormap='qc'+c; mk.cal_min=.5; mk.cal_max=1; mk.opacity=st.masks?st.opacity:0; masks.push(mk);
+    }
+    if (run!==st.run) return;
+    nv.addVolume(fl); masks.forEach(m=>nv.addVolume(m));
+  }
+  setView(st.view);
+  setMM(f.mm0);
+  view.classList.remove('busy');
+  [i+1,i-1].forEach(j=>{ if(FAELLE[j]) loadData(FAELLE[j].sub).catch(()=>{}); });   // preload neighbours
+  if (window.QC_DATEN) for (const k of Object.keys(window.QC_DATEN)){
+    const j=FAELLE.findIndex(x=>x.sub===k); if (Math.abs(j-i)>2) delete window.QC_DATEN[k];
+  }
+}
+
+function setMM(mm){
+  for (const nv of NV){ if(!nv.volumes.length) continue; nv.scene.crosshairPos=nv.mm2frac(mm); nv.drawScene(); }
+  updateSlider();
+}
+function setView(a){
+  st.view=a; document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===a));
+  for (const nv of NV) nv.setSliceType(a==='ax'?nv.sliceTypeAxial:a==='cor'?nv.sliceTypeCoronal:nv.sliceTypeSagittal);
+  updateSlider();
+}
+function sliceVox(){ const nv=NV[0]; if(!nv.volumes.length) return null;
+  const v=nv.frac2vox(nv.scene.crosshairPos); const ax=AXIS[st.view]; return {k:Math.round(v[ax]), n:nv.volumes[0].dimsRAS[ax+1], v}; }
+function updateSlider(){
+  const s=sliceVox(); if(!s) return;
+  const r=document.getElementById('slice'); r.max=s.n-1; r.value=s.k;
+  document.getElementById('sliceText').textContent=`slice ${s.k+1} / ${s.n}`;
+}
+function step(delta){ const s=sliceVox(); if(!s) return; setSlice(Math.max(0,Math.min(s.n-1,s.k+delta))); }
+function setSlice(k){
+  const s=sliceVox(); if(!s) return; const v=Array.from(s.v); v[AXIS[st.view]]=k;
+  for (const nv of NV){ if(!nv.volumes.length) continue; nv.scene.crosshairPos=nv.vox2frac(v); nv.drawScene(); }
+  updateSlider();
+}
+function setMasks(){
+  for (const nv of NV){ for (const m of nv.volumes.slice(1)) m.opacity=st.masks?st.opacity:0; if(nv.volumes.length>1) nv.updateGLVolume(); }
+  document.getElementById('maskChip').classList.toggle('off',!st.masks);
+}
+
+document.querySelectorAll('[data-v]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.v)));
+document.getElementById('op').addEventListener('input',e=>{ st.opacity=e.target.value/100; document.getElementById('opv').textContent=e.target.value+'%'; setMasks(); });
+document.getElementById('maskChip').addEventListener('click',()=>{ st.masks=!st.masks; setMasks(); });
+document.getElementById('cross').addEventListener('click',e=>{ st.cross=!st.cross; e.target.classList.toggle('on',st.cross); for(const nv of NV) nv.setCrosshairWidth(st.cross?1:0); });
+document.getElementById('infoBtn').addEventListener('click',e=>{ const on=document.getElementById('info').classList.toggle('on'); e.target.classList.toggle('on',on); });
+document.getElementById('order').addEventListener('change',e=>{
+  const sub=FAELLE[st.i].sub; FAELLE.sort(ORDER[e.target.value]); buildList(); buildInfo();
+  st.i=FAELLE.findIndex(f=>f.sub===sub);
+  document.querySelectorAll('.case').forEach(x=>x.classList.toggle('on',+x.dataset.i===st.i));
+  const cur=document.querySelector('.case.on'); if(cur) cur.scrollIntoView({block:'nearest'}); e.target.blur();
+});
+document.getElementById('slice').addEventListener('input',e=>setSlice(+e.target.value));
+window.addEventListener('keydown',e=>{
+  if (e.target.tagName==='SELECT') return;
+  if (e.key==='ArrowDown'){ e.preventDefault(); e.stopPropagation(); choose(st.i+1); }
+  else if (e.key==='ArrowUp'){ e.preventDefault(); e.stopPropagation(); choose(st.i-1); }
+  else if (e.key==='ArrowRight'||e.key==='PageUp'){ e.preventDefault(); e.stopPropagation(); step(+1); }
+  else if (e.key==='ArrowLeft'||e.key==='PageDown'){ e.preventDefault(); e.stopPropagation(); step(-1); }
+  else if (e.key==='m'||e.key==='M'){ st.masks=!st.masks; setMasks(); }
+  else if (e.key==='Escape'){ document.getElementById('info').classList.remove('on'); document.getElementById('infoBtn').classList.remove('on'); }
+},true);
+// Mouse wheel: handled here (capture phase, before NiiVue) so one notch is exactly one slice
+// and all three views move together. Touchpads send many small steps, so they are summed up.
+let wheelSum=0;
+document.getElementById('tiles').addEventListener('wheel',e=>{
+  e.preventDefault(); e.stopPropagation();
+  wheelSum += (e.deltaMode===1? e.deltaY*33 : e.deltaY);
+  const n = Math.trunc(wheelSum/90); if(!n) return;
+  wheelSum -= n*90; step(-Math.sign(n)*Math.min(3,Math.abs(n)));
+},{capture:true,passive:false});
+window.addEventListener('resize',()=>{ for(const nv of NV) nv.resizeListener&&nv.resizeListener(); });
+window.QC={FAELLE,st,NV,sliceVox,choose};   // for tests and the console
+start();
+</script>
+</body></html>
