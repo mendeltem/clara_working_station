@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QC</title>
+<style>
+ :root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--ink:#c9d1d9;--muted:#8b949e;--ref:rgb(66,150,255);--aqua:#58a6ff}
+ *{box-sizing:border-box;margin:0;padding:0}
+ html,body{height:100%}
+ body{background:var(--bg);color:var(--ink);font:13px/1.45 system-ui,sans-serif;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+ header,#foot{display:flex;align-items:center;gap:10px;padding:0 10px;height:30px;border-bottom:1px solid var(--line);white-space:nowrap;min-width:0}
+ #foot{border-bottom:0;border-top:1px solid var(--line);height:36px}
+ h1{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis}h1 a{color:inherit;text-decoration:none}h1 span{color:var(--aqua)}
+ button,.chip{font:inherit;font-size:12px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:1px 8px;cursor:pointer;user-select:none;white-space:nowrap}
+ button:hover,.chip:hover{border-color:var(--aqua)}button.on{background:rgba(88,166,255,.18);border-color:var(--aqua)}
+ .chip{display:inline-flex;align-items:center;gap:5px}.chip.off{opacity:.42}.chip i{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
+ .chip b{font-weight:600}
+ input[type=range]{accent-color:var(--aqua);cursor:pointer}
+ #op{width:70px}
+ .sp{flex:1}
+ main{flex:1;display:flex;min-height:0}
+ aside{width:230px;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+ body.nolist aside{display:none}
+ aside .head{padding:6px 10px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line)}
+ aside .head .mrow{display:flex;align-items:center;gap:6px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ aside .head i{width:9px;height:9px;border-radius:2px;display:inline-block;flex-shrink:0}
+ #list{flex:1;overflow:auto;scrollbar-color:#30363d transparent}
+ .case{display:grid;grid-template-columns:1fr auto auto;gap:0 8px;padding:5px 10px;cursor:pointer;border-bottom:1px solid #21262d;font-size:12.5px}
+ .case:hover{background:#1c2128}.case.on{background:rgba(88,166,255,.14);box-shadow:inset 3px 0 0 var(--aqua)}
+ .case small{grid-column:1/-1;color:var(--muted);font-size:11px}
+ select{font:inherit;font-size:12px;width:100%;margin:5px 0 2px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:2px 5px}
+ .hilf{border-bottom:1px dotted var(--muted);cursor:help}
+ #view{flex:1;display:flex;flex-direction:column;min-width:0}
+ #tiles{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;min-height:0;position:relative}
+ .tile{position:relative;background:#000;border-radius:5px;overflow:hidden;min-height:0}
+ .tile canvas{width:100%;height:100%;display:block}
+ .tile .name{position:absolute;left:6px;top:5px;font-size:12px;font-weight:600;padding:1px 6px;border-radius:4px;background:rgba(13,17,23,.78)}
+ #chips{position:absolute;left:6px;right:6px;top:5px;display:flex;flex-wrap:wrap;gap:4px;pointer-events:auto}
+ #chips .chip{background:rgba(13,17,23,.82);font-size:11.5px}
+ #chips .chip .v{color:var(--muted);font-size:11px}
+ #loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(13,17,23,.6);font-size:13px;color:var(--ink)}
+ #view.busy #loading{display:flex}
+ #comp{position:absolute;left:8px;bottom:8px;max-width:min(420px,90%);background:rgba(22,27,34,.95);border:1px solid var(--line);border-radius:7px;padding:8px 11px;font-size:12px;display:none;z-index:4}
+ #comp.on{display:block}#comp b{color:#fff}
+ #caseName{min-width:0;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
+ #sliderBox{flex:3;min-width:200px;display:flex;flex-direction:column;justify-content:center;gap:1px}
+ #slice{width:100%;height:14px;margin:0}
+ #ticks{width:100%;height:9px;display:block;cursor:pointer}
+ #sliceText{color:var(--muted);flex-shrink:0}
+ #info{scrollbar-color:#30363d transparent;position:absolute;right:10px;top:36px;width:min(620px,calc(100vw - 20px));max-height:calc(100vh - 50px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 18px;display:none;z-index:6;font-size:13px}
+ #info.on{display:block}#info h2{font-size:14px;margin:14px 0 4px}#info h2:first-child{margin-top:0}#info p{margin:4px 0 8px}#info a{color:var(--aqua)}
+ #info table{border-collapse:collapse;margin:6px 0;width:100%}#info td,#info th{border-bottom:1px solid var(--line);padding:3px 10px 3px 0;text-align:left;font-size:12.5px;vertical-align:top}
+ #info .m{color:var(--muted);font-size:12px}
+ kbd{font:11px ui-monospace,monospace;background:#21262d;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+ @media (max-width:860px){
+   aside{position:absolute;z-index:5;top:30px;bottom:36px;background:var(--bg)}
+   #tiles{grid-template-columns:1fr;grid-auto-rows:1fr}
+   #op,#opLbl{display:none}
+ }
+</style></head><body class="">
+<header>
+  <h1><a href="../">Clara Working Station</a> · <span id="title"></span></h1>
+  <span class="chip" id="refChip" title="R: reference on/off"><i style="background:var(--ref)"></i>Reference</span>
+  <span id="opLbl" class="m" style="color:var(--muted);font-size:11px">opacity</span><input type="range" id="op" min="0" max="100" value="60" title="opacity of the masks">
+  <span class="sp"></span>
+  <button id="listBtn" class="on" title="L: case list">Cases</button>
+  <button id="infoBtn" title="M: methods, numbers and keys">? Methods</button>
+</header>
+<main>
+  <aside>
+    <div class="head"><span id="count"></span> cases
+      <select id="order" title="Order of the case list"></select>
+      <div id="listHead"></div></div>
+    <div id="list"></div>
+  </aside>
+  <div id="view">
+    <div id="tiles">
+      <div class="tile"><canvas id="c0"></canvas><span class="name" style="color:var(--ref)">Reference</span></div>
+      <div class="tile"><canvas id="c1"></canvas><div id="chips"></div></div>
+      <div id="loading">Loading case &hellip;</div>
+      <div id="comp"></div>
+    </div>
+    <div id="foot">
+      <span id="caseName"></span>
+      <div id="sliderBox"><input type="range" id="slice" min="0" max="1" value="0" title="slice"><canvas id="ticks" title="red: reference, green: a shown method; click to jump; N/P next/previous finding"></canvas></div>
+      <span id="sliceText"></span>
+    </div>
+  </div>
+</main>
+<div id="info"></div>
+
+<script src="niivue.umd.js"></script>
+<script>
+const FAELLE = /*FAELLE*/[];
+const METHODS = /*METHODS*/[];
+const META = /*META*/{};
+const COLOR = Object.fromEntries(METHODS.map(m=>[m.name,m.color]));
+const MAXON = 3;
+const st = {i:0, on:[], ref:true, opacity:.6, run:0, fill:{}, dims:null, vox:null, loaded:null};
+const NV = [];
+const fmt = (x,n=3) => x==null ? '–' : x.toFixed(n);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+const H = META.hover || {};
+const m = (f,n) => f.m[n] || null;
+
+function solid(r,g,b){ return {R:[0,r],G:[0,g],B:[0,b],A:[0,255],I:[0,255]}; }
+
+// ---------- start ----------
+async function start(){
+  if (innerWidth<860){ document.body.classList.add('nolist'); document.getElementById('listBtn').classList.remove('on'); }
+  document.title = META.title || 'QC'; document.getElementById('title').textContent = META.title || 'QC';
+  for (let k=0;k<2;k++){
+    const nv = new niivue.Niivue({backColor:[0,0,0,1], crosshairColor:[1,1,1,.55], crosshairWidth:0,
+      textHeight:.03, isOrientCube:false, dragAndDropEnabled:false, multiplanarForceRender:false});
+    await nv.attachTo('c'+k);
+    nv.addColormap('qcref', solid(...META.ref_rgb));
+    METHODS.forEach((mm,j)=>nv.addColormap('qcm'+j, solid(...mm.color)));
+    nv.setSliceType(nv.sliceTypeAxial);
+    nv.setInterpolation(true);
+    nv.opts.dragMode = nv.dragModes.pan;
+    nv.onLocationChange = updateSlider;
+    NV.push(nv);
+  }
+  NV[0].broadcastTo([NV[1]],{'2d':true,'3d':true}); NV[1].broadcastTo([NV[0]],{'2d':true,'3d':true});
+  const h = readHash();
+  const known = n => METHODS.some(x=>x.name===n);
+  st.on = (h.on||'').split(',').filter(known).slice(0,MAXON);
+  if (!st.on.length) st.on = METHODS.slice(0, Math.min(2,METHODS.length)).map(x=>x.name);
+  buildOrder(); sortCases(); buildList(); buildInfo();
+  await choose(Math.max(0, FAELLE.findIndex(f=>f.sub===h.sub)));
+}
+function readHash(){
+  const p=location.hash.replace('#','').split('&'); const o={sub:p[0]};
+  p.slice(1).forEach(x=>{ const [k,v]=x.split('='); o[k]=decodeURIComponent(v||''); });
+  if (o.a && !o.on) o.on=[o.a,o.b].filter(Boolean).join(',');      // old links: #sub&a=..&b=..
+  return o;
+}
+function writeHash(){ history.replaceState(null,'',`#${FAELLE[st.i].sub}&on=${st.on.map(encodeURIComponent).join(',')}`); }
+
+// ---------- case list ----------
+function buildOrder(){
+  const s=document.getElementById('order'); const first=st.on[0]||'';
+  s.innerHTML=`<option value="f1">worst lesion F1 first (${esc(first)})</option><option value="dice">worst Dice first (${esc(first)})</option>`+
+    `<option value="big">largest lesion load first</option><option value="small">smallest lesion load first</option><option value="name">by case id</option>`;
+}
+const ORDER={f1:(a,b)=>((m(a,st.on[0])||{}).f1??-1)-((m(b,st.on[0])||{}).f1??-1),
+  dice:(a,b)=>((m(a,st.on[0])||{}).dice??-1)-((m(b,st.on[0])||{}).dice??-1),
+  big:(a,b)=>b.ref_ml-a.ref_ml, small:(a,b)=>a.ref_ml-b.ref_ml, name:(a,b)=>a.sub.localeCompare(b.sub)};
+function sortCases(){ const sub=FAELLE[st.i]&&FAELLE[st.i].sub; FAELLE.sort(ORDER[document.getElementById('order').value||'f1']); if(sub) st.i=FAELLE.findIndex(f=>f.sub===sub); }
+function buildList(){
+  const show=st.on.slice(0,2);
+  document.getElementById('count').textContent=FAELLE.length;
+  document.getElementById('listHead').innerHTML=show.map(n=>{ const mm=METHODS.find(x=>x.name===n);
+    return `<div class="mrow"><i style="background:${rgb(mm.color)}"></i><span class="hilf" title="${esc(H.f1_head||'')}">${esc(n)} · F1 ${fmt(mm.f1)} / ${fmt(mm.f1_pooled)}</span></div>`; }).join('');
+  const el=document.getElementById('list'); el.innerHTML='';
+  FAELLE.forEach((f,i)=>{
+    const d=document.createElement('div'); d.className='case'+(i===st.i?' on':''); d.dataset.i=i;
+    const cells=[0,1].map(j=>{ const n=show[j]; if(!n) return '<span></span>'; const x=m(f,n);
+      return `<span class="hilf" style="color:${rgb(COLOR[n])}" title="${esc(n)}: lesion F1 ${fmt(x&&x.f1)} (TP ${x?x.tp:'–'}, FP ${x?x.fp:'–'}, FN ${x?x.fn:'–'}), Dice ${fmt(x&&x.dice)}. ${esc(H.f1_case||'')}">${fmt(x&&x.f1)}</span>`; });
+    d.innerHTML=`<span>${esc(f.sub)}</span>${cells.join('')}<small><span class="hilf" title="${esc(H.ref_ml||'')}">${f.ref_ml} ml</span> · ${f.ref_lesions} lesions</small>`;
+    d.addEventListener('click',()=>{ if(innerWidth<860){ document.body.classList.add('nolist'); document.getElementById('listBtn').classList.remove('on'); } choose(i); });
+    el.appendChild(d);
+  });
+}
+
+// ---------- methods overlay ----------
+function buildInfo(){
+  const T=META.text||{};
+  const rows=METHODS.map(x=>`<tr><td><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${rgb(x.color)}"></i> ${esc(x.name)}</td>`+
+    `<td><span class="hilf" title="${esc(H.dice||'')}">${fmt(x.dice)}</span></td><td><span class="hilf" title="${esc(H.f1_head||'')}">${fmt(x.f1)} / ${fmt(x.f1_pooled)}</span></td>`+
+    `<td class="m">${esc((META.methods_text||{})[x.name]||'No description recorded for this run.')}</td></tr>`).join('');
+  document.getElementById('info').innerHTML=
+    `<h2>What you see</h2><p>${esc(T.what||'')}</p>`+
+    `<h2>Keys</h2><p><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>PgUp</kbd><kbd>PgDn</kbd> case · <kbd>&uarr;</kbd><kbd>&darr;</kbd> or mouse wheel slice · <kbd>N</kbd><kbd>P</kbd> next / previous slice with a finding · <kbd>R</kbd> reference on/off · <kbd>L</kbd> case list · <kbd>M</kbd> this panel · <kbd>Esc</kbd> close · right-drag or pinch zoom, drag pan · click a lesion for its values</p>`+
+    `<h2>What do the models mean?</h2><table><tr><th>Method</th><th>Dice</th><th>F1 mean / pooled</th><th>Run</th></tr>${rows}</table>`+
+    `<h2>Numbers</h2>${(T.numbers||[]).map(x=>`<p>${esc(x)}</p>`).join('')}`+
+    `<h2>Data</h2><p>${T.data||''}</p>`+
+    `<h2>Build</h2><p class="m">Built ${esc(META.built||'')} by <code>${esc(META.generator||'')}</code>. Long version: <a href="${esc(META.wiki||'#')}">wiki</a>. The page is complete without the link.</p>`;
+}
+
+// ---------- data ----------
+function loadData(sub){
+  if (window.QC_DATEN && window.QC_DATEN[sub]) return Promise.resolve(window.QC_DATEN[sub]);
+  return new Promise((ok,fail)=>{
+    const s=document.createElement('script'); s.src=`daten/${sub}.js`;
+    s.onload=()=>{ s.remove(); window.QC_DATEN&&window.QC_DATEN[sub]?ok(window.QC_DATEN[sub]):fail(new Error('empty '+sub)); };
+    s.onerror=()=>{ s.remove(); fail(new Error('cannot load '+sub)); };
+    document.head.appendChild(s);
+  });
+}
+function outline(src,nx,ny,nz){            // in-plane boundary of a binary mask, per axial slice
+  const o=new Uint8Array(src.length), sxy=nx*ny;
+  for(let z=0;z<nz;z++) for(let y=0;y<ny;y++) for(let x=0;x<nx;x++){
+    const i=x+y*nx+z*sxy; if(!src[i]) continue;
+    if(x===0||y===0||x===nx-1||y===ny-1||!src[i-1]||!src[i+1]||!src[i-nx]||!src[i+nx]) o[i]=1;
+  }
+  return o;
+}
+
+// ---------- choose case / redraw ----------
+async function choose(i){
+  if (i<0||i>=FAELLE.length) return;
+  const keepSlice = FAELLE[i].sub===st.loaded ? curSlice() : null;
+  st.i=i; const f=FAELLE[i]; const run=++st.run;
+  document.querySelectorAll('.case').forEach(e=>e.classList.toggle('on',+e.dataset.i===i));
+  const cur=document.querySelector('.case.on'); if(cur) cur.scrollIntoView({block:'nearest'});
+  const x0=m(f,st.on[0]);
+  document.getElementById('caseName').innerHTML=`<b>${esc(f.sub)}</b> · <span class="hilf" title="${esc(H.ref_ml||'')}">${f.ref_ml} ml</span>`+
+    (x0?` · <span class="hilf" title="${esc(st.on[0])}: lesion F1. ${esc(H.f1_case||'')}" style="color:${rgb(COLOR[st.on[0]])}">F1 ${fmt(x0.f1)}</span>`:'');
+  buildChips(); writeHash(); hideComp();
+  const view=document.getElementById('view'); view.classList.add('busy');
+  let d; try{ d=await loadData(f.sub); }catch(e){ view.classList.remove('busy'); alert(e.message); return; }
+  if (run!==st.run) return;
+  const fl0=await niivue.NVImage.loadFromBase64({base64:d.flair,name:'flair.nii.gz'});
+  const dims=fl0.hdr.dims, nx=dims[1], ny=dims[2], nz=dims[3];
+  st.dims=[nx,ny,nz]; st.vox=fl0.hdr.pixDims.slice(1,4); st.fill={};
+  const layers=[[['ref','qcref']], st.on.map(n=>[n,'qcm'+METHODS.findIndex(x=>x.name===n)])];
+  for (let k=0;k<2;k++){
+    const nv=NV[k];
+    for (const v of nv.volumes.slice()) nv.removeVolume(v);
+    const fl = k===0 ? fl0 : await niivue.NVImage.loadFromBase64({base64:d.flair,name:'flair.nii.gz'});
+    fl.colormap='gray'; fl.cal_min=0; fl.cal_max=255;
+    if (run!==st.run) return;
+    nv.addVolume(fl);
+    for (const [key,cm] of layers[k]){
+      const b64 = key==='ref' ? d.ref : (d.masks||{})[key]; if(!b64) continue;
+      const mk=await niivue.NVImage.loadFromBase64({base64:b64,name:key+'.nii.gz'});
+      st.fill[key]=Uint8Array.from(mk.img, v=>v>0?1:0);
+      if (k===1) mk.img.set(outline(st.fill[key],nx,ny,nz));     // methods as outlines
+      mk.colormap=cm; mk.cal_min=.5; mk.cal_max=1; mk.opacity=(key==='ref'?st.ref:true)?st.opacity:0; mk._key=key;
+      if (run!==st.run) return;
+      nv.addVolume(mk);
+    }
+  }
+  if (!st.fill.ref){ const mk=await niivue.NVImage.loadFromBase64({base64:d.ref,name:'ref.nii.gz'}); st.fill.ref=Uint8Array.from(mk.img,v=>v>0?1:0); }
+  for (const nv of NV){ nv.setSliceType(nv.sliceTypeAxial); nv.updateGLVolume(); }
+  st.loaded=f.sub;
+  setSlice(keepSlice!=null ? keepSlice : f.z0);
+  drawTicks();
+  view.classList.remove('busy');
+  [i+1,i-1].forEach(j=>{ if(FAELLE[j]) loadData(FAELLE[j].sub).catch(()=>{}); });
+  if (window.QC_DATEN) for (const k of Object.keys(window.QC_DATEN)){
+    const j=FAELLE.findIndex(x=>x.sub===k); if (Math.abs(j-i)>2) delete window.QC_DATEN[k];
+  }
+}
+function buildChips(){
+  const f=FAELLE[st.i]; const el=document.getElementById('chips');
+  el.innerHTML=METHODS.map(x=>{ const v=m(f,x.name); const on=st.on.includes(x.name);
+    return `<span class="chip${on?'':' off'}" data-n="${esc(x.name)}" title="${esc(x.name)} on this case: lesion F1 ${fmt(v&&v.f1)} (TP ${v?v.tp:'–'}, FP ${v?v.fp:'–'}, FN ${v?v.fn:'–'}), Dice ${fmt(v&&v.dice)}, ${v?v.ml:'–'} ml. Click to show or hide (at most ${MAXON}).">`+
+      `<i style="background:${rgb(x.color)}"></i>${esc(x.name)} <span class="v">${fmt(v&&v.f1,2)}</span></span>`; }).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+    const n=c.dataset.n; if(st.on.includes(n)) st.on=st.on.filter(x=>x!==n); else { st.on.push(n); if(st.on.length>MAXON) st.on.shift(); }
+    buildOrder(); buildList(); choose(st.i);
+  }));
+}
+
+// ---------- slices ----------
+function curSlice(){ const nv=NV[0]; if(!nv.volumes.length) return 0; return Math.round(nv.frac2vox(nv.scene.crosshairPos)[2]); }
+function nSlices(){ return st.dims?st.dims[2]:1; }
+function setSlice(z){
+  const nv0=NV[0]; if(!nv0.volumes.length) return;
+  z=Math.max(0,Math.min(nSlices()-1,z));
+  const v=Array.from(nv0.frac2vox(nv0.scene.crosshairPos)); v[2]=z;
+  for (const nv of NV){ nv.scene.crosshairPos=nv.vox2frac(v); nv.drawScene(); }
+  updateSlider();
+}
+function updateSlider(){
+  const r=document.getElementById('slice'); r.max=nSlices()-1; r.value=curSlice();
+  document.getElementById('sliceText').textContent=`slice ${curSlice()+1} / ${nSlices()}`;
+}
+function findingSlices(){
+  const f=FAELLE[st.i]; const pred=new Set(); st.on.forEach(n=>((f.slices||{})[n]||[]).forEach(z=>pred.add(z)));
+  return {ref:new Set(f.ref_slices||[]), pred};
+}
+function drawTicks(){
+  const c=document.getElementById('ticks'); const w=c.clientWidth, h=c.clientHeight; if(!w) return;
+  c.width=w*devicePixelRatio; c.height=h*devicePixelRatio; const g=c.getContext('2d'); g.scale(devicePixelRatio,devicePixelRatio);
+  g.clearRect(0,0,w,h); const n=nSlices(), s=findingSlices(); const x=z=>7+(w-14)*(n>1?z/(n-1):0);
+  g.fillStyle='#e5534b'; s.ref.forEach(z=>g.fillRect(x(z)-1,0,2,4));
+  g.fillStyle='#3fb950'; s.pred.forEach(z=>g.fillRect(x(z)-1,5,2,4));
+}
+function jumpFinding(dir){
+  const s=findingSlices(); const all=[...new Set([...s.ref,...s.pred])].sort((a,b)=>a-b); const z=curSlice();
+  const t = dir>0 ? all.find(v=>v>z) : all.reverse().find(v=>v<z);
+  if (t!=null) setSlice(t);
+}
+
+// ---------- masks ----------
+function applyOpacity(){
+  for (const nv of NV){ for (const v of nv.volumes.slice(1)) v.opacity = (v._key==='ref' && !st.ref) ? 0 : st.opacity; nv.updateGLVolume(); }
+  document.getElementById('refChip').classList.toggle('off',!st.ref);
+}
+
+// ---------- click on a lesion ----------
+function flood(arr,start){
+  const [nx,ny,nz]=st.dims, sxy=nx*ny, seen=new Uint8Array(arr.length), out=[]; const q=[start]; seen[start]=1;
+  while(q.length && out.length<300000){ const i=q.pop(); out.push(i);
+    const x=i%nx, y=((i/nx)|0)%ny, z=(i/sxy)|0;
+    for(let dz=-1;dz<=1;dz++){const zz=z+dz; if(zz<0||zz>=nz) continue;
+     for(let dy=-1;dy<=1;dy++){const yy=y+dy; if(yy<0||yy>=ny) continue;
+      for(let dx=-1;dx<=1;dx++){const xx=x+dx; if(xx<0||xx>=nx) continue;
+        const j=xx+yy*nx+zz*sxy; if(arr[j]&&!seen[j]){seen[j]=1;q.push(j);} }}}
+  }
+  return out;
+}
+function stats(vox){
+  const [nx,ny]=st.dims, sxy=nx*ny, vv=st.vox[0]*st.vox[1]*st.vox[2]; let cx=0,cy=0,cz=0,zmin=1e9,zmax=-1;
+  for(const i of vox){ const x=i%nx,y=((i/nx)|0)%ny,z=(i/sxy)|0; cx+=x;cy+=y;cz+=z; if(z<zmin)zmin=z; if(z>zmax)zmax=z; }
+  const n=vox.length; return {n, mm3:n*vv, slices:zmax-zmin+1, zmin, zmax, c:[cx/n*st.vox[0],cy/n*st.vox[1],cz/n*st.vox[2]]};
+}
+function hideComp(){ document.getElementById('comp').classList.remove('on'); }
+function showComp(k){
+  if(!st.dims) return; const nv=NV[k]; const v=nv.frac2vox(nv.scene.crosshairPos).map(Math.round);
+  const [nx,ny]=st.dims; const idx=v[0]+v[1]*nx+v[2]*nx*ny;
+  const keys = k===0 ? ['ref'] : st.on.filter(n=>st.fill[n]);
+  const key = keys.find(n=>st.fill[n]&&st.fill[n][idx]);
+  const box=document.getElementById('comp');
+  if(!key){ hideComp(); return; }
+  const comp=flood(st.fill[key],idx), s=stats(comp);
+  const ref=st.fill.ref; let html=`<b>${key==='ref'?'Reference':esc(key)}</b> lesion: ${s.n} voxels, ${s.mm3.toFixed(1)} mm³, ${s.slices} slice${s.slices>1?'s':''} (${s.zmin+1}–${s.zmax+1})<br>`;
+  if (key==='ref'){
+    html+=st.on.map(n=>{ const a=st.fill[n]; const hit=a&&comp.some(i=>a[i]); return `<span style="color:${rgb(COLOR[n])}">${esc(n)}</span>: ${a?(hit?'detected (TP)':'missed (FN)'):'–'}`; }).join(' · ');
+  } else {
+    const hitIdx=comp.find(i=>ref[i]);
+    if (hitIdx==null) html+='Status: <b>FP</b>, touches no reference lesion';
+    else { const r=stats(flood(ref,hitIdx)); const dist=Math.hypot(s.c[0]-r.c[0],s.c[1]-r.c[1],s.c[2]-r.c[2]);
+      html+=`Status: <b>TP</b>, matched to the reference lesion of ${r.n} voxels (${r.mm3.toFixed(1)} mm³) by touching; centroids ${dist.toFixed(1)} mm apart`; }
+  }
+  html+=`<br><span style="color:var(--muted)">${esc(H.click||'')}</span>`;
+  box.innerHTML=html; box.classList.add('on');
+}
+NV.length===0 && ['c0','c1'].forEach((id,k)=>{
+  const c=document.getElementById(id); let x0=0,y0=0;
+  c.addEventListener('pointerdown',e=>{x0=e.clientX;y0=e.clientY;});
+  c.addEventListener('pointerup',e=>{ if(e.button!==0||Math.hypot(e.clientX-x0,e.clientY-y0)>4) return; setTimeout(()=>{showComp(k); updateSlider();},30); });
+});
+
+// ---------- controls ----------
+document.getElementById('op').addEventListener('input',e=>{ st.opacity=e.target.value/100; applyOpacity(); });
+document.getElementById('refChip').addEventListener('click',()=>{ st.ref=!st.ref; applyOpacity(); });
+document.getElementById('listBtn').addEventListener('click',e=>{ const off=document.body.classList.toggle('nolist'); e.target.classList.toggle('on',!off); setTimeout(()=>{NV.forEach(n=>n.resizeListener&&n.resizeListener()); drawTicks();},30); });
+document.getElementById('infoBtn').addEventListener('click',e=>{ const on=document.getElementById('info').classList.toggle('on'); e.target.classList.toggle('on',on); });
+document.getElementById('order').addEventListener('change',e=>{ sortCases(); buildList(); e.target.blur(); });
+document.getElementById('slice').addEventListener('input',e=>setSlice(+e.target.value));
+document.getElementById('ticks').addEventListener('click',e=>{ const r=e.target.getBoundingClientRect(); const n=nSlices(); setSlice(Math.round((e.clientX-r.left-7)/(r.width-14)*(n-1))); });
+window.addEventListener('keydown',e=>{
+  if (e.target.tagName==='SELECT'||e.target.tagName==='INPUT'&&e.target.type!=='range') return;
+  const k=e.key, stop=()=>{e.preventDefault();e.stopPropagation();};
+  if (k==='ArrowRight'||k==='PageDown'){ stop(); choose(st.i+1); }
+  else if (k==='ArrowLeft'||k==='PageUp'){ stop(); choose(st.i-1); }
+  else if (k==='ArrowUp'){ stop(); setSlice(curSlice()+1); }
+  else if (k==='ArrowDown'){ stop(); setSlice(curSlice()-1); }
+  else if (k==='n'||k==='N'){ stop(); jumpFinding(+1); }
+  else if (k==='p'||k==='P'){ stop(); jumpFinding(-1); }
+  else if (k==='r'||k==='R'){ st.ref=!st.ref; applyOpacity(); }
+  else if (k==='l'||k==='L'){ document.getElementById('listBtn').click(); }
+  else if (k==='m'||k==='M'){ document.getElementById('infoBtn').click(); }
+  else if (k==='Escape'){ document.getElementById('info').classList.remove('on'); document.getElementById('infoBtn').classList.remove('on'); hideComp(); }
+},true);
+// Mouse wheel moves through the slices (one notch = one slice, both views together).
+let wheelSum=0;
+document.getElementById('tiles').addEventListener('wheel',e=>{
+  e.preventDefault(); e.stopPropagation();
+  wheelSum += (e.deltaMode===1? e.deltaY*33 : e.deltaY);
+  const n=Math.trunc(wheelSum/90); if(!n) return;
+  wheelSum-=n*90; setSlice(curSlice()-Math.sign(n)*Math.min(3,Math.abs(n)));
+},{capture:true,passive:false});
+window.addEventListener('resize',()=>{ for(const nv of NV) nv.resizeListener&&nv.resizeListener(); drawTicks(); });
+window.QC={FAELLE,METHODS,st,NV,curSlice,choose,setSlice,jumpFinding,showComp};
+start();
+</script>
+</body></html>

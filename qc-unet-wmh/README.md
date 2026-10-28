@@ -1,16 +1,19 @@
 # qc-unet-wmh: scrollable QC for the U-Net
 
-Builds the slice viewer for this page: three linked NiiVue views of the same
-FLAIR (reference, U-Net, both overlaid). The mouse wheel moves through the
-slices, the arrow keys through the cases. Layout after
-[wmhseg QC](https://mendeltem.github.io/wmhseg/).
+Builds the slice viewer for this page (`quality_control.html`, `index.html`
+forwards to it): two linked axial NiiVue views of the same FLAIR, reference on
+the left in blue, the prediction on the right as an outline. Mouse wheel or
+↑/↓ move through the slices, ←/→ through the cases, N/P jump to the next slice
+with a finding; clicking a lesion shows its size and whether it was matched.
+Built after the wiki rules in
+[mri_qc_viewers](https://github.com/mendeltem/blackbeard_wikki/tree/main/knowledge/mri_qc_viewers).
 
 ## Files
 
 | File | Role |
 |---|---|
-| `build_qc.py` | reads FLAIR, reference and prediction volumes, writes `index.html`, `daten/<sub>.js`, `uebersicht.json` |
-| `template.html` | the viewer; `build_qc.py` fills in the case table and the summary |
+| `build_qc.py` | reads FLAIR, reference and prediction volumes, writes `quality_control.html`, `index.html`, `daten/<sub>.js` |
+| `../qc_viewer_template.html`, `../qc_shared.py` | the viewer and the shared counting, shared with `qc-wmh-verfahren` |
 | `niivue.umd.js` | NiiVue, bundled so the page works offline |
 
 ## Run on Alita

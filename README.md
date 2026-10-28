@@ -93,7 +93,7 @@ Bars: mean over the same 20 cases; whiskers: 95 % bootstrap interval over cases 
 
 | | |
 |---|---|
-| **[WMH: eleven methods compared](https://mendeltem.github.io/clara_working_station/qc-wmh-verfahren/)** | Axial viewer: reference, method A and method B side by side on the same slice, mouse wheel through the slices. Plus one page per method and a staged comparison with paired tests. |
+| **[WMH: eleven methods compared](https://mendeltem.github.io/clara_working_station/qc-wmh-verfahren/)** | Axial viewer: reference on the left in blue, up to three methods on the right as outlines, lesion F1 per case, slider marks where the findings are, click a lesion for its values. Plus one page per method and a staged comparison with paired tests. |
 
 ![Dice against reference lesion volume on 20 public test cases for monai-attentionunet and the best BIANCA setting; both rise with lesion load, below 5 ml mean Dice 0.621 and 0.483, from 5 ml on 0.816 and 0.754](dice_vs_load.svg)
 
