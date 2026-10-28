@@ -11,7 +11,7 @@ portfolio: only what was produced here is listed.*
 
 ## Workflow
 
-![Workflow: a research request fans out to research agents, their methods become tasks, the harness builds and trains each model on the workstation GPU with public challenge data, and the results are compared with the public leaderboard](workflow.jpg)
+![Workflow: a prompt from a phone or desktop enters the workstation; inside it the Cloud API (Clé) and research agents find methods, then Clara (local LLM) writes code, trains on the GPU and checks the result in a loop until done; the model is scored on the test set against the leaderboard and an HTML QC page goes back to phone and desktop](workflow.png)
 
 One request, read left to right, using "I want to create a WMH segmentation
 model, can you research it?" as the example:
