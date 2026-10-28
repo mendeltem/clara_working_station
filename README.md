@@ -243,6 +243,8 @@ licence CC BY-NC 4.0.
 
 ## What is not here
 
+![Where data may go: three nested zones. Class 1, open challenge data, may go to public places such as GitHub and the cloud; class 2, data under a data use agreement, may go as far as the institution's Clé model hub; class 3, own patient cohorts, stays on the workstation with Clara, and derived results such as lesion masks keep their class. The exit guard lets only data-free questions out, a System 1 gate checks shell commands, and each task is split: reading the images happens on the workstation, code, method and write-up go to the hub](data-classes.png)
+
 Patient data and results on in-house cohorts stay on the machine. Only work on
 public datasets is published: the QC above runs on the *WMH Segmentation
 Challenge* (Utrecht, Singapore, Amsterdam).
