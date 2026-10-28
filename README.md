@@ -1,91 +1,114 @@
 # Clara Working Station
 
-Was auf **Alita** gerechnet wird, und was daraus veröffentlicht ist.
+What is computed on **Alita**, and what of it is published.
 
 **<https://mendeltem.github.io/clara_working_station/>**
 
 *Work computed on Alita by the local agent. This is a workbench, not a
-portfolio — only what was produced here is listed.*
+portfolio: only what was produced here is listed.*
 
 ---
 
-## Ergebnisse / Results
+## Workflow
+
+![Workflow: a research request fans out to research agents, their methods become tasks, the harness builds and trains each model on the workstation GPU with public challenge data, and the results are compared with the public leaderboard](workflow.png)
+
+One request, read left to right, using "I want to create a WMH segmentation
+model, can you research it?" as the example:
+
+1. **Prompt.** The researcher states the goal in plain language.
+2. **Research agents.** Clé (Charité API) splits the question and sends several
+   agents to search papers and code for every method and architecture that has
+   been used for the task.
+3. **Method shortlist.** The findings are merged into candidate methods, for
+   example 2D U-Net, 3D U-Net, nnU-Net or BIANCA, each turned into tasks with
+   machine-checkable acceptance criteria.
+4. **Harness, outer loop.** Takes one method at a time from the queue and moves
+   on to the next once it is done.
+5. **Harness, inner loop on the workstation GPU.** Clara, the local model,
+   writes the code, trains on open data (the WMH Segmentation Challenge
+   training set), and an acceptance check counts the facts. If the check fails,
+   the task goes back to Clara. The check asks no model.
+6. **Evaluation.** Every model is scored on the challenge test set with the
+   official metric (Dice, lesion F1) and placed next to the public leaderboard,
+   where the 2017 winner reached Dice 0.80.
+7. **Result.** The best model, a comparison table and a QC page.
+
+Clara sees the data and has no network access. Clé and the research agents
+have network access and never see the data.
+
+---
+
+## Results
 
 | | |
 |---|---|
-| **[WMH — elf Verfahren im Vergleich](https://mendeltem.github.io/clara_working_station/qc-wmh-verfahren/)** | Je Patient eine Seite mit FLAIR, Referenzmaske und bis zu elf Segmentierungen übereinander, multiplanar und als 3D-Rendering. Dazu eine Seite je Verfahren und ein gestaffelter Vergleich mit gepaarten Tests. |
-| **[WMH — U-Net, erste Fassung](https://mendeltem.github.io/clara_working_station/qc-unet-wmh/)** | Der erste QC: drei Schnitte je Fall, 170 Fälle in einer Datei. Bleibt als Vergleichspunkt stehen. |
+| **[WMH: eleven methods compared](https://mendeltem.github.io/clara_working_station/qc-wmh-verfahren/)** | One page per patient with FLAIR, reference mask and up to eleven segmentations overlaid, multiplanar and as a 3D rendering. Plus one page per method and a staged comparison with paired tests. |
+| **[WMH: U-Net, first version](https://mendeltem.github.io/clara_working_station/qc-unet-wmh/)** | The first QC: three slices per case, 170 cases in one file. Kept as a point of comparison. |
 
 ---
 
-## Was die WMH-Linie gelernt hat / Lessons from the WMH line
+## Lessons from the WMH line
 
-Gemessen auf den 110 öffentlichen Testfällen der WMH Segmentation Challenge
-2017 (Kuijf et al. 2019, [doi:10.1109/TMI.2019.2905770](https://doi.org/10.1109/TMI.2019.2905770)),
-offizielle Auswertung, gepaart über Fälle mit Bootstrap-Intervall. Das sind
-Eigenmessungen, keine Platzierungen. Jede Zeile verweist auf ihren Eintrag im
-Agenten-Wiki [blackbeard_wikki](https://github.com/mendeltem/blackbeard_wikki).
+Measured on the 110 public test cases of the WMH Segmentation Challenge 2017
+(Kuijf et al. 2019, [doi:10.1109/TMI.2019.2905770](https://doi.org/10.1109/TMI.2019.2905770)),
+official evaluation, paired over cases with bootstrap intervals. These are our
+own measurements, not leaderboard placements. Each row links to its entry in
+the agent wiki [blackbeard_wikki](https://github.com/mendeltem/blackbeard_wikki).
 
-*Measured on the 110 public test cases, official evaluation, paired with bootstrap intervals.*
-
-| Befund | Zahl |
+| Finding | Number |
 |---|---|
-| [Die Hirnmaske ist Teil des Modells.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/brain-mask-is-part-of-the-model.md) Dasselbe Modell mit zwei HD-BET-Läufen: die z-Normierung innerhalb der Maske verschiebt das ganze Eingangsbild, nicht nur den Rand. | Dice 0,688 gegen 0,719 |
-| [Eine zweite Bias-Korrektur hilft](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/second-bias-correction-helps-on-mixed-scanners.md), obwohl die Daten schon korrigiert sind. `fast -B` wirkt hier als Angleichung der Intensität über Scanner und senkt die Streuung über Startwerte auf rund ein Drittel. | ohne sie Dice −0,011 [−0,016; −0,006], Läsions-Recall −0,037 |
-| [Die offizielle Auswertung löscht Vorhersagen auf Label 2](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/official-label-2-rule-deletes-the-prediction.md), statt sie als Fehlalarm zu zählen (`evaluation.py`, Zeilen 47–50). | strengere Zählung liegt 0,005–0,007 Dice zu tief |
-| [Ungesehene Scanner sind nicht die Schwachstelle.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/unseen-scanners-are-not-the-weak-spot.md) Der Testsatz hat fünf Geräte, nicht drei Standorte; alle Fälle unter Dice 0,5 liegen auf bekannten Geräten. | 20 Fälle auf ungesehenen Geräten, 0 Ausfälle |
-| [Ein als Paket geändertes Netz brachte nichts.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/architecture-package-brought-no-gain.md) Der scheinbare Gewinn von +0,032 Dice war das Maskenartefakt aus der ersten Zeile. | Dice −0,001, Läsions-Recall −0,038 |
+| [The brain mask is part of the model.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/brain-mask-is-part-of-the-model.md) The same model with masks from two HD-BET runs: z-normalisation inside the mask shifts the whole input image, not just the edge. | Dice 0.688 vs 0.719 |
+| [A second bias correction helps](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/second-bias-correction-helps-on-mixed-scanners.md), although the data are already corrected. Here `fast -B` acts as intensity harmonisation across scanners and cuts the spread across seeds to about a third. | without it Dice −0.011 [−0.016; −0.006], lesion recall −0.037 |
+| [The official evaluation deletes predictions on label 2](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/official-label-2-rule-deletes-the-prediction.md) instead of counting them as false positives (`evaluation.py`, lines 47–50). | stricter counting is 0.005–0.007 Dice too low |
+| [Unseen scanners are not the weak spot.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/unseen-scanners-are-not-the-weak-spot.md) The test set has five devices, not three sites; every case below Dice 0.5 is on a known device. | 20 cases on unseen devices, 0 failures |
+| [Changing the network as a package brought nothing.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/wmh_segmentation/findings/architecture-package-brought-no-gain.md) The apparent gain of +0.032 Dice was the mask artefact from the first row. | Dice −0.001, lesion recall −0.038 |
 
-Daraus folgt für jeden Modellvergleich: Maskenherkunft und Auswertungsfunktion
-mitprotokollieren, Bausteine einzeln ändern.
+The consequence for every model comparison: record where the mask came from and
+which evaluation function was used, and change one component at a time.
 
 ---
 
-## Das System dahinter
+## The system behind it
 
-Clara ist ein lokales Modell auf einer einzelnen Workstation, ohne
-Netzzugang. Werkzeuge, Messungen und Betriebsregeln stehen getrennt:
+Clara is a local model on a single workstation without network access. Tools,
+measurements and operating rules are kept separately:
 
-**[local_models](https://github.com/mendeltem/local_models)** — [Seite](https://mendeltem.github.io/local_models/) · [das modellunabhängige Gerüst](https://github.com/mendeltem/local_models/blob/main/docs/05-scaffolding.md)
+**[local_models](https://github.com/mendeltem/local_models)** · [page](https://mendeltem.github.io/local_models/) · [the model-independent scaffolding](https://github.com/mendeltem/local_models/blob/main/docs/05-scaffolding.md)
 
-Was die Agenten unterwegs gelernt haben, sammelt das Wiki
-**[blackbeard_wikki](https://github.com/mendeltem/blackbeard_wikki)**, Bereich
+What the agents learned along the way is collected in the wiki
+**[blackbeard_wikki](https://github.com/mendeltem/blackbeard_wikki)**, section
 [local_llm_operation](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/SUMMARY.md).
 
-### Die Maschine, Stand Oktober 2026 / The machine, October 2026
+### The machine, October 2026
 
-- RTX A5000 mit 24 GB (Ampere, sm_86), i9-12900K, 62 GiB RAM, Ubuntu 24.04,
-  NVIDIA-Treiber 550 (CUDA 12.4).
-- Claras Modell ist Qwen3.8-27B in Q4 über llama.cpp. Am 23.10. auf derselben
-  Karte gegen Nemotron 3.5 Bolt 74B-A9B gemessen: auf einem 13-Aufgaben-Test
-  100 % gegen 88,5 % (bei 4096 Token 97,4 % gegen 96,2 %). Bolt erzeugt
-  66–69 tok/s gegen rund 30, denkt aber länger; der Zeitgewinn schrumpft auf
-  etwa 20 %. [Eintrag](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/nemotron-bolt-74b-on-ampere-24gb.md)
-- Der Modellserver entlädt sich im Leerlauf: 21 770 MiB VRAM im Betrieb,
-  1 618 MiB danach, Aufwachen in 11,4 s. Die Karte bleibt so für Training frei.
-- Bei Secure Boot kann ein Kernel-Update den NVIDIA-Treiber stilllegen, ohne dass
-  ein Log ihn nennt. Vor dem Neustart `dkms status` und `mokutil --list-enrolled`.
-  [Eintrag](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/risks/secure-boot-kernel-update-unloads-nvidia-dkms.md)
+- RTX A5000 with 24 GB (Ampere, sm_86), i9-12900K, 62 GiB RAM, Ubuntu 24.04,
+  NVIDIA driver 550 (CUDA 12.4).
+- Clara's model is Qwen3.8-27B in Q4 via llama.cpp. Measured on 23 October on
+  the same card against Nemotron 3.5 Bolt 74B-A9B: 100 % vs 88.5 % on a 13-task
+  test (97.4 % vs 96.2 % at 4,096 tokens). Bolt generates 66–69 tok/s against
+  about 30 but reasons longer, so the wall-time gain shrinks to about 20 %.
+  [Entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/nemotron-bolt-74b-on-ampere-24gb.md)
+- The model server unloads when idle: 21,770 MiB VRAM in use, 1,618 MiB after,
+  11.4 s to wake. This keeps the card free for training.
+- With Secure Boot, a kernel update can disable the NVIDIA driver without any log
+  naming it. Before rebooting, check `dkms status` and `mokutil --list-enrolled`.
+  [Entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/risks/secure-boot-kernel-update-unloads-nvidia-dkms.md)
 
 ---
 
-## Was hier nicht liegt
+## What is not here
 
-Patientendaten und Ergebnisse auf eigenen Kohorten bleiben auf der
-Maschine. Veröffentlicht wird nur, was auf öffentlichen Datensätzen
-gerechnet wurde — der QC oben läuft auf der *WMH Segmentation
+Patient data and results on in-house cohorts stay on the machine. Only work on
+public datasets is published: the QC above runs on the *WMH Segmentation
 Challenge* (Utrecht, Singapore, Amsterdam).
 
-*Patient data and results on in-house cohorts stay on the machine.*
+This also covers everything derived from such data. A mask, an embedding, a log
+line, a QC page or a model trained on it carries the class of its source
+([rule](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md)).
+That is why the comparisons on the mixed pool of challenge and in-house cohorts
+are missing here, even though they are in the wiki.
 
-Das gilt auch für alles, was daraus abgeleitet ist: eine Maske, ein Embedding,
-eine Logzeile, eine QC-Seite oder ein darauf trainiertes Modell trägt die Klasse
-seiner Quelle ([Regel](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md)).
-Deshalb fehlen hier die Vergleiche auf dem gemischten Pool aus Challenge und
-eigenen Kohorten, obwohl sie im Wiki stehen.
-
-*Anything derived from in-house data inherits its class, so results on the mixed pool stay off this page.*
-
-Geprüft vor jedem Push mit `system/werkzeuge/pruefe-veroeffentlichung`:
-jeder Datensatz braucht eine ausdrückliche Freigabe, und ein Pfad auf
-nicht freigegebene Daten bricht ab.
+Checked before every push with `system/werkzeuge/pruefe-veroeffentlichung`:
+every dataset needs an explicit release, and a path to unreleased data aborts
+the push.
