@@ -143,6 +143,8 @@ What the agents learned along the way is collected in the wiki
 
 ## Rebuild it: setup
 
+![Setup: a five-layer stack inside the workstation, from hardware (RTX A5000 24 GB, i9-12900K, 62 GB RAM, NVMe) over Ubuntu 24.04 with NVIDIA 550 / CUDA 12.4, runtimes (llama.cpp, PyTorch, MONAI, nnU-Net, FSL, FreeSurfer, HD-BET), models (Qwen3.8-27B, Bonsai-27B, bge-m3) up to the agents (Hermes Agent, OpenCode, check harness); the prompt comes from a phone, Clé is reached over the intranet API, WMH Challenge data come in, an HTML QC page goes out](setup.png)
+
 Everything needed to set up the same system on another machine. Numbers are
 measured on Alita unless marked otherwise; versions are those in use in
 October 2026. The full scripts are in
