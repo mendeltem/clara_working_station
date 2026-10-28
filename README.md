@@ -227,8 +227,7 @@ same state, and it is where the meta information and the deeper material live:
 
 - findings and long-term experience, with source and date;
 - guidelines, for example how a QC page must be built
-  ([conventions](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/mri_qc_viewers/rules/qc-slice-viewer-conventions.md),
-  [every number explains itself on hover](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/mri_qc_viewers/rules/qc-pages-explain-every-number-on-hover.md))
+  ([every number explains itself on hover](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/mri_qc_viewers/rules/qc-pages-explain-every-number-on-hover.md))
   and what data may go where
   ([data classes](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md));
 - a growing literature list: 403 distinct DOIs and 115 arXiv papers cited in
