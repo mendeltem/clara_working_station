@@ -159,7 +159,7 @@ model-independent scaffolding</a> that describes what lets an agent finish a tas
 learned along the way is collected in the wiki
 <a class="gh" href="https://github.com/mendeltem/blackbeard_wikki">blackbeard_wikki</a>.</p>
 <ul class="s">
-<li>RTX A5000 with 24 GB (Ampere), i9-12900K, 62 GiB RAM, Ubuntu 24.04, NVIDIA driver 550 (CUDA 12.4). As of October 2026.</li>
+<li>RTX A5000 with 24 GB (Ampere), i9-12900K, 64 GB DDR RAM, Ubuntu 24.04, NVIDIA driver 550 (CUDA 12.4). As of October 2026.</li>
 <li>Clara's model is Qwen3.8-27B in Q4 via llama.cpp. Against Nemotron 3.5 Bolt 74B-A9B on the same card:
 100 % vs 88.5 % on a 13-task test. Bolt generates 66–69 tok/s against about 30, but reasons longer.
 <a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/nemotron-bolt-74b-on-ampere-24gb.md">Entry</a></li>
@@ -169,14 +169,14 @@ This keeps the card free for training.</li>
 
 <h2>Rebuild it: setup</h2>
 <a class="fig" href="setup.png"><img src="setup.png" width="984" height="557"
- alt="Setup: a five-layer stack inside the workstation, from hardware (RTX A5000 24 GB, i9-12900K, 62 GB RAM, NVMe) over Ubuntu 24.04 with NVIDIA 550 / CUDA 12.4 and the runtimes (llama.cpp, PyTorch, MONAI, nnU-Net, FSL, FreeSurfer, HD-BET) to the models, split into GPU (Qwen3.8-27B for Clara, Bonsai-27B beside training) and CPU (bge-m3 embeddings, H2O-Lightning-4B as System 1 gate, decider-4b), and the agents on top (Hermes Agent, OpenCode, check, System 1 gate, harness); the prompt comes from a phone, Clé is reached over the intranet API, WMH Challenge data come in, an HTML QC page goes out"></a>
+ alt="Setup: a five-layer stack inside the workstation, from hardware (RTX A5000 24 GB, i9-12900K, 64 GB DDR RAM, NVMe) over Ubuntu 24.04 with NVIDIA 550 / CUDA 12.4 and the runtimes (llama.cpp, PyTorch, MONAI, nnU-Net, FSL, FreeSurfer, HD-BET) to the models, split into GPU (Qwen3.8-27B for Clara, Bonsai-27B beside training) and CPU (bge-m3 embeddings, H2O-Lightning-4B as System 1 gate, decider-4b), and the agents on top (Hermes Agent, OpenCode, check, System 1 gate, harness); the prompt comes from a phone, Clé is reached over the intranet API, WMH Challenge data come in, an HTML QC page goes out"></a>
 <p class="s">What it takes to set up the same system. Measured on Alita, versions as of October 2026.
 Full list, services and steps in the <a class="gh" href="https://github.com/mendeltem/clara_working_station#rebuild-it-setup">README</a>,
 scripts in <a class="gh" href="https://github.com/mendeltem/local_models/tree/main/alita">local_models/alita</a>.</p>
 <div class="tw"><table class="p">
 <tr><th>Part</th><th>What</th><th>Note</th></tr>
 <tr><td>GPU</td><td>NVIDIA RTX A5000, 24 GB (Ampere)</td><td>holds the 27B model in Q4 at 80k context</td></tr>
-<tr><td>CPU / RAM</td><td>i9-12900K, 62.6 GiB RAM</td><td>embeddings and run watcher on the CPU</td></tr>
+<tr><td>CPU / RAM</td><td>i9-12900K, 64 GB DDR RAM</td><td>embeddings and run watcher on the CPU</td></tr>
 <tr><td>OS / driver</td><td>Ubuntu 24.04, NVIDIA 550 (CUDA 12.4)</td><td>no sudo in daily use; services as systemd user units</td></tr>
 <tr><td>Clara</td><td>Qwen3.8-27B, GGUF UD-Q4_K_M + vision projector</td><td>llama.cpp CUDA build, ~30 tok/s, 20.8 GiB VRAM</td></tr>
 <tr><td>Beside GPU jobs</td><td>Ternary-Bonsai-2-27B, PQ2_0, 6.8 GB</td><td>45 tok/s</td></tr>

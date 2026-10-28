@@ -129,7 +129,7 @@ What the agents learned along the way is collected in the wiki
 
 ### The machine, October 2026
 
-- RTX A5000 with 24 GB (Ampere, sm_86), i9-12900K, 62 GiB RAM, Ubuntu 24.04,
+- RTX A5000 with 24 GB (Ampere, sm_86), i9-12900K, 64 GB DDR RAM, Ubuntu 24.04,
   NVIDIA driver 550 (CUDA 12.4).
 - Clara's model is Qwen3.8-27B in Q4 via llama.cpp. Measured on 23 October on
   the same card against Nemotron 3.5 Bolt 74B-A9B: 100 % vs 88.5 % on a 13-task
@@ -146,7 +146,7 @@ What the agents learned along the way is collected in the wiki
 
 ## Rebuild it: setup
 
-![Setup: a five-layer stack inside the workstation, from hardware (RTX A5000 24 GB, i9-12900K, 62 GB RAM, NVMe) over Ubuntu 24.04 with NVIDIA 550 / CUDA 12.4 and the runtimes (llama.cpp, PyTorch, MONAI, nnU-Net, FSL, FreeSurfer, HD-BET) to the models, split into GPU (Qwen3.8-27B for Clara, Bonsai-27B beside training) and CPU (bge-m3 embeddings, H2O-Lightning-4B as System 1 gate, decider-4b), and the agents on top (Hermes Agent, OpenCode, check, System 1 gate, harness); the prompt comes from a phone, Clé is reached over the intranet API, WMH Challenge data come in, an HTML QC page goes out](setup.png)
+![Setup: a five-layer stack inside the workstation, from hardware (RTX A5000 24 GB, i9-12900K, 64 GB DDR RAM, NVMe) over Ubuntu 24.04 with NVIDIA 550 / CUDA 12.4 and the runtimes (llama.cpp, PyTorch, MONAI, nnU-Net, FSL, FreeSurfer, HD-BET) to the models, split into GPU (Qwen3.8-27B for Clara, Bonsai-27B beside training) and CPU (bge-m3 embeddings, H2O-Lightning-4B as System 1 gate, decider-4b), and the agents on top (Hermes Agent, OpenCode, check, System 1 gate, harness); the prompt comes from a phone, Clé is reached over the intranet API, WMH Challenge data come in, an HTML QC page goes out](setup.png)
 
 Everything needed to set up the same system on another machine. Numbers are
 measured on Alita unless marked otherwise; versions are those in use in
@@ -159,7 +159,7 @@ October 2026. The full scripts are in
 |---|---|---|
 | GPU | NVIDIA RTX A5000, 24 GB (Ampere, compute capability 8.6) | 24 GB holds the 27B model in Q4 at 80k context (~20.8 GiB); bfloat16 yes, FP8 no |
 | CPU | Intel i9-12900K, 16 cores / 24 threads | embeddings and the run watcher run on the CPU |
-| RAM | 62.6 GiB, 8 GiB swap | `mri_WMHsynthseg` needs ~54 GiB and runs alone |
+| RAM | 64 GB DDR (62.6 GiB usable), 8 GiB swap | `mri_WMHsynthseg` needs ~54 GiB and runs alone |
 | Disk | NVMe, 915 GB | models ~85 GB, public datasets, wheels for offline installs |
 | Board | MSI MS-7D91 | |
 
