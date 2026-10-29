@@ -1,0 +1,14 @@
+[Unit]
+Description=clara serve 127.0.0.1:8766 -- clara-agent sessions for the Telegram bridge (sandbox on, loopback only)
+After=weiche-relay.service systemone-bridge.service
+Wants=weiche-relay.service
+
+[Service]
+WorkingDirectory=%h/cle-arbeit
+Environment=CLARA_HOME=%h/.clara
+ExecStart=%h/.clara-venv/bin/clara serve --port 8766 --wait 60
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

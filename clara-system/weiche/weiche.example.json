@@ -1,0 +1,53 @@
+{
+  "_info": "Example configuration. Copy to weiche.json and fill in your own data folders and cohort names; weiche.json stays local (git-ignored). Model mapping per task type as measured on 29 Oct 2026 with modellwahl.py.",
+  "systemone_url": "http://127.0.0.1:8761/v1/systemone",
+  "schwelle": 0.8,
+  "cle_url": "https://cle.charite.de/api",
+  "cle_keydatei": "~/.config/cle/api_key",
+  "lokal_url": "http://127.0.0.1:8000/v1",
+  "standard_modell": "clea",
+  "arten": {
+    "trivial": {
+      "beschreibung": "short question, lookup, formatting, one-line answer",
+      "modell": "clea"
+    },
+    "coding": {
+      "beschreibung": "write, fix or review code or shell scripts",
+      "modell": "clea"
+    },
+    "suche": {
+      "beschreibung": "literature or web research, collecting and comparing sources",
+      "modell": "clea"
+    },
+    "schwer": {
+      "beschreibung": "planning, analysis, multi-step reasoning, statistics, design decisions",
+      "modell": "frontier"
+    },
+    "schreiben": {
+      "beschreibung": "write or edit prose: report, wiki entry, mail, document",
+      "modell": "fast"
+    },
+    "bild": {
+      "beschreibung": "look at an image, plot or screenshot and judge it",
+      "modell": "vision"
+    }
+  },
+  "lokal_marker": [
+    "hoher Datenschutz",
+    "ORT: lokal",
+    "ORT:lokal",
+    "Patientendaten"
+  ],
+  "datenpfade": [
+    "~/data/",
+    "/media/$USER/",
+    "~/archive/"
+  ],
+  "id_muster": [
+    "\\bsub-(?=[A-Za-z]*\\d)[A-Za-z0-9]+",
+    "\\bses-(?=[A-Za-z]*\\d)[A-Za-z0-9]+",
+    "\\.nii(\\.gz)?\\b|\\.dcm\\b|\\.mgz\\b|\\.mgh\\b",
+    "\\b(COHORT_A|COHORT_B)\\b"
+  ],
+  "lokal_start": ""
+}

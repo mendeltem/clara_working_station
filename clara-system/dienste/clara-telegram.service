@@ -1,0 +1,16 @@
+[Unit]
+Description=Clara Telegram bridge (same bot as the Hermes gateway had) -> clara serve 8766
+After=clara-serve.service network-online.target
+Wants=clara-serve.service
+Conflicts=hermes-gateway.service
+
+[Service]
+Environment=CLARA_HOME=%h/.clara
+Environment=CLARA_SERVE=http://127.0.0.1:8766
+# Environment=https_proxy=http://your-proxy:8080
+ExecStart=/usr/bin/python3 -I %h/local_agentic_system/system/telegram/clara_telegram.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

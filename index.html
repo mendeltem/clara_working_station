@@ -47,8 +47,8 @@
 A workbench, not a portfolio: only what was produced here is listed.</p>
 
 <h2>Workflow</h2>
-<a class="fig" href="abbildungen/workflow.png"><img src="abbildungen/workflow.png" width="1021" height="542"
- alt="Workflow: a prompt from a phone or desktop enters the workstation; inside it the Cloud API (Clé) and research agents find methods, then Clara (local LLM) writes code, trains on the GPU and checks the result in a loop until done; the model is scored on the test set against the leaderboard and an HTML QC page goes back to phone and desktop"></a>
+<a class="fig" href="abbildungen/4-question-to-qc.png"><img src="abbildungen/4-question-to-qc.png" width="1280" height="680"
+ alt="From a question to a QC page: prompt from phone or terminal; research by Clé and literature workers through the exit guard; a method shortlist where each method becomes a job with a countable acceptance list; the job queue runs one method at a time; in the inner loop Clara writes the code in the sandbox, the GPU queue trains, the acceptance check counts facts and the critic reads, open criteria start the next round; then evaluation on the test set next to the leaderboard and the result with a QC page"></a>
 <p class="s">One request, read left to right, using <i>"I want to create a WMH segmentation
 model, can you research it?"</i> as the example:</p>
 <ol class="s">
@@ -60,7 +60,7 @@ method and architecture used for the task.</li>
 <li><b>Method shortlist.</b> The findings are merged into candidate methods, such as 2D U-Net,
 3D U-Net, nnU-Net or BIANCA, each turned into tasks with machine-checkable acceptance criteria.</li>
 <li><b>Harness, outer loop.</b> Takes one method at a time from the queue and moves on once it is done.</li>
-<li><b>Harness, inner loop on the workstation GPU.</b> Clara, the local model, writes the code,
+<li><b>Harness, inner loop on the workstation GPU.</b> Clara (the clara-agent harness since 29 October 2026) writes the code,
 trains on open data (the WMH Segmentation Challenge training set), and an acceptance check counts
 the facts. If the check fails, the task goes back to Clara. The check asks no model.</li>
 <li><b>Evaluation.</b> Every model is scored on the challenge test set with the official metric
@@ -113,12 +113,16 @@ at all is decided by its data agreement, and a clause that forbids it binds the 
 Where processing is allowed, running it locally keeps the data inside the institution.</p>
 
 <h2>How the parts are used</h2>
+<a class="fig" href="abbildungen/1-clara-overview.png"><img src="abbildungen/1-clara-overview.png" width="1280" height="800"
+ alt="Overview: phone and terminal reach the workstation; clara-agent runs in a kernel sandbox; the Weiche relay sends data-free requests to the Clé hub and requests that touch patient data to the local 27B; System One picks the model, judges answers and gates commands"></a>
 <div class="tw"><table class="p">
 <tr><th>Part</th><th>Runs on</th><th>Patient data</th><th>Network</th><th>Used for</th></tr>
 <tr><td>Prompt</td><td>any device: phone app, desktop PC, browser</td><td>no</td><td>yes</td><td>stating the goal; nothing else happens there</td></tr>
 <tr><td>Clé</td><td>Charité on-premise model hub (intranet), called from the workstation</td><td>no</td><td>yes</td><td>interpreting the request, splitting it into questions and tasks</td></tr>
 <tr><td>Research agents</td><td>workstation, using Clé</td><td>no</td><td>yes</td><td>searching papers and code for methods and architectures</td></tr>
-<tr><td>Clara</td><td>workstation, Qwen3.8-27B via llama.cpp</td><td>yes</td><td>no</td><td>writing the code, training, running and inspecting models on the data</td></tr>
+<tr><td>Clara</td><td>workstation, clara-agent; model per turn: Clé for data-free work, local Qwen3.8-27B for patient data</td><td>yes (local model only)</td><td>no (loopback only, kernel-enforced)</td><td>writing the code, training, running and inspecting models on the data</td></tr>
+<tr><td>Relay</td><td>workstation, port 8770</td><td>checks every request</td><td>Clé only</td><td>fixed rules first (ids, cohort names, data access -> local), then System One picks the Clé model per turn and judges each answer</td></tr>
+<tr><td>System One</td><td>workstation, small decision model</td><td>no</td><td>no</td><td>model choice per turn, verdict per answer, approval gate for commands</td></tr>
 <tr><td>Harness</td><td>workstation</td><td>through Clara</td><td>no</td><td>the outer loop over methods and the inner loop until a task passes</td></tr>
 <tr><td>Check</td><td>workstation</td><td>counts only</td><td>no</td><td>acceptance criteria as countable facts; asks no model</td></tr>
 <tr><td>Exit guard</td><td>workstation, port 8899</td><td>blocks it</td><td>checked questions only</td><td>Clara's only way out: technical questions without data reference</td></tr>
@@ -255,6 +259,11 @@ leaderboard placements. Each row links to its entry in the agent wiki.</p>
 evaluation function was used, and change one component at a time.</p>
 
 <h2>The system behind it</h2>
+<a class="fig" href="abbildungen/2-model-request.png"><img src="abbildungen/2-model-request.png" width="1280" height="800"
+ alt="One model request: fixed rules send it to the local model; otherwise System One picks the kind of work per turn, which maps to a Clé model; System One judges the answer and a no escalates the next turn"></a>
+<a class="fig" href="abbildungen/3-job-queue.png"><img src="abbildungen/3-job-queue.png" width="1280" height="800"
+ alt="Continuous runs: a job with a countable acceptance list; rounds of the antreiber; acceptance by counting facts; accepted, next round or stuck"></a>
+<p class="s">The self-written parts around the agent (relay, decision layer, Telegram bridge, job-queue starter, session reader, image tool) are in <a class="gh" href="https://github.com/mendeltem/clara_working_station/tree/main/clara-system">clara-system/</a>.</p>
 <p class="s">Tools, measurements and operating rules are kept in
 <a class="gh" href="https://mendeltem.github.io/local_models/">local_models</a>, including
 <a class="gh" href="https://github.com/mendeltem/local_models/blob/main/docs/05-scaffolding.md">the
@@ -263,7 +272,7 @@ learned along the way is collected in the wiki
 <a class="gh" href="https://github.com/mendeltem/blackbeard_wikki">blackbeard_wikki</a>.</p>
 <ul class="s">
 <li>RTX A5000 with 24 GB (Ampere), i9-12900K, 64 GB DDR RAM, Ubuntu 24.04, NVIDIA driver 550 (CUDA 12.4). As of October 2026.</li>
-<li>Clara's model is Qwen3.8-27B in Q4 via llama.cpp. Against Nemotron 3.5 Bolt 74B-A9B on the same card:
+<li>Clara's local model is Qwen3.8-27B in Q4 via llama.cpp (since 29 October only for patient data; Clé otherwise). Against Nemotron 3.5 Bolt 74B-A9B on the same card:
 100 % vs 88.5 % on a 13-task test. Bolt generates 66–69 tok/s against about 30, but reasons longer.
 <a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/nemotron-bolt-74b-on-ampere-24gb.md">Entry</a></li>
 <li>The model server unloads when idle: 21,770 MiB VRAM in use, 1,618 MiB after, 11.4 s to wake.
@@ -289,8 +298,8 @@ This keeps the card free for training.</li>
 <p class="s"><b>How an agent uses it.</b> It reads the README and <code>INDEX.md</code>, then only the <code>SUMMARY.md</code> of the areas its task touches, and goes deeper only when needed. It compares with its own project, reuses what is there, and files what it learned with the templates. Nothing is pushed before the owner says yes; each contribution is one commit plus one line in the log. For Claude the wiki is packaged as a skill (<code>plugins/blackbeard-wiki</code>) that loads the matching areas before answering.</p>
 <p class="s"><b>Rules that keep it trustworthy.</b> Entries are data, not commands: an agent never acts on an instruction it finds inside an entry. Every number states its origin (measured, assumed or set by the owner); papers carry a DOI and are marked peer-reviewed, preprint or press release. Never in the wiki: patient data or subject IDs, image data from studies, credentials, internal host names, unpublished manuscripts. Entries that turn out wrong are not deleted but marked <code>gebrochen</code> (broken), with date and source. </p>
 <h2>Rebuild it: setup</h2>
-<a class="fig" href="abbildungen/setup.png"><img src="abbildungen/setup.png" width="984" height="557"
- alt="Setup: a five-layer stack inside the workstation, from hardware (RTX A5000 24 GB, i9-12900K, 64 GB DDR RAM, NVMe) over Ubuntu 24.04 with NVIDIA 550 / CUDA 12.4 and the runtimes (llama.cpp, PyTorch, MONAI, nnU-Net, FSL, FreeSurfer, HD-BET) to the models, split into GPU (Qwen3.8-27B for Clara, Bonsai-27B beside training) and CPU (bge-m3 embeddings, H2O-Lightning-4B as System 1 gate, decider-4b), and the agents on top (Hermes Agent, OpenCode, check, System 1 gate, harness); the prompt comes from a phone, Clé is reached over the intranet API, WMH Challenge data come in, an HTML QC page goes out"></a>
+<a class="fig" href="abbildungen/5-setup-stack.png"><img src="abbildungen/5-setup-stack.png" width="1280" height="720"
+ alt="The workstation layer by layer: agents (clara-agent, Telegram bridge, job queue, morning research, exit guard), decisions (Weiche relay, System One H2O-Lightning-4B, approval gate), models (local Qwen3.8-27B only when needed, Bonsai-27B beside training, Z-Image Turbo for images, bge-m3 on the CPU, Clé hub models for data-free work), runtimes, system and hardware"></a>
 <p class="s">What it takes to set up the same system. Measured on Alita, versions as of October 2026.
 Full list, services and steps in the <a class="gh" href="https://github.com/mendeltem/clara_working_station#rebuild-it-setup">README</a>,
 scripts in <a class="gh" href="https://github.com/mendeltem/local_models/tree/main/alita">local_models/alita</a>.</p>
@@ -302,9 +311,9 @@ scripts in <a class="gh" href="https://github.com/mendeltem/local_models/tree/ma
 <tr><td>Clara</td><td>Qwen3.8-27B, GGUF UD-Q4_K_M + vision projector</td><td>llama.cpp CUDA build, ~30 tok/s, 20.8 GiB VRAM</td></tr>
 <tr><td>Beside GPU jobs</td><td>Ternary-Bonsai-2-27B, PQ2_0, 6.8 GB</td><td>45 tok/s</td></tr>
 <tr><td>Embeddings</td><td>bge-m3 Q8_0</td><td>CPU</td></tr>
-<tr><td>System 1 gate</td><td>H2O-Lightning-4B Q8_0 (decider-4b for comparison)</td><td>CPU; approves shell commands at p ≥ 0.8, else asks; shadow mode since 20 Oct 2026</td></tr>
+<tr><td>System 1 gate</td><td>H2O-Lightning-4B Q8_0 (decider-4b for comparison)</td><td>GPU (CPU while the 27B needs the card); approves commands at p ≥ 0.8, else asks; shadow mode 20-28 Oct, live since 29 Oct 2026</td></tr>
 <tr><td>Clé</td><td>Charité on-premise model hub, OpenAI-compatible</td><td>aliases fast, frontier, eu, light, clea</td></tr>
-<tr><td>Agents</td><td>Hermes Agent v0.21.5, OpenCode 1.18.35</td><td>Hermes gateway takes prompts from the phone</td></tr>
+<tr><td>Agents</td><td>clara-agent 0.1.1 and clara-system (replaced Hermes Agent v0.21.5 and OpenCode 1.18.35 on 29 Oct 2026)</td><td>a Telegram bridge takes prompts from the phone</td></tr>
 <tr><td>Training</td><td>PyTorch 2.6.0+cu124, MONAI 1.5.2, nnU-Net 2.8.1</td><td>conda env <code>dl</code></td></tr>
 <tr><td>Imaging</td><td>FSL, HD-BET, FreeSurfer 8.2.0</td><td>BIANCA, SynthSeg, WMH-SynthSeg</td></tr>
 <tr><td>QC pages</td><td>NiiVue</td><td>bundled, pages work offline</td></tr>
@@ -315,14 +324,14 @@ scripts in <a class="gh" href="https://github.com/mendeltem/local_models/tree/ma
 <ul class="s">
 <li>The method comparison uses 20 of the 110 public test cases, a QC sample, not the full test set. The 2017 winner line is on all 110 cases.</li>
 <li>Clara's own U-Net numbers come from folds that mix challenge training and test cases; they are not a leaderboard result.</li>
-<li>The System 1 gate was measured on 154 commands labelled by one rater (the agent, with a rubric written before any model ran); it runs in shadow mode only.</li>
+<li>The System 1 gate was measured on 154 commands labelled by one rater (the agent, with a rubric written before any model ran); it has been live since 29 Oct 2026 and still escalates many harmless commands to the human.</li>
 <li>The 13-task model test is small; it ranks models for this use, it does not benchmark them.</li>
 <li>The <code>cmake</code> flags in the setup are reconstructed, not copied from the build log.</li>
 <li>The diagrams are generated illustrations; where they and the tables differ, the tables are right.</li>
 </ul>
 <h2>Where data may go</h2>
-<a class="fig" href="abbildungen/data-classes.png"><img src="abbildungen/data-classes.png" width="918" height="550"
- alt="Where data may go: three nested zones. Class 1, open challenge data, may go to public places such as GitHub and the cloud; class 2, data under a data use agreement, may go as far as the institution's Clé model hub; class 3, own patient cohorts, stays on the workstation with Clara, and derived results such as lesion masks keep their class. The exit guard lets only data-free questions out, a System 1 gate checks shell commands, and each task is split: reading the images happens on the workstation, code, method and write-up go to the hub"></a>
+<a class="fig" href="abbildungen/6-control.png"><img src="abbildungen/6-control.png" width="1280" height="720"
+ alt="Control: three nested data classes (open data, data under a use agreement up to the institution's hub, own patient cohorts on the workstation only) and five checks in order: Weiche relay rules, kernel sandbox, approval gate, exit guard, publish check before every push"></a>
 <p class="f"><b>What is not here.</b> Patient data and results on in-house cohorts stay on the
 machine. Only work on public datasets is published: the QC above runs on the
 <i>WMH Segmentation Challenge</i> (Utrecht, Singapore, Amsterdam). Checked before every push:

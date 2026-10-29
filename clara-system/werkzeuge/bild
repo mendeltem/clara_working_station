@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# bild "PROMPT" [-o datei.png] [--gross] [--breite 1024 --hoehe 1024] [--seed N] [--schritte 8]
+#   Generates an image locally on the GPU: Z-Image Turbo (Apache-2.0) with stable-diffusion.cpp (CUDA build, commit 77b72a2),
+#   offline (HF_HUB_OFFLINE=1). Default Q4 + --offload-to-cpu: ~+4.7 GB VRAM, ~23 s per 1024x1024 (measured 29.10.2026
+#   next to a CMB training run); --gross = Q8 without offloading (~+11.3 GB, ~26 s, barely faster -- only with a free card).
+#   Starts only if enough VRAM is free (else rc 3, the GPU belongs to the training) and releases the card afterwards.
+#   Text in the image: give words verbatim in quotation marks, keep it short; 2 of 3 labels came out right on 29.10.
+#   Measurements and example images: ~/local_agentic_system/ergebnisse/bildgen/
+set -uo pipefail
+S="${SD_CPP:-$HOME/local_agentic_system/system/sd.cpp}"; M="${BILD_MODELLE:-$HOME/local_agentic_system/modelle/bild}"
+PROMPT="${1:?Usage: bild \"PROMPT\" [-o datei.png] [--gross]}"; shift
+AUS="bild-$(date +%Y%m%d-%H%M%S).png"; MOD=Q4_K; EXTRA=(--offload-to-cpu); BRAUCHT=6000
+W=1024; H=1024; SEED=42; STEPS=8
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -o) AUS="$2"; shift ;;
+        --gross) MOD=Q8_0; EXTRA=(); BRAUCHT=12500 ;;
+        --breite) W="$2"; shift ;; --hoehe) H="$2"; shift ;;
+        --seed) SEED="$2"; shift ;; --schritte) STEPS="$2"; shift ;;
+        *) echo "bild: unknown option $1" >&2; exit 2 ;;
+    esac; shift
+done
+FREI=$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits 2>/dev/null | head -1)
+if [ -z "$FREI" ] || [ "$FREI" -lt "$BRAUCHT" ]; then
+    echo "bild: only ${FREI:-?} MiB VRAM free, need ~$BRAUCHT -- card busy, try again later (or without --gross)" >&2
+    exit 3
+fi
+LOG="${AUS%.png}.log"
+t0=$(date +%s)
+HF_HUB_OFFLINE=1 "$S/src/build-cuda/bin/sd-cli" --diffusion-model "$M/z_image_turbo-$MOD.gguf" --vae "$M/ae.safetensors" \
+    --llm "$M/Qwen3-4B-Instruct-2507-Q4_K_M.gguf" -p "$PROMPT" --cfg-scale 1.0 --steps "$STEPS" -H "$H" -W "$W" \
+    --seed "$SEED" -o "$AUS" "${EXTRA[@]}" > "$LOG" 2>&1
+rc=$?
+if [ $rc -ne 0 ] || [ ! -s "$AUS" ]; then echo "bild: failed (rc $rc), see $LOG" >&2; tail -3 "$LOG" >&2; exit 1; fi
+echo "$AUS ($(( $(date +%s) - t0 )) s, $MOD, ${W}x${H}, seed $SEED)"

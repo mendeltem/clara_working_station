@@ -1,0 +1,13 @@
+[Unit]
+Description=Weiche relay 127.0.0.1:8770 -- one OpenAI endpoint for clara-agent: Clé (model per turn by System One) or local GPU for patient data
+After=network-online.target systemone-h2o.service
+
+[Service]
+WorkingDirectory=%h/local_agentic_system/system/weiche
+ExecStart=/usr/bin/python3 -I relay.py --port 8770
+Restart=on-failure
+RestartSec=5
+Environment=no_proxy=localhost,127.0.0.1,::1,.charite.de
+
+[Install]
+WantedBy=default.target

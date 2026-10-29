@@ -1,0 +1,232 @@
+#!/usr/bin/env python3
+"""clara-sitzungen -- what clara-agent did in its sessions (counterpart to rundenbilanz/sitzungen for Hermes' state.db).
+
+    clara-sitzungen --seit T0 [-n 5]          sessions since T0 (Unix time): messages, tools, errors, end
+    clara-sitzungen --bilanz --seit T0 [--befehle 8]   round summary: tool counts, last commands, errors, last answer
+    clara-sitzungen --letzte-zeit --seit T0   timestamp of the newest message (for the antreiber time fence)
+    clara-sitzungen --schleifen --seit T0     SCHLEIFE lines: the same tool fails the same way >= 3 times in a row
+    clara-sitzungen --still 30                STILL lines: a running clara process whose session has been silent for > 30 min
+    clara-sitzungen --letzte SID [N]          the last N tool steps of a session with result (default 8)
+    clara-sitzungen --live [-n 5] [--einmal]  watch the newest session (new steps, until Ctrl-C)
+    clara-sitzungen --fehlerbilanz [--tage 1] [--json]  per day: sessions, calls, errors, blocks, relay errors, jobs
+    clara-sitzungen --kurzlage                one line for lage: is Clara running, last session, last steps
+Source: $CLARA_HOME/sessions/*.jsonl (default ~/.clara-lauf, ~/.clara-lauf-cle and ~/.clara = Telegram). Read-only.
+"""
+import argparse, collections, glob, json, os, re, time
+
+HOMES = [os.environ["CLARA_HOME"]] if os.environ.get("CLARA_HOME") else \
+    [os.path.expanduser(h) for h in ("~/.clara-lauf", "~/.clara-lauf-cle", "~/.clara")]
+
+
+def sitzungen(seit):
+    out = []
+    for f in [f for h in HOMES for f in glob.glob(os.path.join(h, "sessions", "*.jsonl"))]:
+        if os.path.getmtime(f) < seit:
+            continue
+        msgs, meta = [], {}
+        for line in open(f, errors="ignore"):
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            if d.get("type") == "meta":
+                meta = d
+            elif d.get("type") == "message":
+                msgs.append((d.get("t", 0), d["message"]))
+        if msgs and msgs[-1][0] >= seit:
+            out.append({"datei": f, "id": meta.get("session", os.path.basename(f)[:-6]), "projekt": meta.get("project", ""),
+                        "start": msgs[0][0], "ende": msgs[-1][0], "msgs": msgs})
+    return sorted(out, key=lambda s: s["start"])
+
+
+def fehler(text):
+    t = (text or "").lstrip()
+    m = re.search(r"\[exit code (\d+)\]\s*$", t)
+    return t.startswith(("ERROR", "error:", "not executed")) or bool(m and m.group(1) != "0")
+
+
+def werkzeuge(s):
+    calls = {}
+    for _, m in s["msgs"]:
+        for tc in m.get("tool_calls") or []:
+            fn = tc.get("function", {})
+            try:
+                arg = json.loads(fn.get("arguments") or "{}")
+            except ValueError:
+                arg = {}
+            calls[tc.get("id")] = (fn.get("name"), arg.get("command") or arg.get("path") or "")
+    res = []
+    for t, m in s["msgs"]:
+        if m.get("role") == "tool":
+            name, arg = calls.get(m.get("tool_call_id"), (m.get("name"), ""))
+            res.append((t, name, str(arg), m.get("content") or "", fehler(m.get("content"))))
+    return res
+
+
+def schritt(t, name, arg, text, err):
+    return f"{zeit(t)} {'FEHLER ' if err else ''}{name}: {arg[:110]} -> {re.sub(r'\s+', ' ', text)[:110]}"
+
+
+def letzte(sid, n):
+    s = next((x for x in sitzungen(0) if x["id"].startswith(sid)), None)
+    if not s:
+        print(f"keine clara-Sitzung {sid}"); return 1
+    print(f"Session {s['id']} ({s['projekt']}), {len(s['msgs'])} messages, last at {zeit(s['ende'])}")
+    for w in werkzeuge(s)[-n:]:
+        print("  " + schritt(*w))
+
+
+def live(n, einmal):
+    ss = sitzungen(time.time() - 7 * 86400)
+    if not ss:
+        print("no clara session in the last 7 days"); return 1
+    s = max(ss, key=lambda x: x["ende"])
+    print(f"Session {s['id']} ({s['projekt']}) -- {'current state' if einmal else 'new steps, Ctrl-C quits'}")
+    gezeigt = 0
+    for w in werkzeuge(s)[-n:]:
+        print("  " + schritt(*w)); gezeigt = w[0]
+    while not einmal:
+        time.sleep(2)
+        s2 = next((x for x in sitzungen(time.time() - 86400) if x["id"] == s["id"]), None)
+        if not s2:
+            continue
+        for w in werkzeuge(s2):
+            if w[0] > gezeigt:
+                print("  " + schritt(*w), flush=True); gezeigt = w[0]
+        for t, m in s2["msgs"]:
+            if m.get("role") == "assistant" and m.get("content") and t > gezeigt:
+                print(f"  {zeit(t)} ANSWER: {m['content'].strip()[:300]}", flush=True); gezeigt = t
+
+
+def fehlerbilanz(tage, als_json):
+    import datetime as dt, subprocess
+    relay = os.path.expanduser("~/local_agentic_system/ergebnisse/weiche/relay.jsonl")
+    vorrat = os.path.expanduser("~/data/work/auftraege")
+    heute = dt.date.today()
+    zeilen = []
+    alle = sitzungen(time.time() - (tage + 1) * 86400)
+    for i in range(tage, 0, -1) if tage > 1 else [0]:
+        tag = heute - dt.timedelta(days=i) if tage > 1 else heute
+        t0 = time.mktime(tag.timetuple()); t1 = t0 + 86400
+        n_sitz = aufrufe = fehler_n = sperren = 0
+        for s in alle:
+            w = [x for x in werkzeuge(s) if t0 <= x[0] < t1]
+            if w:
+                n_sitz += 1
+            aufrufe += len(w); fehler_n += sum(x[4] for x in w)
+            sperren += sum(1 for x in w if x[3].lstrip().startswith(("not executed", "denied")))
+        rf = 0
+        if os.path.exists(relay):
+            a0, a1 = tag.isoformat(), (tag + dt.timedelta(days=1)).isoformat()
+            for l in open(relay, errors="ignore"):
+                try:
+                    d = json.loads(l)
+                except ValueError:
+                    continue
+                if a0 <= d.get("zeit", "") < a1 and (d.get("fehler") or (d.get("status") or 200) >= 400):
+                    rf += 1
+        zaehl = lambda o: sum(1 for f in glob.glob(f"{vorrat}/{o}/*.txt") if t0 <= os.path.getmtime(f) < t1)
+        zeilen.append({"tag": tag.isoformat(), "sitzungen": n_sitz, "aufrufe": aufrufe, "fehler": fehler_n,
+                       "gesperrt": sperren, "relay_fehler": rf, "erledigt": zaehl("erledigt"), "stecken": zaehl("steckengeblieben")})
+    if als_json:
+        print(json.dumps(zeilen, ensure_ascii=False, indent=1)); return
+    print("Day         Sess.   Calls Errors per100 blocked Relay-E.    done   stuck")
+    for z in zeilen:
+        je = 100 * z["fehler"] / z["aufrufe"] if z["aufrufe"] else 0
+        print(f"{z['tag']} {z['sitzungen']:5d} {z['aufrufe']:7d} {z['fehler']:6d} {je:6.1f} {z['gesperrt']:8d} {z['relay_fehler']:8d} {z['erledigt']:8d} {z['stecken']:7d}")
+
+
+def kurzlage():
+    import subprocess
+    ps = subprocess.run(["ps", "-eo", "args"], capture_output=True, text=True).stdout.splitlines()
+    # only real clara processes (python interpreter first), not shells that carry the pattern in their text
+    laufend = sum(1 for l in ps if l.split() and l.split()[0].endswith(("python", "python3")) and re.search(r"bin/clara -C \S+", l))
+    ss = sitzungen(time.time() - 7 * 86400)
+    if not ss:
+        print("Clara   no clara session in 7 days" + (f", {laufend} clara process(es)" if laufend else "")); return
+    s = max(ss, key=lambda x: x["ende"])
+    still = int((time.time() - s["ende"]) / 60)
+    zustand = f"working ({laufend} process(es))" if laufend and still < 30 else "idle"
+    print(f"Clara   {zustand}; last session {s['id']} ({s['projekt']}), {len(s['msgs'])} msgs, last {still} min ago -- follow: clara-live")
+    for w in werkzeuge(s)[-3:]:
+        print("        " + schritt(*w)[:100])
+
+
+def zeit(t):
+    return time.strftime("%H:%M:%S", time.localtime(t))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--seit", type=float, default=time.time() - 86400)
+    ap.add_argument("-n", type=int, default=5)
+    ap.add_argument("--bilanz", action="store_true"); ap.add_argument("--befehle", type=int, default=8)
+    ap.add_argument("--letzte-zeit", action="store_true"); ap.add_argument("--schleifen", action="store_true")
+    ap.add_argument("--projekt", default="")
+    ap.add_argument("--still", type=int, default=0, help="minutes")
+    ap.add_argument("--letzte", nargs="+", metavar=("SID", "N"))
+    ap.add_argument("--live", action="store_true"); ap.add_argument("--einmal", action="store_true")
+    ap.add_argument("--fehlerbilanz", action="store_true"); ap.add_argument("--tage", type=int, default=1)
+    ap.add_argument("--json", action="store_true"); ap.add_argument("--kurzlage", action="store_true")
+    a = ap.parse_args()
+    if a.letzte:
+        return letzte(a.letzte[0], int(a.letzte[1]) if len(a.letzte) > 1 else 8)
+    if a.live:
+        return live(a.n, a.einmal)
+    if a.fehlerbilanz:
+        return fehlerbilanz(a.tage, a.json)
+    if a.kurzlage:
+        return kurzlage()
+    if a.still:
+        # running clara processes with their project (-C DIR); their newest session must not stay silent longer
+        import subprocess
+        ps = subprocess.run(["ps", "-eo", "pid,args"], capture_output=True, text=True).stdout.splitlines()
+        laufend = [(l.split(None, 1)[0], re.search(r"clara -C (\S+)", l).group(1)) for l in ps
+                   if re.search(r"^\s*\d+\s+\S*python3?\s+\S*bin/clara -C \S+", l)]
+        ss = sitzungen(time.time() - 3 * 86400)
+        for pid, projekt in laufend:
+            eigene = [s for s in ss if s["projekt"] == projekt]
+            if not eigene:
+                continue
+            s = max(eigene, key=lambda x: x["ende"])
+            still = (time.time() - s["ende"]) / 60
+            if still > a.still:
+                print(f"STILL {s['id']} silent for {int(still)} min, {len(s['msgs'])} msgs, pid {pid}, {projekt}")
+        return
+    ss = sitzungen(a.seit)
+    if a.projekt:
+        ss = [s for s in ss if s["projekt"].startswith(a.projekt)] or ss
+    if a.letzte_zeit:
+        print(int(max((s["ende"] for s in ss), default=0)) or ""); return
+    if a.schleifen:
+        for s in ss:
+            folge, vorher = 0, None
+            for _, name, arg, text, err in werkzeuge(s):
+                key = (name, text.strip()[:120]) if err else None
+                folge = folge + 1 if key and key == vorher else (1 if key else 0)
+                vorher = key
+                if folge == 3:
+                    print(f"SCHLEIFE {s['id']} {name}: {text.strip()[:150]}")
+        return
+    if a.bilanz:
+        if not ss:
+            print("keine clara-Sitzung since", zeit(a.seit)); return
+        for s in ss:
+            w = werkzeuge(s)
+            n = collections.Counter(x[1] for x in w)
+            print(f"Session {s['id']} {zeit(s['start'])}-{zeit(s['ende'])}: {len(s['msgs'])} messages, "
+                  f"{len(w)} tool calls ({', '.join(f'{k} {v}' for k, v in n.most_common())}), {sum(x[4] for x in w)} errors")
+            for t, name, arg, text, err in [x for x in w if x[1] in ("bash", "write_file", "edit_file")][-a.befehle:]:
+                print(f"  {zeit(t)} {'FEHLER ' if err else ''}{name}: {arg[:150]}")
+            antwort = next((m.get("content") for _, m in reversed(s["msgs"]) if m.get("role") == "assistant" and m.get("content")), "")
+            print(f"  last answer: {(antwort or '-').strip()[:300]}")
+        return
+    print(f"clara sessions since {zeit(a.seit)} ({', '.join(HOMES)}):")
+    print("id                        start     end       msgs  tools  errors  project")
+    for s in ss[-a.n:]:
+        w = werkzeuge(s)
+        print(f"{s['id']:25s} {zeit(s['start'])}  {zeit(s['ende'])}  {len(s['msgs']):4d}  {len(w):5d}  {sum(x[4] for x in w):6d}  {s['projekt']}")
+
+
+if __name__ == "__main__":
+    main()

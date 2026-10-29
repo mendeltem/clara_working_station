@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Register who needs the LOCAL model on the GPU (29.10.2026, user: "Clara uses the local GPU only when necessary").
+#
+#   lokal-bedarf an <pid> [grund]   register: process <pid> needs llama-server (patient-data job)
+#   lokal-bedarf aus <pid>          remove the entry
+#   lokal-bedarf lebt               rc 0 if a registered process is alive (stale entries are removed)
+#   lokal-bedarf zeigen             list live entries
+#
+# modellwache starts llama-server only while a need lives and stops it after LEERLAUF_MIN without one.
+# Entries are files ~/data/work/.llm-lokal/<pid> (one line: time and reason); a dead pid counts as gone.
+set -uo pipefail
+D="${LOKAL_BEDARF_DIR:-$HOME/data/work/.llm-lokal}"
+mkdir -p "$D"
+aufraeumen() { for f in "$D"/*; do [ -e "$f" ] || continue; kill -0 "$(basename "$f")" 2>/dev/null || rm -f "$f"; done; }
+case "${1:-zeigen}" in
+    an)  [ -n "${2:-}" ] || { echo "lokal-bedarf an <pid> [grund]" >&2; exit 2; }
+         echo "$(date '+%F %T') ${3:-}" > "$D/$2" ;;
+    aus) rm -f "$D/${2:?pid}" ;;
+    lebt) aufraeumen; [ -n "$(ls -A "$D" 2>/dev/null)" ] ;;
+    zeigen) aufraeumen; for f in "$D"/*; do [ -e "$f" ] && echo "$(basename "$f") $(cat "$f")"; done; true ;;
+    *) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
+esac

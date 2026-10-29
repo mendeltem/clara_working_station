@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" font-family="DejaVu Sans, Arial, sans-serif">
+  <rect width="1280" height="720" fill="#ffffff"/>
+  <text x="40" y="44" font-size="26" font-weight="bold" fill="#1b2430">The workstation, layer by layer (29 Oct 2026)</text>
+  <text x="40" y="70" font-size="14" fill="#5b6672">Each layer only uses the one below it. One machine, no root for the agents.</text>
+
+  <!-- layer label column -->
+  <g font-size="13" font-weight="bold" fill="#4a5560">
+    <text x="40" y="128">AGENTS</text>
+    <text x="40" y="228">DECISIONS</text>
+    <text x="40" y="328">MODELS</text>
+    <text x="40" y="448">RUNTIMES</text>
+    <text x="40" y="548">SYSTEM</text>
+    <text x="40" y="638">HARDWARE</text>
+  </g>
+
+  <!-- agents -->
+  <rect x="160" y="96" width="1080" height="80" rx="12" fill="#fff8e8" stroke="#c98a00"/>
+  <g font-size="12.5" fill="#1b2430" text-anchor="middle">
+    <rect x="175" y="110" width="200" height="52" rx="8" fill="#fff" stroke="#c98a00"/><text x="275" y="132" font-weight="bold">clara-agent 0.1.1</text><text x="275" y="150">terminal, clara -p, serve</text>
+    <rect x="390" y="110" width="200" height="52" rx="8" fill="#fff" stroke="#c98a00"/><text x="490" y="132" font-weight="bold">Telegram bridge</text><text x="490" y="150">phone, approvals as buttons</text>
+    <rect x="605" y="110" width="200" height="52" rx="8" fill="#fff" stroke="#c98a00"/><text x="705" y="132" font-weight="bold">Job queue</text><text x="705" y="150">dauerlauf, antreiber, critic</text>
+    <rect x="820" y="110" width="200" height="52" rx="8" fill="#fff" stroke="#c98a00"/><text x="920" y="132" font-weight="bold">Morning research</text><text x="920" y="150">06:00, five workers</text>
+    <rect x="1035" y="110" width="190" height="52" rx="8" fill="#fff" stroke="#c98a00"/><text x="1130" y="132" font-weight="bold">Exit guard</text><text x="1130" y="150">checked questions out</text>
+  </g>
+
+  <!-- decisions -->
+  <rect x="160" y="196" width="1080" height="80" rx="12" fill="#f3eefb" stroke="#6b3fb8"/>
+  <g font-size="12.5" fill="#1b2430" text-anchor="middle">
+    <rect x="175" y="210" width="330" height="52" rx="8" fill="#fff" stroke="#6b3fb8"/><text x="340" y="232" font-weight="bold">Weiche relay :8770</text><text x="340" y="250">fixed rules first; Clé or local model</text>
+    <rect x="520" y="210" width="340" height="52" rx="8" fill="#fff" stroke="#6b3fb8"/><text x="690" y="232" font-weight="bold">System One: H2O-Lightning-4B</text><text x="690" y="250">model per turn, verdict per answer</text>
+    <rect x="875" y="210" width="350" height="52" rx="8" fill="#fff" stroke="#6b3fb8"/><text x="1050" y="232" font-weight="bold">Approval gate :8765</text><text x="1050" y="250">commands: run, or ask the human</text>
+  </g>
+
+  <!-- models -->
+  <rect x="160" y="296" width="1080" height="110" rx="12" fill="#eaf6f0" stroke="#1d8a5a"/>
+  <g font-size="12.5" fill="#1b2430" text-anchor="middle">
+    <text x="420" y="316" font-size="12" fill="#1d8a5a" font-weight="bold">LOCAL GPU, ONLY WHEN NEEDED</text>
+    <rect x="175" y="324" width="160" height="70" rx="8" fill="#fff" stroke="#1d8a5a"/><text x="255" y="346" font-weight="bold">Qwen3.8-27B</text><text x="255" y="364">Q4, 80k context;</text><text x="255" y="382">patient data</text>
+    <rect x="345" y="324" width="160" height="70" rx="8" fill="#fff" stroke="#1d8a5a"/><text x="425" y="346" font-weight="bold">Bonsai-27B</text><text x="425" y="364">PQ2, 16k context;</text><text x="425" y="382">beside training</text>
+    <rect x="515" y="324" width="160" height="70" rx="8" fill="#fff" stroke="#1d8a5a"/><text x="595" y="346" font-weight="bold">Z-Image Turbo</text><text x="595" y="364">images, ~23 s;</text><text x="595" y="382">tool "bild"</text>
+    <text x="800" y="316" font-size="12" fill="#4a5560" font-weight="bold">CPU</text>
+    <rect x="700" y="324" width="200" height="70" rx="8" fill="#fff" stroke="#8a96a3"/><text x="800" y="346" font-weight="bold">bge-m3 embeddings</text><text x="800" y="364">System One moves here</text><text x="800" y="382">when the 27B needs the card</text>
+    <text x="1067" y="316" font-size="12" fill="#1f6fd1" font-weight="bold">CHARITE HUB (INTRANET)</text>
+    <rect x="915" y="324" width="310" height="70" rx="8" fill="#eef4fb" stroke="#1f6fd1"/><text x="1070" y="346" font-weight="bold">Clé models, data-free work</text><text x="1070" y="364">clea (code, research), frontier (hard),</text><text x="1070" y="382">fast (writing), vision (images)</text>
+  </g>
+
+  <!-- runtimes -->
+  <rect x="160" y="426" width="1080" height="70" rx="12" fill="#f3f5f7" stroke="#8a96a3"/>
+  <g font-size="12.5" fill="#1b2430" text-anchor="middle">
+    <text x="300" y="454" font-weight="bold">llama.cpp (CUDA sm_86)</text><text x="300" y="474">model servers</text>
+    <text x="545" y="454" font-weight="bold">stable-diffusion.cpp (CUDA)</text><text x="545" y="474">image generation</text>
+    <text x="800" y="454" font-weight="bold">PyTorch 2.6 cu124, MONAI, nnU-Net</text><text x="800" y="474">training (conda env dl)</text>
+    <text x="1080" y="454" font-weight="bold">FSL, FreeSurfer 8.2, HD-BET</text><text x="1080" y="474">imaging tools</text>
+  </g>
+
+  <!-- system -->
+  <rect x="160" y="516" width="1080" height="70" rx="12" fill="#f3f5f7" stroke="#8a96a3"/>
+  <g font-size="12.5" fill="#1b2430" text-anchor="middle">
+    <text x="330" y="544" font-weight="bold">Ubuntu 24.04, kernel 7.0</text><text x="330" y="564">Landlock ABI 8 + seccomp for the agent</text>
+    <text x="700" y="544" font-weight="bold">NVIDIA driver 550 / CUDA 12.4</text><text x="700" y="564">conda: qwen-serve, dl, medizin</text>
+    <text x="1040" y="544" font-weight="bold">systemd user services</text><text x="1040" y="564">no sudo for agents</text>
+  </g>
+
+  <!-- hardware -->
+  <rect x="160" y="606" width="1080" height="70" rx="12" fill="#e9ecef" stroke="#6c757d"/>
+  <g font-size="12.5" fill="#1b2430" text-anchor="middle">
+    <text x="330" y="634" font-weight="bold">NVIDIA RTX A5000, 24 GB</text><text x="330" y="654">Ampere, compute capability 8.6</text>
+    <text x="700" y="634" font-weight="bold">Intel i9-12900K, 24 threads</text><text x="700" y="654">64 GB DDR RAM</text>
+    <text x="1040" y="634" font-weight="bold">NVMe 1 TB + external SSD</text><text x="1040" y="654">results and archive</text>
+  </g>
+</svg>

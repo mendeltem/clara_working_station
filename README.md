@@ -11,7 +11,7 @@ portfolio: only what was produced here is listed.*
 
 ## Workflow
 
-![Workflow: a prompt from a phone or desktop enters the workstation; inside it the Cloud API (Clé) and research agents find methods, then Clara (local LLM) writes code, trains on the GPU and checks the result in a loop until done; the model is scored on the test set against the leaderboard and an HTML QC page goes back to phone and desktop](abbildungen/workflow.png)
+![From a question to a QC page: prompt from phone or terminal; research by Clé and literature workers through the exit guard; a method shortlist where each method becomes a job with a countable acceptance list; the job queue runs one method at a time; in the inner loop Clara writes the code in the sandbox, the GPU queue trains, the acceptance check counts facts and the critic reads, open criteria start the next round; then evaluation on the test set next to the leaderboard and the result with a QC page](abbildungen/4-question-to-qc.png)
 
 One request, read left to right, using "I want to create a WMH segmentation
 model, can you research it?" as the example:
@@ -269,7 +269,7 @@ unpublished manuscripts. Entries that turn out wrong are not deleted but marked
 
 ## Rebuild it: setup
 
-![Setup: a five-layer stack inside the workstation, from hardware (RTX A5000 24 GB, i9-12900K, 64 GB DDR RAM, NVMe) over Ubuntu 24.04 with NVIDIA 550 / CUDA 12.4 and the runtimes (llama.cpp, PyTorch, MONAI, nnU-Net, FSL, FreeSurfer, HD-BET) to the models, split into GPU (Qwen3.8-27B for Clara, Bonsai-27B beside training) and CPU (bge-m3 embeddings, H2O-Lightning-4B as System 1 gate, decider-4b), and the agents on top (Hermes Agent, OpenCode, check, System 1 gate, harness); the prompt comes from a phone, Clé is reached over the intranet API, WMH Challenge data come in, an HTML QC page goes out](abbildungen/setup.png)
+![The workstation layer by layer: agents (clara-agent, Telegram bridge, job queue, morning research, exit guard), decisions (Weiche relay, System One H2O-Lightning-4B, approval gate), models (local Qwen3.8-27B only when needed, Bonsai-27B beside training, Z-Image Turbo for images, bge-m3 on the CPU, Clé hub models for data-free work), runtimes, system and hardware](abbildungen/5-setup-stack.png)
 
 Everything needed to set up the same system on another machine. Numbers are
 measured on Alita unless marked otherwise; versions are those in use in
@@ -406,6 +406,16 @@ licence CC BY-NC 4.0.
 
 ---
 
+## Self-written Clara software: clara-system
+
+[clara-system/](clara-system/) holds the parts of our own that run Clara together with clara-agent:
+- the Weiche relay and decision layer (fixed rules, System One per turn, verdicts, escalation),
+- the Telegram bridge, the job-queue starter `clara-lauf`, the session reader `clara-sitzungen`,
+- the local image tool `bild` and the systemd units.
+
+Cohort names and the institution's data folders stay in a local `weiche.json`; the repository ships
+`weiche.example.json` with placeholders. Install and configuration: [clara-system/README.md](clara-system/README.md).
+
 ## Clara agent: the harness in this repository
 
 [clara-agent/](clara-agent/) is a coding agent written to replace Hermes Agent
@@ -451,16 +461,16 @@ threat model: [clara-agent/docs/PRIVACY.md](clara-agent/docs/PRIVACY.md).
 - The 13-task model test is small; it ranks models for this use, it does not
   benchmark them.
 - The `cmake` flags in the setup are reconstructed, not copied from the build log.
-- The workflow and setup diagrams at the top are generated illustrations from
-  before 29 October 2026 (they still show Hermes Agent and OpenCode). The three
-  drawn diagrams (overview, model request, continuous runs) show the state of
-  29 October 2026. Where a diagram and a table differ, the table is right.
+- All diagrams are drawn by hand (SVG next to each PNG in abbildungen/) and show
+  the state of 29 October 2026. The earlier generated illustrations are still
+  in abbildungen/ (workflow.png, setup.png, data-classes.png) but no longer shown.
+  Where a diagram and a table differ, the table is right.
 
 ---
 
 ## What is not here
 
-![Where data may go: three nested zones. Class 1, open challenge data, may go to public places such as GitHub and the cloud; class 2, data under a data use agreement, may go as far as the institution's Clé model hub; class 3, own patient cohorts, stays on the workstation with Clara, and derived results such as lesion masks keep their class. The exit guard lets only data-free questions out, a System 1 gate checks shell commands, and each task is split: reading the images happens on the workstation, code, method and write-up go to the hub](abbildungen/data-classes.png)
+![Control: three nested data classes (open data, data under a use agreement up to the institution's hub, own patient cohorts on the workstation only) and five checks in order: Weiche relay rules, kernel sandbox, approval gate, exit guard, publish check before every push](abbildungen/6-control.png)
 
 Patient data and results on in-house cohorts stay on the machine. Only work on
 public datasets is published: the QC above runs on the *WMH Segmentation
