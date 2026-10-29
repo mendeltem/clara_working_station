@@ -9,6 +9,7 @@ Running on the target workstation (Ubuntu 24.04, kernel 7.0, Landlock ABI 8, Pyt
 - `sandbox.extra_connect_ports`: more loopback TCP ports for the locked tree (for example a local research gateway).
 - Fix: the project root no longer climbs to `$HOME` because Clara's own `~/.clara` looked like a project marker; under `--yolo` that had made the whole home directory writable.
 - Fix: `list_files` with the default pattern `**/*` (and `**/*.py`) now finds files in the project root.
+- `[serve] serialize`: switch for the global model lock of `clara serve`. With `false`, sessions run side by side behind a relay or API; with `true` (default, single-slot llama-server) a session waiting for an approval blocks the others.
 - `clara sandbox-check`: 27 checks (new: UDP to the DNS stub, Unix socket, outside name lookup, `systemd-run --user`, socketpair).
 
 Test results, 2026-10-29, on the workstation: `python -m pytest -q` 85 passed, 5 skipped; `clara sandbox-check` 27 of 27. `scripts/netaudit.sh` on real runs against the hospital model hub through a local relay: only loopback destinations (relay and approval gate); `curl`, a UDP DNS query to 8.8.8.8, `getent hosts` and `systemd-run` refused. `clara serve` API test (auth, origin check, two turns, approve/deny, agent question, mode switch, busy/interrupt, session list): 18 of 18. GPU: CUDA training with DataLoader workers, a spawn pool, nibabel and MONAI under the lock with `unix_sockets = "allow"`; with `"seqpacket"` the DataLoader hangs.

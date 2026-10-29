@@ -7,6 +7,7 @@ the phone as events and answered through the API.
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import mimetypes
 import os
@@ -230,7 +231,10 @@ class App:
         self.project_root = project_root
         self.token = token
         self.sessions: dict[str, ServerSession] = {}
-        self.model_lock = threading.Lock()
+        # One session at a time talks to the model when the server has one slot (llama-server -np 1). Behind a relay or
+        # a hosted API sessions may run side by side: [serve] serialize = false. With true, the lock covers the whole
+        # turn, so a session that waits for an approval also blocks the others until it is answered.
+        self.model_lock = threading.Lock() if settings.serve_serialize else contextlib.nullcontext()
         self.lock = threading.Lock()
         self.sandbox_report = sandbox_report
         self.default_mode = default_mode

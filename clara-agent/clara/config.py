@@ -70,6 +70,9 @@ show_reasoning = true
 # Phone app. Bind to loopback unless you run `clara serve --lan`.
 host = "127.0.0.1"
 port = 8765
+# true: one session at a time uses the model (single-slot llama-server). false: sessions run side by side
+# (a relay or an API that serves parallel requests).
+serialize = true
 """
 
 READ_ONLY_TOOLS = ("read_file", "list_files", "search", "ask_user", "todo")
@@ -99,6 +102,7 @@ class Settings:
     show_reasoning: bool = True
     serve_host: str = "127.0.0.1"
     serve_port: int = 8765
+    serve_serialize: bool = True
     home: Path = field(default_factory=clara_home)
     raw: dict[str, Any] = field(default_factory=dict)
 
@@ -191,6 +195,7 @@ def load_settings(home: Path | None = None) -> Settings:
     s.show_reasoning = bool(agent.get("show_reasoning", s.show_reasoning))
     s.serve_host = str(serve.get("host", s.serve_host))
     s.serve_port = int(serve.get("port", s.serve_port))
+    s.serve_serialize = bool(serve.get("serialize", s.serve_serialize))
     env_url = os.environ.get("CLARA_BASE_URL")
     if env_url:
         s.base_url = env_url.rstrip("/")
