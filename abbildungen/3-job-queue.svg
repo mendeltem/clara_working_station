@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" font-family="DejaVu Sans, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4a5560"/></marker>
+  </defs>
+  <rect width="1280" height="800" fill="#ffffff"/>
+  <text x="40" y="44" font-size="26" font-weight="bold" fill="#1b2430">Continuous runs: from a job file to an accepted result</text>
+  <text x="40" y="70" font-size="14" fill="#5b6672">Claude (or you) writes the job and a countable acceptance list; Clara works in rounds until every criterion holds.</text>
+
+  <!-- column 1 -->
+  <rect x="40" y="110" width="250" height="120" rx="12" fill="#f3f5f7" stroke="#8a96a3"/>
+  <text x="165" y="138" font-size="15" font-weight="bold" text-anchor="middle" fill="#1b2430">Job in offen/</text>
+  <text x="165" y="162" font-size="12.5" text-anchor="middle" fill="#3a4450">name.txt: task, folder, steps</text>
+  <text x="165" y="180" font-size="12.5" text-anchor="middle" fill="#3a4450">name.abnahme: file exists,</text>
+  <text x="165" y="198" font-size="12.5" text-anchor="middle" fill="#3a4450">contains, count, command</text>
+  <text x="165" y="216" font-size="12.5" text-anchor="middle" fill="#3a4450">optional BRAUCHT: prerequisites</text>
+
+  <line x1="165" y1="230" x2="165" y2="268" stroke="#4a5560" stroke-width="1.8" marker-end="url(#a)"/>
+  <rect x="40" y="270" width="250" height="110" rx="12" fill="#eef4fb" stroke="#1f6fd1"/>
+  <text x="165" y="298" font-size="15" font-weight="bold" text-anchor="middle" fill="#1b2430">dauerlauf</text>
+  <text x="165" y="322" font-size="12.5" text-anchor="middle" fill="#3a4450">takes the first job in</text>
+  <text x="165" y="340" font-size="12.5" text-anchor="middle" fill="#3a4450">name order whose</text>
+  <text x="165" y="358" font-size="12.5" text-anchor="middle" fill="#3a4450">prerequisites exist</text>
+
+  <!-- GPU handover -->
+  <rect x="40" y="440" width="250" height="150" rx="12" fill="#f3f5f7" stroke="#8a96a3"/>
+  <text x="165" y="468" font-size="15" font-weight="bold" text-anchor="middle" fill="#1b2430">GPU queue first</text>
+  <text x="165" y="492" font-size="12.5" text-anchor="middle" fill="#3a4450">heavy runs are queued with</text>
+  <text x="165" y="510" font-size="12.5" text-anchor="middle" fill="#3a4450">grossauftrag --einreihen;</text>
+  <text x="165" y="528" font-size="12.5" text-anchor="middle" fill="#3a4450">while it is not empty the</text>
+  <text x="165" y="546" font-size="12.5" text-anchor="middle" fill="#3a4450">dauerlauf hands over and</text>
+  <text x="165" y="564" font-size="12.5" text-anchor="middle" fill="#3a4450">one run trains at a time</text>
+  <line x1="165" y1="380" x2="165" y2="438" stroke="#4a5560" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#a)"/>
+  <text x="175" y="415" font-size="11.5" fill="#5b6672">queue not empty</text>
+
+  <!-- antreiber loop -->
+  <line x1="290" y1="325" x2="348" y2="325" stroke="#4a5560" stroke-width="1.8" marker-end="url(#a)"/>
+  <rect x="350" y="100" width="560" height="560" rx="16" fill="#fbfcfd" stroke="#1b2430" stroke-width="1.6"/>
+  <text x="630" y="128" font-size="16" font-weight="bold" text-anchor="middle" fill="#1b2430">antreiber: one round</text>
+
+  <rect x="380" y="146" width="500" height="70" rx="10" fill="#f3eefb" stroke="#6b3fb8"/>
+  <text x="630" y="170" font-size="14" font-weight="bold" text-anchor="middle" fill="#1b2430">a. Weiche decides the place</text>
+  <text x="630" y="192" font-size="12.5" text-anchor="middle" fill="#3a4450">data folder or ids -> local 27B (model started first);</text><text x="630" y="208" font-size="12.5" text-anchor="middle" fill="#3a4450">otherwise Clé, with the model and topic brief System One picks</text>
+
+  <line x1="630" y1="216" x2="630" y2="240" stroke="#4a5560" stroke-width="1.8" marker-end="url(#a)"/>
+  <rect x="380" y="242" width="500" height="90" rx="10" fill="#fff8e8" stroke="#c98a00" stroke-dasharray="7 4"/>
+  <text x="630" y="268" font-size="14" font-weight="bold" text-anchor="middle" fill="#1b2430">b. Clara works: agent.sh -> clara-lauf -> clara -p --yolo</text>
+  <text x="630" y="290" font-size="12.5" text-anchor="middle" fill="#3a4450">the open criteria and the critic's points are part of the message;</text>
+  <text x="630" y="308" font-size="12.5" text-anchor="middle" fill="#3a4450">sandbox on (writes only in listed folders, loopback TCP only);</text>
+  <text x="630" y="324" font-size="12.5" text-anchor="middle" fill="#3a4450">time fence per round (RUNDENZEIT), own process group</text>
+
+  <line x1="630" y1="332" x2="630" y2="356" stroke="#4a5560" stroke-width="1.8" marker-end="url(#a)"/>
+  <rect x="380" y="358" width="500" height="70" rx="10" fill="#fff" stroke="#8a96a3"/>
+  <text x="630" y="384" font-size="14" font-weight="bold" text-anchor="middle" fill="#1b2430">c. Round summary from Clara's session files</text>
+  <text x="630" y="406" font-size="12.5" text-anchor="middle" fill="#3a4450">tool calls, last commands, errors, loops (clara-sitzungen)</text>
+
+  <line x1="630" y1="428" x2="630" y2="452" stroke="#4a5560" stroke-width="1.8" marker-end="url(#a)"/>
+  <rect x="380" y="454" width="500" height="90" rx="10" fill="#eaf6f0" stroke="#1d8a5a" stroke-width="1.8"/>
+  <text x="630" y="480" font-size="14" font-weight="bold" text-anchor="middle" fill="#1b2430">d. Acceptance: count the facts, ask no model</text>
+  <text x="630" y="502" font-size="12.5" text-anchor="middle" fill="#3a4450">every line of name.abnahme is checked against the files;</text>
+  <text x="630" y="520" font-size="12.5" text-anchor="middle" fill="#3a4450">then the critic reads the result (severe / medium / small);</text>
+  <text x="630" y="536" font-size="12.5" text-anchor="middle" fill="#3a4450">System One's yes/no is only logged (shadow)</text>
+
+  <line x1="630" y1="544" x2="630" y2="568" stroke="#4a5560" stroke-width="1.8" marker-end="url(#a)"/>
+  <rect x="460" y="570" width="340" height="66" rx="10" fill="#fff" stroke="#1b2430"/>
+  <text x="630" y="596" font-size="14" font-weight="bold" text-anchor="middle" fill="#1b2430">all criteria met, no severe point?</text>
+  <text x="630" y="618" font-size="12.5" text-anchor="middle" fill="#3a4450">no -> next round (up to the round limit)</text>
+  <path d="M460,603 H365 V181 H378" fill="none" stroke="#4a5560" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#a)"/>
+
+  <!-- results -->
+  <rect x="960" y="470" width="280" height="80" rx="12" fill="#eaf6f0" stroke="#1d8a5a" stroke-width="2"/>
+  <text x="1100" y="500" font-size="15" font-weight="bold" text-anchor="middle" fill="#1b2430">erledigt/</text>
+  <text x="1100" y="524" font-size="12.5" text-anchor="middle" fill="#3a4450">accepted; protocol and blackboard</text>
+  <rect x="960" y="590" width="280" height="80" rx="12" fill="#fdeeee" stroke="#c0392b" stroke-width="1.6"/>
+  <text x="1100" y="620" font-size="15" font-weight="bold" text-anchor="middle" fill="#1b2430">steckengeblieben/</text>
+  <text x="1100" y="644" font-size="12.5" text-anchor="middle" fill="#3a4450">round limit, time fence or loop</text>
+  <path d="M800,590 H935 V510 H958" fill="none" stroke="#1d8a5a" stroke-width="2" marker-end="url(#a)"/>
+  <text x="942" y="560" font-size="12" font-weight="bold" fill="#1d8a5a">yes</text>
+  <path d="M800,620 H958" fill="none" stroke="#c0392b" stroke-width="1.6" marker-end="url(#a)"/>
+  <text x="812" y="652" font-size="12" fill="#c0392b">no, limit reached</text>
+
+  <rect x="960" y="110" width="280" height="300" rx="12" fill="#f3f5f7" stroke="#8a96a3"/>
+  <text x="1100" y="138" font-size="15" font-weight="bold" text-anchor="middle" fill="#1b2430">Guards around it</text>
+  <text x="980" y="166" font-size="12.5" fill="#3a4450">modellwache: local model only</text>
+  <text x="980" y="184" font-size="12.5" fill="#3a4450">while a need is registered</text>
+  <text x="980" y="212" font-size="12.5" fill="#3a4450">rundgang / werkzeugtest:</text>
+  <text x="980" y="230" font-size="12.5" fill="#3a4450">services, Clé, System One</text>
+  <text x="980" y="258" font-size="12.5" fill="#3a4450">fehlstart check: an agent that</text>
+  <text x="980" y="276" font-size="12.5" fill="#3a4450">ends in seconds without output</text>
+  <text x="980" y="294" font-size="12.5" fill="#3a4450">stops the chain, not the job</text>
+  <text x="980" y="322" font-size="12.5" fill="#3a4450">melden: short message to</text>
+  <text x="980" y="340" font-size="12.5" fill="#3a4450">your phone at the end</text>
+  <text x="980" y="368" font-size="12.5" fill="#3a4450">rollback: AGENT_HARNESS=hermes</text>
+  <text x="980" y="386" font-size="12.5" fill="#3a4450">(old harness, still installed)</text>
+</svg>

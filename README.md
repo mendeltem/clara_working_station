@@ -78,6 +78,8 @@ institution.
 
 ## How the parts are used
 
+![Overview since 29 October 2026: phone and terminal reach the workstation; inside it the Telegram bridge, clara serve and the job queue feed clara-agent, which runs in a kernel sandbox (Landlock writes, TCP only to three loopback ports, seccomp without UDP or ICMP); the Weiche relay sends data-free requests to the Clé model hub and anything with ids, cohort names or data paths to the local Qwen3.8-27B; System One (H2O-Lightning-4B) picks the model per turn, judges answers and gates commands; the exit guard passes data-free literature questions out; the only ways out are Clé, Telegram and the literature gate](abbildungen/1-clara-overview.png)
+
 | Part | Runs on | Sees patient data | Network | Used for |
 |---|---|---|---|---|
 | **Prompt** | any device: phone app, desktop PC, browser | no | yes | stating the goal; nothing else happens there |
@@ -334,6 +336,8 @@ conversation goes to `frontier`.
 
 ### One harness, Clé by default (since 29 October 2026)
 
+![One model request: fixed rules first (subject or session ids, cohort names and image files anywhere; data paths outside the topic brief; privacy markers in user or tool text) send it to the local 27B; otherwise System One picks the kind of work per user turn, which maps to a Clé model (clea, frontier, fast, vision); Clé answers through the relay, and System One judges the finished answer, a "no" sends the next turn to frontier; commands and writes take a separate path: deny rules, read tools, allow rules and mode, the System One gate, then the human](abbildungen/2-model-request.png)
+
 Hermes Agent and OpenCode were replaced by one harness, [clara-agent](clara-agent/) (standard library only), because
 both contacted their own servers by default: Hermes refreshes a model list from models.dev every 4 hours and checks
 GitHub for updates (no switch found), OpenCode fetches models.dev and checks opencode.ai for updates. One harness also
@@ -348,6 +352,8 @@ means one sandbox, one approval path and one session format to audit.
 - **Phone.** A Telegram bridge talks to `clara serve`; approvals that System One escalates arrive as buttons.
 - **Continuous runs.** The job queue and its driver now start `clara -p` per round; the round summary, the time
   fence and the loop check read clara-agent's session files.
+
+![Continuous runs: a job file with a countable acceptance list waits in offen/; the dauerlauf takes the first job whose prerequisites exist, or hands over to the GPU queue while heavy runs wait; each round of the antreiber lets the Weiche decide the place, runs clara -p in the sandbox, summarises the round from the session files, then checks every acceptance line against the files and asks the critic; all criteria met moves the job to erledigt/, otherwise the next round, and at the round limit to steckengeblieben/](abbildungen/3-job-queue.png)
 - **Research every morning at 06:00:** five research workers on workflow, token saving, privacy, news and evaluation
   of agents; report plus a Telegram summary.
 
@@ -400,7 +406,7 @@ licence CC BY-NC 4.0.
 
 ---
 
-## Clara agent: a candidate harness in this repository
+## Clara agent: the harness in this repository
 
 [clara-agent/](clara-agent/) is a coding agent written to replace Hermes Agent
 and OpenCode on this workstation with one program: a terminal session like
@@ -412,13 +418,16 @@ and listed read-denied folders that every child process inherits, permission
 rules kept outside the project, and `scripts/netaudit.sh` plus Wireshark filters
 to check from outside that nothing leaves.
 
-Status, honestly: built and tested on 2026-10-25 in a cloud container, not on
-Alita. 84 tests pass there, the sandbox check passes 22 of 22 on a Landlock
+Status: in use on Alita since 29 October 2026 (version 0.1.1, see
+[One harness, Clé by default](#one-harness-clé-by-default-since-29-october-2026)
+and [the changelog](clara-agent/CHANGELOG.md)). First built and tested on
+2026-10-25 in a cloud container, not on Alita. 84 tests pass there, the sandbox check passes 22 of 22 on a Landlock
 ABI 7 kernel, and a real Qwen3-1.7B on two CPU cores drove it through tool
 calls (file read in 106 to 130 s, file written in 153 s). What is open: the
 27B on this machine's `llama-server` with `--jinja`, the phone page in a real
 phone browser, and the comparison against Hermes and OpenCode on the 13-task
-set. Until that is measured, the two rows above stay the harness in use.
+set. The phone page is replaced in practice by the Telegram bridge; the 13-task
+comparison against Hermes and OpenCode is still open.
 Install and test commands: [clara-agent/INSTALL.md](clara-agent/INSTALL.md);
 threat model: [clara-agent/docs/PRIVACY.md](clara-agent/docs/PRIVACY.md).
 
@@ -442,9 +451,10 @@ threat model: [clara-agent/docs/PRIVACY.md](clara-agent/docs/PRIVACY.md).
 - The 13-task model test is small; it ranks models for this use, it does not
   benchmark them.
 - The `cmake` flags in the setup are reconstructed, not copied from the build log.
-- The diagrams are generated illustrations from before 29 October 2026 (they
-  still show Hermes Agent and OpenCode); where they and the tables differ, the
-  tables are right.
+- The workflow and setup diagrams at the top are generated illustrations from
+  before 29 October 2026 (they still show Hermes Agent and OpenCode). The three
+  drawn diagrams (overview, model request, continuous runs) show the state of
+  29 October 2026. Where a diagram and a table differ, the table is right.
 
 ---
 
