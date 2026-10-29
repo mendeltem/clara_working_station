@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clara-agent"
-version = "0.1.0"
+version = "0.1.1"
 description = "Clara: an offline coding agent for a local model server. Terminal first, phone app over WLAN, no network except the model you point it at."
 readme = "README.md"
 requires-python = ">=3.11"

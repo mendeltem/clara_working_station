@@ -99,3 +99,15 @@ def test_scheduler(clara_home):
     out = run_due(settings, runner=lambda s, t: ran.append(t["id"]))
     assert ran == ["a"] and [t["id"] for t in out] == ["a"]
     assert run_due(settings, runner=lambda s, t: ran.append(t["id"])) == []
+
+
+def test_project_root_never_climbs_to_home(tmp_path, monkeypatch):
+    from clara.config import find_project_root
+    home = tmp_path / "home"
+    (home / ".clara").mkdir(parents=True)
+    (home / ".git").mkdir()
+    work = home / "data" / "work" / "job"
+    work.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("CLARA_HOME", str(home / ".clara"))
+    assert find_project_root(work) == work

@@ -90,6 +90,8 @@ class SandboxReport:
     file_only_paths: list[str] = field(default_factory=list)
     connect_ports: list[int] = field(default_factory=list)
     bind_ports: list[int] = field(default_factory=list)
+    socket_sealed: bool = False
+    seal_reason: str = ""
     missing_paths: list[str] = field(default_factory=list)
     reason: str = ""
 
@@ -104,6 +106,8 @@ class SandboxReport:
             parts.append(f"TCP connect only to ports {self.connect_ports or '[]'}, bind only to {self.bind_ports or '[]'}")
         else:
             parts.append("TCP not restricted (kernel ABI < 4)")
+        if self.net_locked:
+            parts.append("sockets: " + (self.seal_reason if self.socket_sealed else f"UDP/Unix NOT sealed ({self.seal_reason})"))
         return "; ".join(parts)
 
 
@@ -197,7 +201,7 @@ def read_grant_rules(denied: list[str]) -> list[tuple[str, bool]]:
 
 
 def apply(write_paths, connect_ports=(), bind_ports=(), file_only_paths=("/dev", "/proc"),
-          restrict_net: bool = True, write_files=(), read_deny=()) -> SandboxReport:
+          restrict_net: bool = True, write_files=(), read_deny=(), unix_sockets: str = "seqpacket") -> SandboxReport:
     """Restrict the calling thread (and everything it starts from now on).
 
     Call this from the main thread before any other thread exists. Raises
@@ -281,6 +285,11 @@ def apply(write_paths, connect_ports=(), bind_ports=(), file_only_paths=("/dev",
     rep.applied = True
     rep.fs_locked = True
     rep.net_locked = want_net
+    if want_net:
+        # Landlock does not see UDP, ICMP or Unix sockets (DNS names can carry data; the systemd user bus can start
+        # a process outside every lock): a seccomp filter leaves only TCP sockets. See clara/netseal.py.
+        from . import netseal
+        rep.socket_sealed, rep.seal_reason = netseal.apply(unix_sockets)
     return rep
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.1 (2026-10-29)
+
+Running on the target workstation (Ubuntu 24.04, kernel 7.0, Landlock ABI 8, Python 3.13, RTX A5000) in place of Hermes Agent and OpenCode.
+
+- Approval service: `[permissions] approver_url` asks a local gate (Hermes smart-approval format, APPROVE / DENY / ESCALATE) after the rules and the mode and before the user; the request carries the project folder and Clara's own warnings. ESCALATE and any error fall through to the user.
+- Socket seal (`clara/netseal.py`): seccomp filter under Landlock, no root. Landlock limits TCP by port but does not see UDP, ICMP or Unix sockets, so a DNS query could carry data and `systemd-run --user` could start a process outside every lock. `sandbox.unix_sockets = "seqpacket"` (default) leaves only TCP and Unix SEQPACKET sockets (libcuda needs the latter); `"allow"` also allows Unix stream sockets, which PyTorch DataLoader workers need, and leaves the systemd/D-Bus route open. UDP, ICMP, raw sockets and io_uring are refused in both.
+- `sandbox.extra_connect_ports`: more loopback TCP ports for the locked tree (for example a local research gateway).
+- Fix: the project root no longer climbs to `$HOME` because Clara's own `~/.clara` looked like a project marker; under `--yolo` that had made the whole home directory writable.
+- Fix: `list_files` with the default pattern `**/*` (and `**/*.py`) now finds files in the project root.
+- `clara sandbox-check`: 27 checks (new: UDP to the DNS stub, Unix socket, outside name lookup, `systemd-run --user`, socketpair).
+
+Test results, 2026-10-29, on the workstation: `python -m pytest -q` 85 passed, 5 skipped; `clara sandbox-check` 27 of 27. `scripts/netaudit.sh` on real runs against the hospital model hub through a local relay: only loopback destinations (relay and approval gate); `curl`, a UDP DNS query to 8.8.8.8, `getent hosts` and `systemd-run` refused. `clara serve` API test (auth, origin check, two turns, approve/deny, agent question, mode switch, busy/interrupt, session list): 18 of 18. GPU: CUDA training with DataLoader workers, a spawn pool, nibabel and MONAI under the lock with `unix_sockets = "allow"`; with `"seqpacket"` the DataLoader hangs.
+
 ## 0.1.0 (2026-10-25)
 
 First version. Built and tested in an Ubuntu-based container (kernel 6.18, Landlock ABI 7, Python 3.13, 2 CPU cores, no GPU).

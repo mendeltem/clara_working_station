@@ -28,8 +28,8 @@ model, can you research it?" as the example:
    machine-checkable acceptance criteria.
 4. **Harness, outer loop.** Takes one method at a time from the queue and moves
    on to the next once it is done.
-5. **Harness, inner loop on the workstation GPU.** Clara, the local model,
-   writes the code, trains on open data (the WMH Segmentation Challenge
+5. **Harness, inner loop on the workstation GPU.** Clara (the
+   [clara-agent](clara-agent/) harness since 29 October 2026) writes the code, trains on open data (the WMH Segmentation Challenge
    training set), and an acceptance check counts the facts. If the check fails,
    the task goes back to Clara. The check asks no model.
 6. **Evaluation.** Every model is scored on the challenge test set with the
@@ -41,6 +41,12 @@ Everything after the prompt runs on the workstation: the calls to Clé, the
 research agents, the harness, training and evaluation. Clara sees the data and
 has no network access. The research agents reach the network and Clé, and never
 see the data.
+
+Since 29 October 2026 Clara's default model is Clé, not the local GPU model: a
+relay on the workstation sends every model request either to Clé (data-free
+work) or to the local Qwen3.8-27B (anything that names patient data), and the
+GPU holds the 27B only while such a request needs it. See
+[One harness, Clé by default](#one-harness-clé-by-default-since-29-october-2026).
 
 ---
 
@@ -77,7 +83,9 @@ institution.
 | **Prompt** | any device: phone app, desktop PC, browser | no | yes | stating the goal; nothing else happens there |
 | **Clé** | Charité on-premise model hub (intranet), called from the workstation | no | yes | interpreting the request, splitting it into questions and tasks |
 | **Research agents** | workstation, using Clé | no | yes | searching papers and code for methods and architectures |
-| **Clara** | workstation, Qwen3.8-27B via llama.cpp | yes | no | writing the code, training, running and inspecting models on the data |
+| **Clara** | workstation, clara-agent; model per turn: Clé for data-free work, local Qwen3.8-27B via llama.cpp for patient data | yes (local model only) | no (loopback only, kernel-enforced) | writing the code, training, running and inspecting models on the data |
+| **Relay** | workstation, port 8770 | checks every request | Clé only | one OpenAI endpoint for Clara: fixed rules first (data paths, subject ids, cohort names, image files, privacy markers -> local), then System One picks the Clé model per user turn and judges each answer |
+| **System One** | workstation, small decision model | no | no | model choice per turn, verdict per answer, approval gate for Clara's commands |
 | **Harness** | workstation | through Clara | no | the outer loop over methods and the inner loop until a task passes |
 | **Check** | workstation | counts only | no | acceptance criteria as countable facts; asks no model |
 | **Exit guard** | workstation, port 8899 | blocks it | only for checked questions | Clara's only way out: technical questions without data reference |
@@ -190,7 +198,8 @@ What the agents learned along the way is collected in the wiki
 
 - RTX A5000 with 24 GB (Ampere, sm_86), i9-12900K, 64 GB DDR RAM, Ubuntu 24.04,
   NVIDIA driver 550 (CUDA 12.4).
-- Clara's model is Qwen3.8-27B in Q4 via llama.cpp. Measured on 23 October on
+- Clara's local model is Qwen3.8-27B in Q4 via llama.cpp (since 29 October only
+  for patient data; Clé otherwise). Measured on 23 October on
   the same card against Nemotron 3.5 Bolt 74B-A9B: 100 % vs 88.5 % on a 13-task
   test (97.4 % vs 96.2 % at 4,096 tokens). Bolt generates 66–69 tok/s against
   about 30 but reasons longer, so the wall-time gain shrinks to about 20 %.
@@ -295,8 +304,8 @@ October 2026. The full scripts are in
 | Small model beside GPU jobs | Ternary-Bonsai-2-27B | `PQ2_0`, 6.8 GB (PrismML llama.cpp fork) | GPU | 45 tok/s, 92 % on the 13-task test |
 | Embeddings | bge-m3 | GGUF `Q8_0` | CPU, port 8001 | 0.23 GiB RAM |
 | Run watcher | Qwen2.5-0.5B-Instruct | GGUF `Q8_0` | CPU | |
-| System 1: approval gate | H2O-Lightning-4B; decider-4b v2.1 as comparison | GGUF `Q8_0` / `Q4_K_M`, `/v1/systemone` format | CPU, 8 threads | on 154 real shell commands: 0 of 36 approval-needed commands let through at p ≥ 0.8; 1.3–9.5 s per decision on the CPU. Shadow mode since 20 Oct 2026: logs next to the human, approvals stay manual |
-| Clé, planning and research | Charité on-premise model hub, OpenAI-compatible API | aliases `fast` (Qwen 3.8 Flash Next), `frontier` (DeepSeek V4.1 Flash), `eu` (Mistral Small 4), `light`, `clea` | hospital intranet, called from the workstation | 13-task test: `clea` 100 %, `frontier` 96 %, `fast` 92 % at 180 tok/s |
+| System 1: approval gate | H2O-Lightning-4B; decider-4b v2.1 as comparison | GGUF `Q8_0` / `Q4_K_M`, `/v1/systemone` format | CPU, 8 threads | on 154 real shell commands: 0 of 36 approval-needed commands let through at p ≥ 0.8; 1.3–9.5 s per decision on the CPU. Shadow mode 20-28 Oct 2026; live since 29 Oct as Clara's approval gate, model choice per turn and verdict per answer. On the GPU 0.2-0.3 s per decision, 4.9 GB VRAM; moves to the CPU when the 27B needs the card. decider-4b switched off on 29 Oct (unused) |
+| Clé, planning and research | Charité on-premise model hub, OpenAI-compatible API | aliases `fast` (Qwen 3.8 Flash Next), `frontier` (DeepSeek V4.1 Flash), `eu` (Mistral Small 4), `light`, `clea` | hospital intranet, called from the workstation | 13-task test: `clea` 100 %, `frontier` 96 %, `fast` 92 % at 180 tok/s. Per task type (29 Oct, 32 tasks x 2): see below |
 
 Reasoning models on the hub need `max_tokens` of about 6,000, otherwise the
 hidden reasoning uses up the budget and the answer comes back empty
@@ -309,6 +318,40 @@ sends everything else to the human; it never denies on its own. On the CPU a
 decision takes seconds, so a live gate needs the GPU
 ([entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/open_checks/system-one-decision-layer-for-agent-harnesses.md)).
 
+Model per task type, measured on 29 October 2026 (32 auto-scored synthetic tasks, two repeats, score and mean seconds):
+
+| type | fast | clea | frontier | eu | vision | light | used |
+|---|---|---|---|---|---|---|---|
+| trivial | 1.00 (1.1) | 1.00 (0.8) | 1.00 (0.9) | 0.70 (0.9) | 1.00 (1.2) | 1.00 (1.8) | clea |
+| coding (code run against hidden tests) | 0.90 (6.7) | 1.00 (2.8) | 1.00 (2.9) | 0.60 (1.3) | 0.90 (6.6) | 1.00 (7.8) | clea |
+| research (DOI recall, fake-paper refusal) | 0.67 (6.5) | 1.00 (1.6) | 1.00 (2.2) | 0.33 (0.9) | 0.75 (2.8) | 0.92 (4.8) | clea |
+| hard (statistics, scheduling, units) | 1.00 (1.4) | 1.00 (3.2) | 1.00 (3.1) | 0.00 (2.2) | 1.00 (2.1) | 0.83 (4.0) | frontier |
+| writing (format constraints) | 1.00 (3.7) | 1.00 (8.0) | 1.00 (7.8) | 0.90 (1.2) | 0.98 (3.6) | 1.00 (5.5) | fast |
+| image (synthetic shapes and plots) | 1.00 (1.3) | 0.38 (4.6) | 0.50 (4.2) | 0.38 (0.8) | 1.00 (1.3) | 1.00 (1.1) | vision |
+
+`eu` ignored "number only" and invented DOIs, so it is not used. On "hard" all strong models hit the ceiling; `frontier`
+stays there until harder tasks separate them. After System One judges an answer "no", the next turn of that
+conversation goes to `frontier`.
+
+### One harness, Clé by default (since 29 October 2026)
+
+Hermes Agent and OpenCode were replaced by one harness, [clara-agent](clara-agent/) (standard library only), because
+both contacted their own servers by default: Hermes refreshes a model list from models.dev every 4 hours and checks
+GitHub for updates (no switch found), OpenCode fetches models.dev and checks opencode.ai for updates. One harness also
+means one sandbox, one approval path and one session format to audit.
+
+- **Silence.** Clara's process tree may open TCP only to three loopback ports: the relay, the approval gate and the
+  exit guard for checked research. Landlock (writes, TCP ports) plus a seccomp filter (no UDP, ICMP, raw sockets,
+  io_uring; Unix stream sockets only for training jobs) enforce it in the kernel, without root. `strace` over real
+  runs shows loopback only; `curl`, a DNS query to 8.8.8.8, `getent hosts` and `systemd-run` fail.
+- **What leaves the machine,** each through its own small service: model requests to Clé (relay), Telegram messages
+  (the same bot as before, a new bridge), and checked literature questions (exit guard).
+- **Phone.** A Telegram bridge talks to `clara serve`; approvals that System One escalates arrive as buttons.
+- **Continuous runs.** The job queue and its driver now start `clara -p` per round; the round summary, the time
+  fence and the loop check read clara-agent's session files.
+- **Research every morning at 06:00:** five research workers on workflow, token saving, privacy, news and evaluation
+  of agents; report plus a Telegram summary.
+
 ### Software
 
 | Layer | What | Version / setting |
@@ -316,8 +359,7 @@ decision takes seconds, so a live gate needs the GPU
 | Inference server | [llama.cpp](https://github.com/ggml-org/llama.cpp), built from source | CUDA build for sm_86 (`cmake -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=86`), commit f64a498 |
 | Server environment | conda `qwen-serve` | Python 3.12, gcc 12, CUDA 12.4 |
 | Training environment | conda `dl` | Python 3.12, PyTorch 2.6.0+cu124, MONAI 1.5.2, nnU-Net 2.8.1, nibabel, scikit-learn |
-| Agent harness | [Hermes Agent](https://github.com/NousResearch/hermes-agent) | v0.21.5; its gateway receives prompts from the phone |
-| Coding agent | [OpenCode](https://github.com/sst/opencode) | 1.18.35, pointed at the local server |
+| Agent harness | [clara-agent](clara-agent/) | 0.1.1 since 29 Oct 2026 (replaces Hermes Agent v0.21.5 and OpenCode 1.18.35); terminal, `clara -p` for the job queue, `clara serve` behind the Telegram bridge |
 | Candidate replacement for both | [clara-agent/](clara-agent/) in this repository | 0.1.0; not yet run on Alita, see below |
 | Imaging tools | FSL (`bet`, `flirt`, `fast`, `bianca`), HD-BET, FreeSurfer 8.2.0 (`mri_synthseg`, `mri_WMHsynthseg`) | |
 | QC pages | [NiiVue](https://github.com/niivue/niivue) | bundled `niivue.umd.js`, pages work offline |
@@ -326,13 +368,17 @@ decision takes seconds, so a live gate needs the GPU
 
 | Port | Service | Role |
 |---|---|---|
-| 8000 | `llama-server` | Clara's model |
+| 8000 | `llama-server` | local Qwen3.8-27B, started only while a request with patient data needs it (not at boot) |
+| 8761 | `systemone-h2o` | System One (H2O-Lightning-4B) |
+| 8765 | `systemone-bridge` | approval gate for Clara's commands |
+| 8766 | `clara-serve` | clara-agent sessions for the phone bridge |
+| 8770 | `weiche-relay` | Clara's one model endpoint: Clé or local |
 | 8001 | `embedding-server` | bge-m3 on the CPU |
 | 8800 | `chat-gui` | chat interface |
 | 8810 | `qc-viewer` | QC pages |
 | 8899 | `guard-daemon` | exit guard, Clara's only way out |
 | – | `dauerlauf` | job queue, runs the agent continuously |
-| – | `hermes-gateway` | receives prompts from the phone |
+| – | `clara-telegram` | Telegram bridge, same bot as before (replaced `hermes-gateway` on 29 Oct 2026) |
 
 ### Data
 
@@ -386,12 +432,20 @@ threat model: [clara-agent/docs/PRIVACY.md](clara-agent/docs/PRIVACY.md).
 - Clara's own U-Net numbers come from folds that mix challenge training and test
   cases; they are not a leaderboard result.
 - The System 1 gate was measured on 154 commands labelled by one rater (the
-  agent, with a rubric written before any model ran); it runs in shadow mode only.
+  agent, with a rubric written before any model ran); it has been live since
+  29 Oct 2026 and still escalates many harmless commands to the human. Its
+  verdicts on answers are not yet checked against acceptance results.
+- The per-type model table uses 32 synthetic tasks; several types hit the
+  ceiling, so it ranks the hub models coarsely.
+- The routing of System One was measured on 60 labelled jobs (19 Oct: accuracy
+  0.88 at coverage 0.80; 29 Oct with six types: 0.68 at 0.62, mostly "hard"
+  read as "research", which maps to the same model).
 - The 13-task model test is small; it ranks models for this use, it does not
   benchmark them.
 - The `cmake` flags in the setup are reconstructed, not copied from the build log.
-- The diagrams are generated illustrations; where they and the tables differ,
-  the tables are right.
+- The diagrams are generated illustrations from before 29 October 2026 (they
+  still show Hermes Agent and OpenCode); where they and the tables differ, the
+  tables are right.
 
 ---
 

@@ -44,10 +44,21 @@ allowed_hosts = ["127.0.0.1", "::1", "localhost"]
 mode = "auto"
 # Extra writable folders besides the project folder and Clara's session folders.
 extra_write_paths = []
+# Extra loopback TCP ports the sandboxed tree may connect to (e.g. a local research gateway).
+extra_connect_ports = []
+# Unix sockets under the sandbox: "seqpacket" (strict; CUDA works, torch DataLoader workers do not) or "allow"
+# (training; leaves the systemd/D-Bus/resolved route open). UDP, ICMP and raw sockets are refused in both.
+unix_sockets = "seqpacket"
 # Folders the sandboxed process may not read at all (patient data, private keys).
 # Enforced by the kernel for every child process, so `cat` and symlinks cannot
 # get around it. Takes effect when the sandbox is on.
 read_deny = []
+
+[permissions]
+# Optional local approval service (Hermes smart-approval format: one <command> block, reply APPROVE / DENY /
+# ESCALATE). Asked after the rules and the mode, before the user; ESCALATE falls through to the user.
+# approver_url = "http://127.0.0.1:8765/v1/chat/completions"
+approver_timeout = 90
 
 [agent]
 max_turns = 60
@@ -78,6 +89,10 @@ class Settings:
     allowed_hosts: list[str] = field(default_factory=lambda: ["127.0.0.1", "::1", "localhost"])
     sandbox_mode: str = "auto"
     extra_write_paths: list[str] = field(default_factory=list)
+    extra_connect_ports: list[int] = field(default_factory=list)
+    unix_sockets: str = "seqpacket"
+    approver_url: str = ""
+    approver_timeout: float = 90.0
     read_deny: list[str] = field(default_factory=list)
     max_turns: int = 60
     context_warn_fraction: float = 0.85
@@ -166,6 +181,11 @@ def load_settings(home: Path | None = None) -> Settings:
     s.sandbox_mode = str(sandbox.get("mode", s.sandbox_mode))
     s.extra_write_paths = list(sandbox.get("extra_write_paths", []))
     s.read_deny = list(sandbox.get("read_deny", []))
+    s.extra_connect_ports = [int(x) for x in sandbox.get("extra_connect_ports", [])]
+    s.unix_sockets = str(sandbox.get("unix_sockets", s.unix_sockets))
+    perm = raw.get("permissions", {})
+    s.approver_url = str(perm.get("approver_url", ""))
+    s.approver_timeout = float(perm.get("approver_timeout", s.approver_timeout))
     s.max_turns = int(agent.get("max_turns", s.max_turns))
     s.context_warn_fraction = float(agent.get("context_warn_fraction", s.context_warn_fraction))
     s.show_reasoning = bool(agent.get("show_reasoning", s.show_reasoning))
@@ -223,7 +243,13 @@ class ProjectSettings:
 def find_project_root(start: Path | None = None) -> Path:
     """The project is the first ancestor with .clara/, CLARA.md or .git, else cwd."""
     cur = (start or Path.cwd()).resolve()
+    own_home = clara_home().resolve()
     for p in [cur, *cur.parents]:
-        if (p / ".clara").is_dir() or (p / "CLARA.md").is_file() or (p / ".git").exists():
+        # ~/.clara is Clara's own home, not a project marker: without this check every folder under $HOME
+        # resolved to $HOME, and --yolo made the whole home directory writable
+        marker = (p / ".clara").is_dir() and (p / ".clara").resolve() != own_home
+        if p == Path.home().resolve() and not (p / "CLARA.md").is_file():
+            break
+        if marker or (p / "CLARA.md").is_file() or (p / ".git").exists():
             return p
     return cur

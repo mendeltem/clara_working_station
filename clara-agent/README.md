@@ -66,6 +66,10 @@ sudo scripts/netaudit.sh --pcap -- clara      # same, plus a packet capture for 
 ```
 Details, threat model and the Wireshark filter: [docs/PRIVACY.md](docs/PRIVACY.md).
 
+## Approval gate and socket seal (0.1.1)
+
+`[permissions] approver_url` lets a local approval service decide before you are asked (APPROVE runs, ESCALATE asks you, DENY refuses). Under the sandbox a seccomp filter leaves only TCP sockets plus Unix SEQPACKET (`sandbox.unix_sockets = "allow"` for training jobs whose data loaders need Unix stream sockets): DNS queries, ICMP and `systemd-run` fail. See CHANGELOG.md for what was measured.
+
 ## Test status
 
 2026-10-25, Ubuntu-based container, kernel 6.18 (Landlock ABI 7), Python 3.13, 2 CPU cores: `python -m pytest -q` 84 passed, 4 skipped (the real-model tests, run separately); `clara sandbox-check` 22 of 22; real model Qwen3-1.7B Q8_0 on CPU: 4 of 4 end-to-end tests passed (file read through a tool call in both tool modes, file written in accept-edits mode, write refused headless); fresh-clone install test passed. The table of what each test proves, and what is still open, is in [docs/DETAILS.md](docs/DETAILS.md).

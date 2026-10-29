@@ -126,7 +126,8 @@ class ServerSession:
         self.waiters: dict[str, Waiter] = {}
         self.ui = WebUI(self)
         ps = ProjectSettings.load(project_root, app.settings.home)
-        self.permissions = Permissions(ps, mode=mode, asker=self.ui.ask_permission, project_root=project_root,
+        from .cli import _approver
+        self.permissions = Permissions(ps, mode=mode, approver=_approver(app.settings), asker=self.ui.ask_permission, project_root=project_root,
                                        home=app.settings.home)
         self.agent = Agent(app.settings, app.provider, default_registry(), self.permissions, session, self.ui,
                            project_root, tool_mode=app.settings.tool_mode)
@@ -661,8 +662,10 @@ def serve_command(args) -> int:
         mport = _server_port(settings.base_url)
         rep = sandbox.apply(sandbox.default_write_paths(project_root, settings.home, settings.extra_write_paths,
                                                         rules_writable=(perm_mode != "yolo")),
-                            connect_ports=[mport] if mport else [], bind_ports=[port],
-                            write_files=sandbox.default_write_files(settings.home), read_deny=settings.read_deny)
+                            connect_ports=([mport] if mport else []) + list(settings.extra_connect_ports)
+                            + ([_server_port(settings.approver_url)] if settings.approver_url else []), bind_ports=[port],
+                            write_files=sandbox.default_write_files(settings.home), read_deny=settings.read_deny,
+                        unix_sockets=settings.unix_sockets)
         if not rep.applied:
             print(f"! sandbox requested but not applied: {rep.reason}", file=sys.stderr)
     if getattr(args, "mock", False):

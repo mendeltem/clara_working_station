@@ -90,3 +90,15 @@ def test_remember_and_todo(ctx, project):
     assert "memory.md" in r.text and "tests live in tests/" in (project / ".clara/memory.md").read_text()
     r = run("todo", {"items": [{"text": "a", "status": "done"}, {"text": "b", "status": "pending"}]}, ctx)
     assert r.text == "[x] a\n[ ] b" and ctx.todo_state[1]["text"] == "b"
+
+
+def test_list_files_default_pattern_finds_root_files(tmp_path):
+    from clara.tools.base import ToolContext, default_registry
+    (tmp_path / "top.py").write_text("x")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "deep.py").write_text("x")
+    tool = default_registry().get("list_files")
+    ctx = ToolContext(project_root=tmp_path, home=tmp_path / "home", session_id="t2")
+    for pattern in (None, "**/*.py"):
+        out = tool.run({} if pattern is None else {"pattern": pattern}, ctx).text
+        assert "top.py" in out and "deep.py" in out

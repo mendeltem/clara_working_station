@@ -154,17 +154,28 @@ def make_provider(settings: Settings, args, status=None) -> Provider:
     return prov
 
 
+def _approver(settings: Settings):
+    if not settings.approver_url:
+        return None
+    from .approver import make_approver
+    return make_approver(settings.approver_url, settings.approver_timeout)
+
+
 def apply_sandbox(settings: Settings, project_root: Path, perm_mode: str, sandbox_mode: str,
                   bind_ports=()) -> sandbox.SandboxReport | None:
     want = sandbox_mode == "on" or (sandbox_mode == "auto" and perm_mode == "yolo")
     if not want:
         return None
     port = _server_port(settings.base_url)
-    connect_ports = [port] if port else []
+    connect_ports = ([port] if port else []) + list(settings.extra_connect_ports)
+    aport = _server_port(settings.approver_url) if settings.approver_url else None
+    if aport:
+        connect_ports.append(aport)
     rep = sandbox.apply(sandbox.default_write_paths(project_root, settings.home, settings.extra_write_paths,
                                                     rules_writable=(perm_mode != "yolo")),
                         connect_ports=connect_ports, bind_ports=list(bind_ports),
-                        write_files=sandbox.default_write_files(settings.home), read_deny=settings.read_deny)
+                        write_files=sandbox.default_write_files(settings.home), read_deny=settings.read_deny,
+                        unix_sockets=settings.unix_sockets)
     if not rep.applied:
         print(c(YELLOW, f"! sandbox requested but not applied: {rep.reason}"), file=sys.stderr)
     if rep.missing_paths:
@@ -198,7 +209,7 @@ def bootstrap(args, interactive: bool, ui) -> Runtime:
             ps.allow.append(rule)
     # Headless runs have no one to ask: the asker stays None so a refusal is
     # reported as "no user available", not as a denial by a user.
-    perms = Permissions(ps, mode=perm_mode, asker=ui.ask_permission if (ui and interactive) else None,
+    perms = Permissions(ps, mode=perm_mode, approver=_approver(settings), asker=ui.ask_permission if (ui and interactive) else None,
                         project_root=project_root, home=settings.home)
     if args.resume:
         session = resume_session(settings, args.resume)

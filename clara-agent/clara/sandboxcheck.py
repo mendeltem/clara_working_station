@@ -64,6 +64,20 @@ if rep.applied:
         check("tcp connect to other port", lambda: connect(bad_port), False)
         check("child curl to other port", lambda: subprocess.run(
             ["bash", "-c", f"exec 3<>/dev/tcp/127.0.0.1/{bad_port}"], check=True, capture_output=True), False)
+        results["socket_sealed"] = rep.socket_sealed
+        def udp():
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.sendto(b"x", ("127.0.0.53", 53)); s.close()
+        def unix():
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM); s.close()
+        check("udp to the DNS stub (name lookups can carry data)", udp, False)
+        check("unix socket (systemd/D-Bus/resolved)", unix, False)
+        check("child dig/getent of an outside name", lambda: subprocess.run(
+            ["bash", "-c", f"{sys.executable} -c 'import socket; socket.getaddrinfo(\"example.org\", 443)'"],
+            check=True, capture_output=True), False)
+        check("child systemd-run --user (escapes every lock)", lambda: subprocess.run(
+            ["systemd-run", "--user", "--quiet", "true"],
+            check=True, capture_output=True), False)
+        check("socketpair for pipes still works", lambda: socket.socketpair()[0].close(), True)
 print(json.dumps(results))
 """
 

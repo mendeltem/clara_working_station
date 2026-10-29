@@ -25,12 +25,12 @@ grid. The prediction can be a binary mask or a probability map
 
 ```bash
 conda activate dl
-cd /home/uchralt/clara_working_station/qc-unet-wmh
+cd clara_working_station/qc-unet-wmh
 python build_qc.py \
-  --flair "/home/uchralt/data/work/unet-qc/flair/{sub}.nii.gz" \
-  --ref   "/home/uchralt/data/work/unet-qc/ref/{sub}.nii.gz" \
-  --pred  "/home/uchralt/data/work/unet-qc/oof/{sub}.nii.gz" \
-  --meta  /home/uchralt/data/work/unet-qc/cases.csv
+  --flair "/path/to/unet-qc/flair/{sub}.nii.gz" \
+  --ref   "/path/to/unet-qc/ref/{sub}.nii.gz" \
+  --pred  "/path/to/unet-qc/oof/{sub}.nii.gz" \
+  --meta  /path/to/unet-qc/cases.csv
 ```
 
 The three paths above are examples: point them at the folders where the

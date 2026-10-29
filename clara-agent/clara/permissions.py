@@ -132,6 +132,7 @@ class Permissions:
     project_root: Path | None = None
     home: Path | None = None
     log: list[dict] = field(default_factory=list)
+    approver: Callable | None = None
 
     def set_mode(self, mode: str) -> None:
         if mode not in MODES:
@@ -193,6 +194,12 @@ class Permissions:
             return self._log(Decision(True, "yolo mode"), req)
         if self.mode == "accept-edits" and tool.kind == "write" and not req.outside_project and not req.protected:
             return self._log(Decision(True, "accept-edits mode"), req)
+        if self.approver is not None and not req.protected:
+            verdict = self.approver(req, self.project_root)
+            if verdict == "APPROVE":
+                return self._log(Decision(True, "approved by the local gate"), req)
+            if verdict == "DENY":
+                return self._log(Decision(False, "denied by the local gate"), req)
         if self.asker is None:
             return self._log(Decision(False, "needs approval and no user is available"), req)
         answer = self.asker(req)
