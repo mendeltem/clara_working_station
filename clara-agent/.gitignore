@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.clara/
+clara/app/icon-192.png
+clara/app/icon-512.png
+node_modules
+tests/package-lock.json

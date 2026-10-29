@@ -1,0 +1,2 @@
+# Code only: an agent harness. No case files, no embedded datasets.
+# Tests use synthetic files; the real-model test needs a local model server.

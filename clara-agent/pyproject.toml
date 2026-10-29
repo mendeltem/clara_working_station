@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clara-agent"
+version = "0.1.0"
+description = "Clara: an offline coding agent for a local model server. Terminal first, phone app over WLAN, no network except the model you point it at."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "mendeltem"}]
+keywords = ["agent", "llama.cpp", "offline", "privacy", "coding-assistant"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: Console",
+]
+# Zero runtime dependencies on purpose: everything is standard library so the
+# whole code path that could ever open a socket is auditable in this repository.
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+desktop = ["pywebview>=5"]
+
+[project.scripts]
+clara = "clara.cli:main"
+
+[project.urls]
+Repository = "https://github.com/mendeltem/clara-agent"
+
+[tool.setuptools.packages.find]
+include = ["clara", "clara.*"]
+
+[tool.setuptools.package-data]
+clara = ["app/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

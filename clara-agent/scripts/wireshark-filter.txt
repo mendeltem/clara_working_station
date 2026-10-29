@@ -1,0 +1,39 @@
+Wireshark display filters for a Clara session
+==============================================
+
+What you should see while Clara works, and nothing else:
+  * loopback TCP between Clara and the model server (port 8000 for llama-server)
+  * with the phone app: TCP between the workstation and the phone (port 8765), on the WLAN
+
+1. Everything that is NOT loopback (should contain only the phone traffic, or nothing):
+
+   !(ip.addr == 127.0.0.0/8) && !(ipv6.addr == ::1)
+
+2. Same, but also hide the phone (replace the network with yours):
+
+   !(ip.addr == 127.0.0.0/8) && !(ipv6.addr == ::1) && !(ip.addr == 192.168.178.0/24)
+
+   Anything left after this filter during a Clara session is traffic to investigate.
+   Note that the capture is machine-wide: browser, package updates, mDNS and NTP of
+   the system itself show up here too. scripts/netaudit.sh attributes connections
+   to Clara's process tree with strace; use the two together.
+
+3. DNS queries (Clara never resolves names; this list must stay empty while it runs):
+
+   dns
+
+4. Only the model server traffic (loopback, llama-server on 8000):
+
+   tcp.port == 8000 && ip.addr == 127.0.0.1
+
+5. Only the phone app:
+
+   tcp.port == 8765
+
+Capture filter for tcpdump/Wireshark that excludes loopback at capture time
+(fewer packets, same result as filter 1):
+
+   not (src net 127.0.0.0/8 or dst net 127.0.0.0/8 or src host ::1 or dst host ::1)
+
+Interfaces: capture on "any" (Linux) to see the WLAN and loopback together, or on
+"lo" alone to watch the model server traffic.

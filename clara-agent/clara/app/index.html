@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b2230">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Clara</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<style>
+  /* No external resources on purpose: fonts, icons and scripts are all here. */
+  :root {
+    --bg: #1b2230; --surface: #242d3d; --raised: #2e394c; --line: #3a4760;
+    --ink: #e6e9ef; --ink-2: #9aa5b8; --ink-3: #6f7b90;
+    --signal: #f2b33d; --signal-ink: #1b2230; --bad: #e0665b; --good: #7fc8a9; --think: #7d93b8;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --radius: 10px; --gutter: 16px; --sheet-h: 0px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--sans); }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+  a { color: var(--ink); }
+  code, pre, .mono { font-family: var(--mono); font-size: 0.86em; }
+
+  /* ---------- frame ---------- */
+  #top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) var(--gutter) 10px; background: var(--bg); border-bottom: 1px solid var(--line); }
+  #top .title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+  #top .sub { color: var(--ink-2); font-size: 13px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-3); flex: none; }
+  .dot.busy { background: var(--signal); animation: pulse 1.2s ease-in-out infinite; }
+  .dot.ok { background: var(--good); }
+  .dot.err { background: var(--bad); }
+  @keyframes pulse { 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .dot.busy { animation: none; } #sheet { transition: none; } }
+  .iconbtn { background: none; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); padding: 6px 10px; }
+  .iconbtn:hover { color: var(--ink); border-color: var(--ink-3); }
+
+  #stream { padding: 12px var(--gutter) calc(140px + var(--sheet-h) + env(safe-area-inset-bottom)); max-width: 820px; margin: 0 auto; }
+  #stream:empty::before { content: "Nothing yet. Write what Clara should do in the project folder; she asks before writing files or running commands."; display: block; color: var(--ink-2); padding: 40px 0; max-width: 46ch; }
+
+  /* ---------- transcript ---------- */
+  .turn { margin: 0 0 22px; }
+  .you { border-left: 3px solid var(--line); padding: 4px 0 4px 12px; color: var(--ink); white-space: pre-wrap; word-break: break-word; }
+  .you .who { display: block; color: var(--ink-2); font-size: 13px; margin-bottom: 2px; }
+  .reply { margin-top: 12px; }
+  .reply p { margin: 0 0 10px; word-break: break-word; }
+  .reply pre { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; overflow-x: auto; margin: 0 0 10px; white-space: pre; }
+  .reply code:not(pre code) { background: var(--surface); padding: 1px 5px; border-radius: 4px; }
+  .reply ul { margin: 0 0 10px; padding-left: 22px; }
+  .reply h1, .reply h2, .reply h3 { font-size: 1.05em; margin: 12px 0 6px; }
+  .think { color: var(--think); font-size: 14px; white-space: pre-wrap; word-break: break-word; border-left: 2px dotted var(--think); padding-left: 10px; margin: 8px 0; max-height: 7.5em; overflow: hidden; position: relative; cursor: pointer; }
+  .think.open { max-height: none; }
+  .think:not(.open)::after { content: "…"; position: absolute; right: 0; bottom: 0; background: var(--bg); padding-left: 10px; }
+  .tool { border: 1px solid var(--line); border-radius: var(--radius); margin: 8px 0; background: var(--surface); overflow: hidden; }
+  .tool summary { list-style: none; display: flex; gap: 8px; align-items: baseline; padding: 8px 12px; cursor: pointer; }
+  .tool summary::-webkit-details-marker { display: none; }
+  .tool .name { font-family: var(--mono); font-size: 14px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .tool .state { font-size: 12px; color: var(--ink-2); flex: none; }
+  .tool .state.err { color: var(--bad); }
+  .tool .state.run { color: var(--signal); }
+  .tool pre { margin: 0; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--bg); white-space: pre-wrap; word-break: break-word; max-height: 50vh; overflow: auto; font-size: 13px; color: var(--ink-2); }
+  .note { color: var(--ink-2); font-size: 13px; margin: 6px 0; }
+  .warn { color: var(--signal); font-size: 14px; margin: 8px 0; padding: 8px 12px; border: 1px solid var(--signal); border-radius: var(--radius); background: rgba(242,179,61,.08); }
+  .todo { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); font-size: 14px; }
+  .todo div { display: flex; gap: 8px; } .todo .done { color: var(--ink-3); text-decoration: line-through; } .todo .doing { color: var(--signal); }
+
+  /* ---------- composer ---------- */
+  #composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--bg); border-top: 1px solid var(--line); padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom)); }
+  #composer .row { display: flex; gap: 8px; max-width: 820px; margin: 0 auto; align-items: flex-end; }
+  #input { flex: 1; min-height: 44px; max-height: 40vh; resize: none; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 10px 12px; }
+  #send, #stop { height: 44px; padding: 0 16px; border-radius: var(--radius); border: 0; font-weight: 600; }
+  #send { background: var(--ink); color: var(--bg); }
+  #stop { background: var(--raised); color: var(--ink); display: none; }
+  body.busy #send { display: none; } body.busy #stop { display: inline-block; }
+  #composer .meta { max-width: 820px; margin: 6px auto 0; font-size: 12px; color: var(--ink-3); display: flex; gap: 12px; }
+
+  /* ---------- approval sheet: the one place with colour ---------- */
+  #sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 7; transform: translateY(110%); transition: transform .22s ease-out; background: var(--raised); border-top: 3px solid var(--signal); padding: 14px var(--gutter) calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -12px 30px rgba(0,0,0,.35); }
+  #sheet.show { transform: none; }
+  #sheet .inner { max-width: 820px; margin: 0 auto; }
+  #sheet .ask { color: var(--ink-2); font-size: 14px; }
+  #sheet .what { font-family: var(--mono); font-size: 14px; background: var(--bg); border-radius: var(--radius); padding: 10px 12px; margin: 8px 0; white-space: pre-wrap; word-break: break-word; max-height: 32vh; overflow: auto; }
+  #sheet .flags { color: var(--signal); font-size: 14px; margin: 4px 0 8px; }
+  #sheet .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #sheet .btns button { min-height: 48px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); }
+  #sheet .btns .allow { background: var(--signal); color: var(--signal-ink); border-color: var(--signal); font-weight: 700; }
+  #sheet .btns .deny { color: var(--bad); }
+  #sheet textarea { width: 100%; min-height: 48px; border: 1px solid var(--line); background: var(--bg); border-radius: var(--radius); padding: 10px 12px; margin: 8px 0; }
+
+  /* ---------- drawer ---------- */
+  #drawer { position: fixed; inset: 0; z-index: 8; display: none; }
+  #drawer.show { display: block; }
+  #drawer .veil { position: absolute; inset: 0; background: rgba(0,0,0,.5); }
+  #drawer .panel { position: absolute; top: 0; bottom: 0; left: 0; width: min(88vw, 360px); background: var(--surface); padding: calc(14px + env(safe-area-inset-top)) 14px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  #drawer h2 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin: 0 0 6px; }
+  #drawer .sess { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 8px 6px; border-radius: 8px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #drawer .sess:hover, #drawer .sess.current { background: var(--raised); }
+  #drawer .sess small { color: var(--ink-3); display: block; font-size: 12px; }
+  #drawer .kv { font-size: 13px; color: var(--ink-2); line-height: 1.6; word-break: break-word; }
+  #drawer .kv b { color: var(--ink); font-weight: 500; }
+  #drawer select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); }
+  #drawer .primary { width: 100%; min-height: 44px; border-radius: var(--radius); border: 0; background: var(--ink); color: var(--bg); font-weight: 600; }
+  #audit { font-family: var(--mono); font-size: 11px; color: var(--ink-2); white-space: pre; overflow-x: auto; max-height: 30vh; }
+  #gate { position: fixed; inset: 0; z-index: 9; background: var(--bg); display: none; place-items: center; padding: var(--gutter); }
+  #gate.show { display: grid; }
+  #gate .box { max-width: 46ch; } #gate input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); margin: 10px 0; }
+</style>
+</head>
+<body>
+<header id="top">
+  <button class="iconbtn" id="menu" aria-label="Sessions and settings">☰</button>
+  <div class="dot" id="dot" title="status"></div>
+  <div class="title"><span id="title">Clara</span><div class="sub" id="subtitle">connecting…</div></div>
+  <button class="iconbtn" id="newbtn" title="New session">+</button>
+</header>
+
+<main id="stream" aria-live="polite"></main>
+
+<div id="composer">
+  <div class="row">
+    <textarea id="input" rows="1" placeholder="What should Clara do?" autocomplete="off"></textarea>
+    <button id="send">Send</button>
+    <button id="stop">Stop</button>
+  </div>
+  <div class="meta"><span id="modechip">mode default</span><span id="ctxchip"></span><span id="netchip"></span></div>
+</div>
+
+<section id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-ask">
+  <div class="inner">
+    <div class="ask" id="sheet-ask">Clara wants to</div>
+    <div class="what" id="sheet-what"></div>
+    <div class="flags" id="sheet-flags"></div>
+    <div id="sheet-q" style="display:none"><textarea id="sheet-answer" placeholder="Your answer"></textarea></div>
+    <div class="btns" id="sheet-btns"></div>
+  </div>
+</section>
+
+<aside id="drawer">
+  <div class="veil" id="veil"></div>
+  <div class="panel">
+    <div><button class="primary" id="newbtn2">New session</button></div>
+    <div><h2>Sessions</h2><div id="sessions"></div></div>
+    <div><h2>Permissions</h2>
+      <select id="mode">
+        <option value="default">default: ask before writes and commands</option>
+        <option value="accept-edits">accept edits: ask only before commands</option>
+        <option value="yolo">yolo: no questions (sandbox recommended)</option>
+      </select>
+    </div>
+    <div><h2>This computer</h2><div class="kv" id="status">…</div></div>
+    <div><h2>Network audit (last entries)</h2><div id="audit">…</div></div>
+    <div><button class="iconbtn" id="forget">Forget token on this phone</button></div>
+  </div>
+</aside>
+
+<div id="gate"><div class="box"><strong>Paired token needed.</strong><p>Run <code>clara pair</code> on the computer and open the link it prints, or paste the token here.</p><input id="gate-token" placeholder="token"><button class="iconbtn" id="gate-ok">Use token</button></div></div>
+
+<script>
+(function () {
+  "use strict";
+  // ---------- token ----------
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+  if (hash.get("token")) { localStorage.setItem("clara-token", hash.get("token")); history.replaceState(null, "", location.pathname); }
+  let TOKEN = localStorage.getItem("clara-token") || "";
+  const $ = (id) => document.getElementById(id);
+  const gate = $("gate");
+  function needToken() { gate.classList.add("show"); }
+  $("gate-ok").onclick = () => { TOKEN = $("gate-token").value.trim(); if (TOKEN) { localStorage.setItem("clara-token", TOKEN); gate.classList.remove("show"); boot(); } };
+  $("forget").onclick = () => { localStorage.removeItem("clara-token"); location.reload(); };
+
+  async function api(path, opts) {
+    const o = Object.assign({ headers: {} }, opts || {});
+    o.headers["Authorization"] = "Bearer " + TOKEN;
+    if (o.body && typeof o.body !== "string") { o.body = JSON.stringify(o.body); o.headers["Content-Type"] = "application/json"; }
+    const r = await fetch(path, o);
+    if (r.status === 401) { needToken(); throw new Error("token rejected"); }
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+    return data;
+  }
+
+  // ---------- state ----------
+  let sid = localStorage.getItem("clara-session") || "";
+  let seq = 0, es = null, busy = false, currentTurn = null, currentReply = null, currentThink = null, pendingText = "";
+  const stream = $("stream"), input = $("input"), dot = $("dot");
+  const tools = new Map();
+
+  function setBusy(b) { busy = b; document.body.classList.toggle("busy", b); dot.className = "dot " + (b ? "busy" : "ok"); }
+  function scrollDown() { window.scrollTo({ top: document.body.scrollHeight }); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+  // Small markdown: code fences, inline code, bold, headings, bullet lists, paragraphs.
+  function md(text) {
+    const parts = text.split(/```/);
+    let out = "";
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 1) { out += "<pre><code>" + esc(parts[i].replace(/^[^\n]*\n/, "")) + "</code></pre>"; continue; }
+      const lines = esc(parts[i]).split("\n"); let inList = false, para = [];
+      const flush = () => { if (para.length) { out += "<p>" + para.join("<br>") + "</p>"; para = []; } };
+      for (let ln of lines) {
+        ln = ln.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        const h = ln.match(/^(#{1,3})\s+(.*)/);
+        if (h) { flush(); if (inList) { out += "</ul>"; inList = false; } out += "<h3>" + h[2] + "</h3>"; continue; }
+        const li = ln.match(/^\s*[-*]\s+(.*)/);
+        if (li) { flush(); if (!inList) { out += "<ul>"; inList = true; } out += "<li>" + li[1] + "</li>"; continue; }
+        if (inList) { out += "</ul>"; inList = false; }
+        if (ln.trim() === "") { flush(); } else { para.push(ln); }
+      }
+      flush(); if (inList) out += "</ul>";
+    }
+    return out;
+  }
+
+  // ---------- rendering ----------
+  function newTurn(userText) {
+    const t = document.createElement("div"); t.className = "turn";
+    if (userText != null) {
+      const y = document.createElement("div"); y.className = "you";
+      y.innerHTML = '<span class="who">You</span>' + esc(userText.replace(/^\[context:[^\]]*\]\n\n/, ""));
+      t.appendChild(y);
+    }
+    stream.appendChild(t); currentTurn = t; currentReply = null; currentThink = null; pendingText = "";
+    return t;
+  }
+  function ensureTurn() { if (!currentTurn) newTurn(null); return currentTurn; }
+  function replyBlock() {
+    if (!currentReply) { currentReply = document.createElement("div"); currentReply.className = "reply"; ensureTurn().appendChild(currentReply); }
+    return currentReply;
+  }
+  function addText(delta) { pendingText += delta; replyBlock().innerHTML = md(pendingText); scrollDown(); }
+  function finishText() { if (pendingText) { replyBlock().innerHTML = md(pendingText); } currentReply = null; pendingText = ""; currentThink = null; }
+  function addThink(delta) {
+    if (!currentThink) { currentThink = document.createElement("div"); currentThink.className = "think"; currentThink.onclick = () => currentThink.classList.toggle("open"); ensureTurn().appendChild(currentThink); }
+    currentThink.textContent += delta; scrollDown();
+  }
+  function toolCard(ev) {
+    finishText();
+    const d = document.createElement("details"); d.className = "tool";
+    d.innerHTML = '<summary><span class="name"></span><span class="state run">running</span></summary><pre></pre>';
+    d.querySelector(".name").textContent = ev.summary || ev.name;
+    ensureTurn().appendChild(d); tools.set(ev.id, d); scrollDown();
+  }
+  function toolDone(ev) {
+    const d = tools.get(ev.id); if (!d) return;
+    const st = d.querySelector(".state"); st.textContent = ev.decision + (ev.seconds >= 1 ? " · " + ev.seconds + "s" : "");
+    st.className = "state" + (ev.error ? " err" : "");
+    d.querySelector("pre").textContent = ev.text || "";
+    if (ev.error) d.open = true;
+  }
+  function note(cls, text) { finishText(); const n = document.createElement("div"); n.className = cls; n.textContent = text; ensureTurn().appendChild(n); scrollDown(); }
+  function todo(items) {
+    let box = ensureTurn().querySelector(".todo"); if (!box) { box = document.createElement("div"); box.className = "todo"; ensureTurn().prepend(box); }
+    box.innerHTML = items.map((i) => '<div class="' + (i.status === "done" ? "done" : i.status === "in_progress" ? "doing" : "") + '"><span>' + (i.status === "done" ? "✔" : i.status === "in_progress" ? "▶" : "○") + "</span><span>" + esc(i.text) + "</span></div>").join("");
+  }
+
+  // ---------- sheet ----------
+  const sheet = $("sheet");
+  function setSheet(show) { sheet.classList.toggle("show", show); document.documentElement.style.setProperty("--sheet-h", show ? Math.min(sheet.offsetHeight, 300) + "px" : "0px"); }
+  function showPermission(ev) {
+    $("sheet-ask").textContent = "Clara wants to run";
+    $("sheet-what").textContent = ev.summary + (ev.preview ? "\n\n" + ev.preview : "");
+    $("sheet-flags").textContent = (ev.warnings || []).join(" · ");
+    $("sheet-q").style.display = "none";
+    const b = $("sheet-btns"); b.innerHTML = "";
+    [["allow", "Allow once", "allow"], ["allow_session", "Allow this session", ""], ["allow_persist", "Allow and save rule", ""], ["deny", "Deny", "deny"]].forEach(([v, label, cls]) => {
+      const btn = document.createElement("button"); btn.textContent = label; btn.className = cls;
+      btn.onclick = () => { api("/api/permissions/" + ev.id, { method: "POST", body: { answer: v } }).catch((e) => note("warn", e.message)); setSheet(false); };
+      b.appendChild(btn);
+    });
+    setSheet(true);
+  }
+  function showQuestion(ev) {
+    $("sheet-ask").textContent = "Clara asks";
+    $("sheet-what").textContent = ev.question; $("sheet-flags").textContent = "";
+    $("sheet-q").style.display = "block"; $("sheet-answer").value = "";
+    const b = $("sheet-btns"); b.innerHTML = "";
+    const ok = document.createElement("button"); ok.textContent = "Answer"; ok.className = "allow";
+    ok.onclick = () => { api("/api/answers/" + ev.id, { method: "POST", body: { answer: $("sheet-answer").value } }).catch((e) => note("warn", e.message)); setSheet(false); };
+    const skip = document.createElement("button"); skip.textContent = "Skip"; skip.className = "deny";
+    skip.onclick = () => { api("/api/answers/" + ev.id, { method: "POST", body: { answer: "" } }).catch(() => {}); setSheet(false); };
+    b.appendChild(ok); b.appendChild(skip); setSheet(true); $("sheet-answer").focus();
+  }
+
+  // ---------- events ----------
+  function handle(ev) {
+    seq = Math.max(seq, ev.seq || 0);
+    switch (ev.kind) {
+      case "user": newTurn(ev.text); setBusy(true); break;
+      case "text": addText(ev.delta); break;
+      case "reasoning": addThink(ev.delta); break;
+      case "tool_start": toolCard(ev); break;
+      case "tool_result": toolDone(ev); break;
+      case "status": $("ctxchip").textContent = ev.text; break;
+      case "warning": note("warn", ev.text); break;
+      case "todo": todo(ev.items || []); break;
+      case "permission": showPermission(ev); break;
+      case "question": showQuestion(ev); break;
+      case "permission_done": case "question_done": setSheet(false); break;
+      case "turn_end": finishText(); break;
+      case "idle": finishText(); setBusy(false); currentTurn = null; break;
+      case "mode": $("modechip").textContent = "mode " + ev.mode; $("mode").value = ev.mode; break;
+      case "gap": openSession(sid).catch(() => {}); break;   // we fell behind the retained events: reload the snapshot
+    }
+  }
+  let reconnectTimer = null;
+  async function connect() {
+    if (es) { es.close(); es = null; }
+    if (!sid) return;
+    const mySid = sid;
+    let ticket;
+    try { ticket = (await api("/api/sessions/" + mySid + "/ticket", { method: "POST", body: {} })).ticket; }
+    catch (e) { dot.className = "dot err"; scheduleReconnect(); return; }
+    if (mySid !== sid) return;
+    // The bearer token never goes into a URL: the stream uses a single-use ticket.
+    es = new EventSource("/api/sessions/" + mySid + "/events?since=" + seq + "&ticket=" + encodeURIComponent(ticket));
+    es.onmessage = (m) => { try { handle(JSON.parse(m.data)); } catch (e) { console.error(e); } };
+    es.onerror = () => { dot.className = "dot err"; if (es) { es.close(); es = null; } scheduleReconnect(); };
+    es.onopen = () => { dot.className = "dot " + (busy ? "busy" : "ok"); };
+  }
+  function scheduleReconnect() { clearTimeout(reconnectTimer); reconnectTimer = setTimeout(() => { if (sid) connect(); }, 2000); }
+
+  // ---------- sessions ----------
+  function renderHistory(snap) {
+    stream.innerHTML = ""; tools.clear(); currentTurn = null; currentReply = null; currentThink = null; pendingText = "";
+    for (const m of snap.messages) {
+      if (m.role === "user") {
+        if (m.content.startsWith("<tool_response>")) { const d = document.createElement("details"); d.className = "tool"; d.innerHTML = '<summary><span class="name">tool result</span><span class="state"></span></summary><pre></pre>'; d.querySelector("pre").textContent = m.content.replace(/^<tool_response>\n?|\n?<\/tool_response>$/g, ""); ensureTurn().appendChild(d); continue; }
+        newTurn(m.content);
+      } else if (m.role === "assistant") {
+        if (m.content) { pendingText = m.content.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, "").trim(); if (pendingText) replyBlock().innerHTML = md(pendingText); finishText(); }
+        for (const tc of (m.tool_calls || [])) { let args = tc.function.arguments; try { args = JSON.parse(args); } catch (e) {} const first = args && typeof args === "object" ? Object.values(args)[0] : args; toolCard({ id: tc.id, name: tc.function.name, summary: tc.function.name + "(" + String(first == null ? "" : first).slice(0, 100) + ")" }); }
+      } else if (m.role === "tool") {
+        const d = [...tools.values()].find((x) => x.querySelector(".state").classList.contains("run"));
+        if (d) { d.querySelector(".state").textContent = m.content.startsWith("ERROR:") ? "error" : "ok"; d.querySelector(".state").className = "state" + (m.content.startsWith("ERROR:") ? " err" : ""); d.querySelector("pre").textContent = m.content; }
+      }
+    }
+    seq = snap.seq || 0; setBusy(snap.busy); currentTurn = snap.busy ? currentTurn : null;
+    $("title").textContent = snap.title || "Clara"; $("modechip").textContent = "mode " + snap.mode; $("mode").value = snap.mode;
+    for (const p of snap.pending || []) { /* a pending question re-appears through the event log */ }
+    scrollDown();
+  }
+  async function openSession(id) {
+    const snap = await api("/api/sessions/" + id);
+    sid = id; localStorage.setItem("clara-session", sid); renderHistory(snap); connect(); $("drawer").classList.remove("show");
+    if (snap.pending && snap.pending.length) { seq = 0; connect(); }  // replay so the sheet shows again
+  }
+  async function newSession() { const r = await api("/api/sessions", { method: "POST", body: {} }); seq = 0; await openSession(r.id); loadSessions(); }
+  async function loadSessions() {
+    const r = await api("/api/sessions"); const box = $("sessions"); box.innerHTML = "";
+    for (const s of r.sessions) { const b = document.createElement("button"); b.className = "sess" + (s.id === sid ? " current" : ""); b.innerHTML = esc(s.title || "(empty)") + "<small>" + s.id + " · " + s.messages + " msgs" + (s.busy ? " · running" : "") + "</small>"; b.onclick = () => openSession(s.id).catch((e) => note("warn", e.message)); box.appendChild(b); }
+  }
+  async function loadStatus() {
+    try {
+      const s = await api("/api/status"); const srv = s.server || {};
+      $("status").innerHTML = "<b>" + esc(s.model) + "</b> at " + esc(s.base_url) + (srv.kind ? " (" + esc(srv.kind) + (srv.n_ctx ? ", " + srv.n_ctx + " ctx" : "") + (srv.sleeping ? ", sleeping" : "") + ")" : "") + (srv.error ? "<br>server: " + esc(srv.error) : "") + "<br>project " + esc(s.project) + "<br>sandbox " + esc(s.sandbox) + "<br>allowed hosts " + esc(s.allowed_hosts.join(", ")) + "<br>guard allowed " + s.guard.allowed + ", blocked " + s.guard.blocked;
+      $("subtitle").textContent = (srv.error ? "model server unreachable" : s.model) + " · " + (s.sandbox === "off" ? "no sandbox" : "sandboxed");
+      $("netchip").textContent = "blocked " + s.guard.blocked;
+      const a = await api("/api/audit"); $("audit").textContent = a.entries.slice(-12).map((e) => e.ts.slice(11) + " " + e.decision + " " + e.event + " " + e.host + ":" + e.port).join("\n") || "no entries";
+    } catch (e) { $("subtitle").textContent = e.message; }
+  }
+
+  // ---------- composer ----------
+  async function send() {
+    const text = input.value.trim(); if (!text) return;
+    if (!sid) await newSession();
+    try { await api("/api/sessions/" + sid + "/messages", { method: "POST", body: { text } }); input.value = ""; input.style.height = ""; }
+    catch (e) { note("warn", e.message); }
+  }
+  $("send").onclick = send;
+  $("stop").onclick = () => api("/api/sessions/" + sid + "/interrupt", { method: "POST", body: {} }).catch(() => {});
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !/Mobi|Android/i.test(navigator.userAgent)) { e.preventDefault(); send(); } });
+  input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, window.innerHeight * 0.4) + "px"; });
+  $("menu").onclick = () => { $("drawer").classList.add("show"); loadSessions(); loadStatus(); };
+  $("veil").onclick = () => $("drawer").classList.remove("show");
+  $("newbtn").onclick = $("newbtn2").onclick = () => newSession().catch((e) => note("warn", e.message));
+  $("mode").onchange = () => { if (sid) api("/api/sessions/" + sid + "/mode", { method: "POST", body: { mode: $("mode").value } }).catch((e) => note("warn", e.message)); };
+
+  async function boot() {
+    if (!TOKEN) { needToken(); return; }
+    try {
+      await loadStatus();
+      if (sid) { try { await openSession(sid); } catch (e) { sid = ""; } }
+      if (!sid) { const r = await api("/api/sessions"); if (r.sessions.length) { await openSession(r.sessions[0].id); } }
+      dot.className = "dot ok";
+    } catch (e) { $("subtitle").textContent = e.message; dot.className = "dot err"; }
+  }
+  if (navigator.serviceWorker) { navigator.serviceWorker.register("/sw.js").catch(() => {}); }
+  boot();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+"""Configuration: where files live and what the defaults are.
+
+Global state lives in ~/.clara (override with CLARA_HOME). Project state lives in
+<project>/.clara. Nothing is ever written anywhere else unless a tool call that
+the user approved writes it.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import tomllib
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+DEFAULT_CONFIG_TOML = """# Clara configuration. Everything here is optional.
+
+[model]
+# OpenAI-compatible server on your own machine. llama-server: 8000 (your service),
+# Ollama: 11434, LM Studio: 1234, vLLM: 8000. Clara refuses anything that is not
+# in [network].allowed_hosts.
+base_url = "http://127.0.0.1:8000/v1"
+# Empty = take the first model that /v1/models reports.
+model = ""
+# "native": send tools in the request (llama-server --jinja, Ollama, vLLM).
+# "prompt": describe tools in the system prompt and parse <tool_call> text; works
+# with every server, used automatically when the server ignores the tools field.
+tool_mode = "native"
+# Seconds to wait for the first byte. Long on purpose: a sleeping llama-server
+# needs ~11 s to reload a 27B model, and a single slot can be busy.
+timeout = 600
+# Leave sampling to the server unless you measured a gain.
+# temperature = 0.6
+
+[network]
+# Hosts Clara's own process may ever connect to. Everything else is refused
+# before a packet leaves and written to ~/.clara/netaudit.log.
+allowed_hosts = ["127.0.0.1", "::1", "localhost"]
+
+[sandbox]
+# Landlock (Linux, no root). "auto": on when --yolo is used, off otherwise.
+# "on": always. "off": never.
+mode = "auto"
+# Extra writable folders besides the project folder and Clara's session folders.
+extra_write_paths = []
+# Folders the sandboxed process may not read at all (patient data, private keys).
+# Enforced by the kernel for every child process, so `cat` and symlinks cannot
+# get around it. Takes effect when the sandbox is on.
+read_deny = []
+
+[agent]
+max_turns = 60
+# Warn when the estimated prompt exceeds this share of the server context.
+context_warn_fraction = 0.85
+show_reasoning = true
+
+[serve]
+# Phone app. Bind to loopback unless you run `clara serve --lan`.
+host = "127.0.0.1"
+port = 8765
+"""
+
+READ_ONLY_TOOLS = ("read_file", "list_files", "search", "ask_user", "todo")
+
+
+def clara_home() -> Path:
+    return Path(os.environ.get("CLARA_HOME") or Path.home() / ".clara")
+
+
+@dataclass
+class Settings:
+    base_url: str = "http://127.0.0.1:8000/v1"
+    model: str = ""
+    tool_mode: str = "native"
+    timeout: float = 600.0
+    temperature: float | None = None
+    allowed_hosts: list[str] = field(default_factory=lambda: ["127.0.0.1", "::1", "localhost"])
+    sandbox_mode: str = "auto"
+    extra_write_paths: list[str] = field(default_factory=list)
+    read_deny: list[str] = field(default_factory=list)
+    max_turns: int = 60
+    context_warn_fraction: float = 0.85
+    show_reasoning: bool = True
+    serve_host: str = "127.0.0.1"
+    serve_port: int = 8765
+    home: Path = field(default_factory=clara_home)
+    raw: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def sessions_dir(self) -> Path:
+        return self.home / "sessions"
+
+    @property
+    def skills_dir(self) -> Path:
+        return self.home / "skills"
+
+    @property
+    def memory_file(self) -> Path:
+        return self.home / "memory.md"
+
+    @property
+    def audit_log(self) -> Path:
+        return self.home / "netaudit.log"
+
+    @property
+    def schedules_file(self) -> Path:
+        return self.home / "schedules.json"
+
+    @property
+    def backups_dir(self) -> Path:
+        return self.home / "backups"
+
+    @property
+    def history_file(self) -> Path:
+        # readline writes a temporary file next to the history and renames it,
+        # so the history lives in a folder that is writable under the sandbox.
+        return self.home / "state" / "history"
+
+
+def ensure_home(home: Path | None = None) -> Path:
+    home = home or clara_home()
+    for sub in ("sessions", "skills", "backups", "tls", "projects", "schedule-runs", "netaudit-runs", "state"):
+        (home / sub).mkdir(parents=True, exist_ok=True)
+    # Files the sandbox grants write access to must exist before the lock is applied.
+    for name in ("memory.md", "netaudit.log"):
+        f = home / name
+        if not f.exists():
+            f.touch()
+    cfg = home / "config.toml"
+    if not cfg.exists():
+        cfg.write_text(DEFAULT_CONFIG_TOML, encoding="utf-8")
+    return home
+
+
+def project_slug(root: Path) -> str:
+    """Stable file name for a project: readable tail plus a short hash of the full path."""
+    import hashlib
+    full = str(Path(root).resolve())
+    tail = re.sub(r"[^A-Za-z0-9._-]+", "-", Path(full).name).strip("-") or "project"
+    return f"{tail}-{hashlib.sha256(full.encode()).hexdigest()[:10]}"
+
+
+def load_settings(home: Path | None = None) -> Settings:
+    home = ensure_home(home)
+    raw: dict[str, Any] = {}
+    cfg = home / "config.toml"
+    try:
+        raw = tomllib.loads(cfg.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        # No silent fallback: say that the file was ignored and why.
+        import sys
+        print(f"clara: config {cfg} not readable ({exc}); using built-in defaults", file=sys.stderr)
+    model = raw.get("model", {})
+    net = raw.get("network", {})
+    sandbox = raw.get("sandbox", {})
+    agent = raw.get("agent", {})
+    serve = raw.get("serve", {})
+    s = Settings(home=home, raw=raw)
+    s.base_url = str(model.get("base_url", s.base_url)).rstrip("/")
+    s.model = str(model.get("model", s.model))
+    s.tool_mode = str(model.get("tool_mode", s.tool_mode))
+    s.timeout = float(model.get("timeout", s.timeout))
+    s.temperature = model.get("temperature", None)
+    s.allowed_hosts = list(net.get("allowed_hosts", s.allowed_hosts))
+    s.sandbox_mode = str(sandbox.get("mode", s.sandbox_mode))
+    s.extra_write_paths = list(sandbox.get("extra_write_paths", []))
+    s.read_deny = list(sandbox.get("read_deny", []))
+    s.max_turns = int(agent.get("max_turns", s.max_turns))
+    s.context_warn_fraction = float(agent.get("context_warn_fraction", s.context_warn_fraction))
+    s.show_reasoning = bool(agent.get("show_reasoning", s.show_reasoning))
+    s.serve_host = str(serve.get("host", s.serve_host))
+    s.serve_port = int(serve.get("port", s.serve_port))
+    env_url = os.environ.get("CLARA_BASE_URL")
+    if env_url:
+        s.base_url = env_url.rstrip("/")
+    env_model = os.environ.get("CLARA_MODEL")
+    if env_model:
+        s.model = env_model
+    return s
+
+
+# ---------------------------------------------------------------- project settings
+
+@dataclass
+class ProjectSettings:
+    """Per-project permission rules.
+
+    Stored in ~/.clara/projects/<slug>.json, outside the project folder on
+    purpose: with the sandbox on, the model can write anywhere in the project
+    but not here, so it cannot grant itself rules for the next session.
+    """
+    root: Path
+    home: Path = field(default_factory=clara_home)
+    allow: list[str] = field(default_factory=list)
+    deny: list[str] = field(default_factory=list)
+
+    @property
+    def path(self) -> Path:
+        return self.home / "projects" / f"{project_slug(self.root)}.json"
+
+    @classmethod
+    def load(cls, root: Path, home: Path | None = None) -> "ProjectSettings":
+        ps = cls(root=root, home=home or clara_home())
+        try:
+            data = json.loads(ps.path.read_text(encoding="utf-8"))
+            ps.allow = list(data.get("allow", []))
+            ps.deny = list(data.get("deny", []))
+        except FileNotFoundError:
+            pass
+        except (OSError, json.JSONDecodeError) as exc:
+            import sys
+            print(f"clara: {ps.path} unreadable ({exc}); starting with no rules", file=sys.stderr)
+        return ps
+
+    def save(self) -> None:
+        """Raises OSError when the file cannot be written (e.g. under the sandbox)."""
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(json.dumps({"project": str(self.root), "allow": self.allow, "deny": self.deny}, indent=2) + "\n",
+                             encoding="utf-8")
+
+
+def find_project_root(start: Path | None = None) -> Path:
+    """The project is the first ancestor with .clara/, CLARA.md or .git, else cwd."""
+    cur = (start or Path.cwd()).resolve()
+    for p in [cur, *cur.parents]:
+        if (p / ".clara").is_dir() or (p / "CLARA.md").is_file() or (p / ".git").exists():
+            return p
+    return cur

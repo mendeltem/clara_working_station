@@ -1,0 +1,8 @@
+{
+  "name": "clara-app-page-test",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}

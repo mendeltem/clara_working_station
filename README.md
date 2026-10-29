@@ -318,6 +318,7 @@ decision takes seconds, so a live gate needs the GPU
 | Training environment | conda `dl` | Python 3.12, PyTorch 2.6.0+cu124, MONAI 1.5.2, nnU-Net 2.8.1, nibabel, scikit-learn |
 | Agent harness | [Hermes Agent](https://github.com/NousResearch/hermes-agent) | v0.21.5; its gateway receives prompts from the phone |
 | Coding agent | [OpenCode](https://github.com/sst/opencode) | 1.18.35, pointed at the local server |
+| Candidate replacement for both | [clara-agent/](clara-agent/) in this repository | 0.1.0; not yet run on Alita, see below |
 | Imaging tools | FSL (`bet`, `flirt`, `fast`, `bianca`), HD-BET, FreeSurfer 8.2.0 (`mri_synthseg`, `mri_WMHsynthseg`) | |
 | QC pages | [NiiVue](https://github.com/niivue/niivue) | bundled `niivue.umd.js`, pages work offline |
 
@@ -351,6 +352,30 @@ licence CC BY-NC 4.0.
    systemd user units and checks paths, environments and weights.
 6. Run `system/werkzeuge/werkzeugtest --schnell`. It calls every tool on real
    input, so it says "computes", not just "installed".
+
+---
+
+## Clara agent: a candidate harness in this repository
+
+[clara-agent/](clara-agent/) is a coding agent written to replace Hermes Agent
+and OpenCode on this workstation with one program: a terminal session like
+Claude Code, a phone page served over the WLAN (prompts and tool approvals from
+the phone, which Hermes' gateway does today), and the model from `llama-server`
+on port 8000. Standard library only, no network path except the model server:
+an in-process allowlist with an audit log, a Landlock sandbox for writes, TCP
+and listed read-denied folders that every child process inherits, permission
+rules kept outside the project, and `scripts/netaudit.sh` plus Wireshark filters
+to check from outside that nothing leaves.
+
+Status, honestly: built and tested on 2026-10-25 in a cloud container, not on
+Alita. 84 tests pass there, the sandbox check passes 22 of 22 on a Landlock
+ABI 7 kernel, and a real Qwen3-1.7B on two CPU cores drove it through tool
+calls (file read in 106 to 130 s, file written in 153 s). What is open: the
+27B on this machine's `llama-server` with `--jinja`, the phone page in a real
+phone browser, and the comparison against Hermes and OpenCode on the 13-task
+set. Until that is measured, the two rows above stay the harness in use.
+Install and test commands: [clara-agent/INSTALL.md](clara-agent/INSTALL.md);
+threat model: [clara-agent/docs/PRIVACY.md](clara-agent/docs/PRIVACY.md).
 
 ---
 
