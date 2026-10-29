@@ -11,7 +11,7 @@ portfolio: only what was produced here is listed.*
 
 ## Workflow
 
-![Workflow: a prompt from a phone or desktop enters the workstation; inside it the Cloud API (Clé) and research agents find methods, then Clara (local LLM) writes code, trains on the GPU and checks the result in a loop until done; the model is scored on the test set against the leaderboard and an HTML QC page goes back to phone and desktop](workflow.png)
+![Workflow: a prompt from a phone or desktop enters the workstation; inside it the Cloud API (Clé) and research agents find methods, then Clara (local LLM) writes code, trains on the GPU and checks the result in a loop until done; the model is scored on the test set against the leaderboard and an HTML QC page goes back to phone and desktop](abbildungen/workflow.png)
 
 One request, read left to right, using "I want to create a WMH segmentation
 model, can you research it?" as the example:
@@ -101,7 +101,6 @@ Bars: mean over the same 20 cases; whiskers: 95 % bootstrap interval over cases 
 
 | | |
 |---|---|
-| **[WMH: eleven methods compared](https://mendeltem.github.io/clara_working_station/qc-wmh-verfahren/)** | Axial viewer: reference on the left in blue, up to three methods on the right as outlines, lesion F1 per case, slider marks where the findings are, click a lesion for its values. Plus one page per method and a staged comparison with paired tests. |
 
 ![Dice against reference lesion volume on 20 public test cases for monai-attentionunet and the best BIANCA setting; both rise with lesion load, below 5 ml mean Dice 0.621 and 0.483, from 5 ml on 0.816 and 0.754](dice_vs_load.svg)
 
@@ -268,7 +267,7 @@ unpublished manuscripts. Entries that turn out wrong are not deleted but marked
 
 ## Rebuild it: setup
 
-![Setup: a five-layer stack inside the workstation, from hardware (RTX A5000 24 GB, i9-12900K, 64 GB DDR RAM, NVMe) over Ubuntu 24.04 with NVIDIA 550 / CUDA 12.4 and the runtimes (llama.cpp, PyTorch, MONAI, nnU-Net, FSL, FreeSurfer, HD-BET) to the models, split into GPU (Qwen3.8-27B for Clara, Bonsai-27B beside training) and CPU (bge-m3 embeddings, H2O-Lightning-4B as System 1 gate, decider-4b), and the agents on top (Hermes Agent, OpenCode, check, System 1 gate, harness); the prompt comes from a phone, Clé is reached over the intranet API, WMH Challenge data come in, an HTML QC page goes out](setup.png)
+![Setup: a five-layer stack inside the workstation, from hardware (RTX A5000 24 GB, i9-12900K, 64 GB DDR RAM, NVMe) over Ubuntu 24.04 with NVIDIA 550 / CUDA 12.4 and the runtimes (llama.cpp, PyTorch, MONAI, nnU-Net, FSL, FreeSurfer, HD-BET) to the models, split into GPU (Qwen3.8-27B for Clara, Bonsai-27B beside training) and CPU (bge-m3 embeddings, H2O-Lightning-4B as System 1 gate, decider-4b), and the agents on top (Hermes Agent, OpenCode, check, System 1 gate, harness); the prompt comes from a phone, Clé is reached over the intranet API, WMH Challenge data come in, an HTML QC page goes out](abbildungen/setup.png)
 
 Everything needed to set up the same system on another machine. Numbers are
 measured on Alita unless marked otherwise; versions are those in use in
@@ -451,7 +450,7 @@ threat model: [clara-agent/docs/PRIVACY.md](clara-agent/docs/PRIVACY.md).
 
 ## What is not here
 
-![Where data may go: three nested zones. Class 1, open challenge data, may go to public places such as GitHub and the cloud; class 2, data under a data use agreement, may go as far as the institution's Clé model hub; class 3, own patient cohorts, stays on the workstation with Clara, and derived results such as lesion masks keep their class. The exit guard lets only data-free questions out, a System 1 gate checks shell commands, and each task is split: reading the images happens on the workstation, code, method and write-up go to the hub](data-classes.png)
+![Where data may go: three nested zones. Class 1, open challenge data, may go to public places such as GitHub and the cloud; class 2, data under a data use agreement, may go as far as the institution's Clé model hub; class 3, own patient cohorts, stays on the workstation with Clara, and derived results such as lesion masks keep their class. The exit guard lets only data-free questions out, a System 1 gate checks shell commands, and each task is split: reading the images happens on the workstation, code, method and write-up go to the hub](abbildungen/data-classes.png)
 
 Patient data and results on in-house cohorts stay on the machine. Only work on
 public datasets is published: the QC above runs on the *WMH Segmentation
