@@ -182,6 +182,36 @@ the agent wiki [blackbeard_wikki](https://github.com/mendeltem/blackbeard_wikki)
 The consequence for every model comparison: record where the mask came from and
 which evaluation function was used, and change one component at a time.
 
+## A second line: cerebral microbleeds
+
+Since September Clara also works on cerebral microbleeds (CMB): dark dots of 2–10 mm on T2\*-weighted or
+susceptibility-weighted MRI. Public data: the training set of the VALDO 2021 challenge, Task 2 (Sudre et al. 2024,
+[doi:10.1016/j.media.2023.103029](https://doi.org/10.1016/j.media.2023.103029); 72 scans from three cohorts, Philips 3 T,
+GE 1.5 T and GE 3 T, slices 0.8–4 mm). The same pipeline also runs on two hospital cohorts that never leave the machine; no
+number from them appears here.
+
+![Two-stage microbleed detector](abbildungen/7-cmb-two-stage.png)
+
+The design is taken from MicrobleedNet (Sundaresan et al. 2023,
+[doi:10.3389/fninf.2023.1204186](https://doi.org/10.3389/fninf.2023.1204186)): a U-Net proposes candidates at high
+sensitivity, a small classifier judges a 16 mm cube around each one. The change: every site, scanner and sequence gets its
+own U-Net, but there is one classifier, trained on the candidates of all sites.
+
+On the 57 VALDO scans used here (out-of-fold, 5-fold CV; 15 of the 72 were spent earlier as a held-out set), stage 1 alone
+reaches lesion F1 0.565, with the CSF rule 0.627, with the shared classifier 0.610 (precision 0.624, recall 0.597, 0.88 false
+alarms per scan). Stage 1 reaches 57 % of the reference CMB under 2 mm, 86 % of 2–3 mm and 89 % of 3–5 mm: half of the
+smallest never become a candidate, so no second stage can find them.
+
+| Finding (VALDO, paired over cases) | Number |
+|---|---|
+| [The vessel inpainting of the original removes microbleeds.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/cmb_detection/findings/vessel-inpainting-removes-microbleeds-on-thick-slices.md) | touches 109 of 236 CMB; without it F1 0.470 → 0.588 |
+| [Half of the false alarms lie in free CSF.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/cmb_detection/findings/csf-rule-removes-false-alarms-without-loss.md) One SynthSeg rule without parameters. | 98 of 176 false alarms; F1 0.585 → 0.646, 0 CMB lost |
+| [An in-plane first level beats isotropic 3D nets.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/cmb_detection/findings/anisotropic-first-level-beats-isotropic-3d-nets.md) | F1 0.404 vs 0.245 (attention U-Net, 40 epochs) |
+| [Sensitivity levers do not raise lesion F1.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/cmb_detection/findings/sensitivity-levers-do-not-raise-lesion-f1.md) | blob loss: small-CMB recall 0.52 → 0.64, F1 −0.044 |
+| [The training loss does not rank networks.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/cmb_detection/findings/training-loss-does-not-rank-networks-or-schedules.md) | same loss 0.154: F1 0.176 vs 0.404 |
+| [The published MicrobleedNet code never trains its teacher.](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/cmb_detection/findings/microbleednet-never-trains-its-teacher.md) | code reading |
+| Ten second-stage modules and a merged, more sensitive first stage against the plain classifier, rules fixed before the runs | best on VALDO +0.048; confirmed over all cohorts: none |
+
 ---
 
 ## The system behind it
