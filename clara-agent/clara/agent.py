@@ -129,6 +129,18 @@ class Agent:
                 self.ui.on_turn_end("")
                 return ""
             if not calls:
+                if not text.strip() and not getattr(self, "_leer_versucht", False):
+                    # an empty final answer (reasoning used the whole budget, or a small fallback model gave up) is
+                    # not a result: ask once more, then say so instead of ending the turn in silence
+                    self._leer_versucht = True
+                    self.ui.on_warning("the model returned an empty answer; asking once more")
+                    self.session.append({"role": "user", "content": "(Your last reply was empty. Continue the task: "
+                                                                    "use a tool or give your answer now.)"})
+                    continue
+                if not text.strip():
+                    text = "[no answer: the model returned an empty reply twice; try again or start a new session]"
+                    self.ui.on_warning(text)
+                self._leer_versucht = False
                 self.session.append({"role": "assistant", "content": text})
                 final_text = text
                 break

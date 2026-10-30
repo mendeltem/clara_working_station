@@ -24,6 +24,8 @@ OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))   # Clé a
 _wahl = {}            # conversation+turn key -> (Clé alias, type)
 _eskaliert = {}       # conversation key -> model whose last turn System One judged 'nein'
 STARK = "frontier"
+OEFFENTLICH_LESEN = tuple(os.path.expanduser(p) for p in (
+    "~/blackbeard_wikki/", "~/local_agentic_system/system/skills-clara/", "~/.clara/skills/", "~/.clara-lauf-cle/skills/"))
 _lock = threading.Lock()
 
 
@@ -52,6 +54,52 @@ def hat_bild(messages):
                                                           for p in m["content"]) for m in messages)
 
 
+LESEBEFEHLE = {"cat", "head", "tail", "ls", "grep", "sed", "echo", "wc", "sort", "uniq", "cut", "find", "awk", "tr", "nl"}
+
+
+def nur_lesen_oeffentlich(cmd):
+    """A shell command that only reads public files (wiki, skills): every path in it is public, every command of the
+    pipeline a reading one, no redirection into a file."""
+    if re.search(r"[^2]>|`|\$\(", cmd.replace("2>/dev/null", "").replace("2>&1", "")):
+        return False
+    pfade = re.findall(r"(?:~|/)[^\s;|&'\"<>()]+", cmd)
+    pfade = [p for p in pfade if p not in ("/dev/null",)]
+    if not pfade or not all(os.path.abspath(os.path.expanduser(p)).startswith(OEFFENTLICH_LESEN) for p in pfade):
+        return False
+    teile = [t.strip().split()[0] for t in re.split(r"[;|&]+", cmd) if t.strip()]
+    return all(t in LESEBEFEHLE for t in teile)
+
+
+def kuerzen(messages, zeichen):
+    """Fit a conversation into a small local context: keep the system prompt, the first user message and as many of
+    the latest messages as fit (a tool result is never kept without the call that produced it)."""
+    sysm = [m for m in messages if m.get("role") == "system"][:1]
+    erste = next((m for m in messages if m.get("role") == "user"), None)
+    rest = [m for m in messages if m is not erste and m.get("role") != "system"]
+    behalten, n = [], len(json.dumps(sysm + [erste]))
+    for m in reversed(rest):
+        g = len(json.dumps(m))
+        if n + g > zeichen:
+            break
+        behalten.insert(0, m); n += g
+    while behalten and behalten[0].get("role") == "tool":
+        behalten.pop(0)                                    # drop orphan tool results at the cut
+    hinweis = {"role": "user", "content": "(Earlier steps of this session were dropped to fit the local model; "
+                                          "continue from the latest steps.)"}
+    return sysm + ([erste] if erste else []) + [hinweis] + behalten
+
+
+def herkunft(body):
+    """Who sent the request when the caller did not say: clara-agent sends tools; its project line tells Telegram
+    (clara serve in ~/cle-arbeit) from the job queue (clara-lauf in a project folder)."""
+    if not body.get("tools"):
+        return "skript"
+    m = re.search(r"\[context: project=([^,\]]+)", text_of(body.get("messages") or []))
+    if not m:
+        return "agent"
+    return "telegram/serve" if m.group(1).rstrip("/").endswith("/cle-arbeit") else "auftrag"
+
+
 def gespraech(messages):
     first = next((m for m in messages if m.get("role") == "user"), {})
     sysm = next((m for m in messages if m.get("role") == "system"), {})
@@ -71,15 +119,36 @@ def route(body):
     # data is ACCESSED: the project line of the system prompt and the arguments of tool calls (read, write, bash).
     # A path that is only mentioned in text (a log, a script, the brief) is structure, not content -- the same line as
     # for Claude in system/CLAUDE.md. Plain-word markers count in user and tool text outside the topic brief.
+    # Reading a public file (the wiki on GitHub, Clara's own skills) is not data: drop those tool results before the
+    # checks (29.10.2026, the wiki areas name cohorts and every planning turn went to the GPU)
+    aufrufe = {tc.get("id"): tc.get("function", {}) for m in msgs for tc in (m.get("tool_calls") or [])}
+    def oeffentlich_gelesen(m):
+        f = aufrufe.get(m.get("tool_call_id"), {})
+        try:
+            pfad = json.loads(f.get("arguments") or "{}").get("path", "")
+        except ValueError:
+            pfad = ""
+        if f.get("name") in ("read_file", "list_files", "search"):
+            return bool(pfad) and os.path.abspath(os.path.expanduser(pfad)).startswith(OEFFENTLICH_LESEN)
+        if f.get("name") == "bash":
+            try:
+                cmd = json.loads(f.get("arguments") or "{}").get("command", "")
+            except ValueError:
+                return False
+            return nur_lesen_oeffentlich(cmd)
+        return False
+    msgs = [m for m in msgs if not (m.get("role") == "tool" and oeffentlich_gelesen(m))]
     voll = text_of(msgs)
-    zugriff = "\n".join([text_of([m for m in msgs if m.get("role") == "system"])] +
-                        [json.dumps(tc.get("function", {}), ensure_ascii=False)
-                         for m in msgs for tc in (m.get("tool_calls") or [])])
-    ids = [g for g in weiche.schutzgruende(voll, pfade=False) if g.startswith("pattern") and ".nii" not in g]
-    schutz = ids
+    # data ACCESS: the project line clara-agent puts into the conversation, and the arguments of tool calls; not the
+    # rest of the system prompt (skill descriptions mention file types, the memory explains the rules)
+    projekt = " ".join(re.findall(r"\[context: project=[^\]]*\]", voll))
+    zugriff = "\n".join([projekt] + [json.dumps(f, ensure_ascii=False) for f in aufrufe.values()])
+    schutz = [g for g in weiche.schutzgruende(voll, pfade=False) if g.startswith("pattern") and ".nii" not in g]
     schutz += [g for g in weiche.schutzgruende(zugriff, pfade=True)
                if g.startswith("data path") or (g.startswith("pattern") and ".nii" in g)]
-    schutz += [g for g in weiche.schutzgruende(ohne_brief(text_of([m for m in msgs if m.get("role") != "system"])),
+    # plain-word markers are the user's (or the job's) own flag: only in user messages, outside the topic brief;
+    # our code and docs quote "Patientendaten" as rule text, so tool output does not count here
+    schutz += [g for g in weiche.schutzgruende(ohne_brief(text_of([m for m in msgs if m.get("role") == "user"])),
                                                pfade=False) if g.startswith("marker")]
     if schutz or wunsch == "lokal":
         return "lokal", None, schutz or ["model lokal requested"], None
@@ -89,6 +158,8 @@ def route(body):
         return "cle", wunsch, ["model requested"], turn
     if hat_bild(msgs):
         return "cle", K["arten"]["bild"]["modell"], ["image in request"], turn
+    if K.get("modellwahl", "system1") == "fest":
+        return "cle", K["standard_modell"], ["fixed model (modellwahl fest)"], turn
     key = conv + hashlib.sha256(frage.encode()).hexdigest()[:12]   # one decision per user turn, kept in its tool loop
     with _lock:
         if key in _wahl:
@@ -115,6 +186,22 @@ def urteil_im_hintergrund(turn, modell, antwort):
         protokoll({"zeit": time.strftime("%FT%T"), "bewertung": v["urteil"], "p": v["p"], "art": turn["art"],
                    "modell": modell, "conv": turn["conv"]})
     threading.Thread(target=arbeit, daemon=True).start()
+
+
+def verbrauch_aus(raw, stream):
+    """(prompt_tokens, completion_tokens, cached_tokens) the server reported, or (None, None, None)."""
+    try:
+        if not stream:
+            u = json.loads(raw).get("usage") or {}
+        else:
+            u = {}
+            for line in raw.splitlines():
+                if line.startswith(b"data: ") and b'"usage"' in line:
+                    u = json.loads(line[6:]).get("usage") or u
+        det = u.get("prompt_tokens_details") or {}
+        return u.get("prompt_tokens"), u.get("completion_tokens"), det.get("cached_tokens")
+    except (ValueError, AttributeError):
+        return None, None, None
 
 
 def antwort_aus(raw, stream):
@@ -211,6 +298,7 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             return self._json(400, {"error": "invalid json"})
         t0 = time.time()
+        quelle = str(body.pop("x_quelle", "") or self.headers.get("X-Clara-Quelle", "") or herkunft(body))[:40]
         try:
             ort, modell, gruende, turn = route(body)
             if ort == "lokal":
@@ -218,7 +306,9 @@ class Handler(BaseHTTPRequestHandler):
                 url, hdr = K["lokal_url"].rstrip("/") + "/chat/completions", {}
             else:
                 body["model"] = modell
-                body["max_tokens"] = max(int(body.get("max_tokens") or 0), 8000)
+                body["max_tokens"] = max(int(body.get("max_tokens") or 0), 24000)   # reasoning counts against it (test run 9)
+                if body.get("stream"):
+                    body["stream_options"] = {"include_usage": True}   # the hub reports tokens in the last chunk
                 body.pop("chat_template_kwargs", None)
                 url, hdr = K["cle_url"].rstrip("/") + "/chat/completions", {"Authorization": f"Bearer {weiche.cle_key()}"}
         except Exception as e:  # noqa: BLE001 -- a broken Weiche never sends to Clé
@@ -233,7 +323,23 @@ class Handler(BaseHTTPRequestHandler):
             up, status = e, e.code
             if ort == "lokal" and status == 400:
                 fehler = e.read().decode("utf-8", "replace")
-                if "exceed" in fehler and "context" in fehler:
+                ctx = re.search(r'"n_ctx":\s*(\d+)', fehler)
+                if "exceed" in fehler and "context" in fehler and ctx and not body.get("_gekuerzt"):
+                    # one retry with a trimmed conversation (~3 characters per token, room for the answer)
+                    body["messages"] = kuerzen(body["messages"], int(ctx.group(1)) * 2)
+                    body["_gekuerzt"] = True
+                    gek = dict(body); gek.pop("_gekuerzt")
+                    try:
+                        up = OPENER.open(urllib.request.Request(url, json.dumps(gek).encode(), {"Content-Type": "application/json", **hdr},
+                                                                method="POST"), timeout=900)
+                        status = 200
+                        protokoll({"zeit": time.strftime("%FT%T"), "ort": ort, "modell": body.get("model"),
+                                   "hinweis": f"conversation trimmed to {len(gek['messages'])} messages for n_ctx {ctx.group(1)}"})
+                    except urllib.error.HTTPError as e2:
+                        fehler, status, up = e2.read().decode("utf-8", "replace"), e2.code, None
+                if up is not None and status == 200:
+                    pass
+                elif "exceed" in fehler and "context" in fehler:
                     protokoll({"zeit": time.strftime("%FT%T"), "ort": ort, "modell": body.get("model"), "status": 400,
                                "fehler": "local context too small for this conversation"})
                     return self._json(400, {"error": {"message":
@@ -263,7 +369,9 @@ class Handler(BaseHTTPRequestHandler):
             antwort = antwort_aus(b"".join(roh), bool(body.get("stream")))
             if antwort:
                 urteil_im_hintergrund(turn, body.get("model"), antwort)
-        protokoll({"zeit": time.strftime("%FT%T"), "ort": ort, "modell": body.get("model"), "status": status,
+        pt, ct, cache = verbrauch_aus(b"".join(roh), bool(body.get("stream")))
+        protokoll({"zeit": time.strftime("%FT%T"), "quelle": quelle, "ort": ort, "modell": body.get("model"), "status": status,
+                   "prompt_tokens": pt, "completion_tokens": ct, "cached_tokens": cache,
                    "stream": bool(body.get("stream")), "art": (turn or {}).get("art"), "gruende": gruende[:4], "s": round(time.time() - t0, 1)})
 
 

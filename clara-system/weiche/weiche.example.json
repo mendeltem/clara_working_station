@@ -49,5 +49,27 @@
     "\\.nii(\\.gz)?\\b|\\.dcm\\b|\\.mgz\\b|\\.mgh\\b",
     "\\b(COHORT_A|COHORT_B)\\b"
   ],
-  "lokal_start": ""
+  "lokal_start": "",
+  "relay_url": "http://127.0.0.1:8770/v1",
+  "_modellwahl_info": "system1 = System One picks the hub model per user turn; fest = always standard_modell.",
+  "modellwahl": "system1",
+  "_oeffentlich_info": "Released open datasets: their folders and subject ids are not treated as patient data, but only while the release file named in 'freigabe' exists in ~/local_agentic_system/datensaetze-oeffentlich/.",
+  "oeffentlich": [
+    {
+      "freigabe": "example-open-dataset.txt",
+      "pfade": [
+        "~/data/extern/example-open-dataset/"
+      ],
+      "id_listen": [
+        "~/data/extern/example-open-dataset/subjects.txt"
+      ]
+    }
+  ],
+  "_keine_daten_info": "Folders under ~/data that hold structure, not data (job queue, plans, literature); their contents are still checked for ids and cohort names.",
+  "keine_daten": [
+    "~/data/work/jobs/",
+    "~/data/work/plans/",
+    "~/papers/"
+  ],
+  "verbrauch_warnung_tag": 20000000
 }

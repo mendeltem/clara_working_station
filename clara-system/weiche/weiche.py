@@ -25,6 +25,7 @@ import re
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 
 HIER = os.path.dirname(os.path.abspath(__file__))
@@ -40,7 +41,38 @@ LOKAL_BEDARF = os.path.join(SYSTEM, "werkzeuge", "lokal-bedarf")
 # relay assumes the local server is already up
 MODELLSTART = KONFIG.get("lokal_start") or os.path.join(SYSTEM, "werkzeuge", "modellstart")
 
-ID_MUSTER = [re.compile(m) for m in KONFIG["id_muster"]]
+ID_MUSTER = [re.compile(m, re.I) for m in KONFIG["id_muster"]]     # case-insensitive: a cohort name in a path counts in any spelling
+FREIGABEN = os.path.expanduser("~/local_agentic_system/datensaetze-oeffentlich")
+DATENPFAD_RX = re.compile(r"(?:~|/home/[^/\s]+)/data/[^\s'\"<>|;,)\]}]*")
+BILD_RX = re.compile(r"[^\s'\"<>|;,()\[\]{}]*\.(?:nii(?:\.gz)?|dcm|mgz|mgh)\b", re.I)
+SUB_RX = re.compile(r"\bsub-[A-Za-z0-9]+")
+
+
+def _oeffentlich():
+    """(public folder prefixes, public case ids) from weiche.json 'oeffentlich'; an entry counts only while its release
+    file exists in datensaetze-oeffentlich/ (class 1 open data, see the three data classes)."""
+    pfade, ids = [], set()
+    for e in KONFIG.get("oeffentlich", []):
+        if not os.path.exists(os.path.join(FREIGABEN, e.get("freigabe", "-"))):
+            continue
+        pfade += [os.path.expanduser(p).rstrip("/") + "/" for p in e.get("pfade", [])]
+        for liste in e.get("id_listen", []):
+            try:
+                ids |= set(SUB_RX.findall(open(os.path.expanduser(liste), encoding="utf-8").read()))
+            except OSError:
+                pass
+    return pfade, ids
+
+
+OEFF_PFADE, OEFF_IDS = _oeffentlich()
+# job queue, plans, literature under ~/data: structure, not data (contents are still checked for ids and cohorts)
+OEFF_PFADE += [os.path.expanduser(p).rstrip("/") + "/" for p in KONFIG.get("keine_daten", [])]
+
+
+def _pfad_oeffentlich(p):
+    p = os.path.expanduser(p.replace("/home/" + os.path.basename(os.path.expanduser("~")), "~", 1)) if p.startswith("/home/") else os.path.expanduser(p)
+    p = os.path.normpath(p)                         # "auftraege/../other" must not count as the queue folder
+    return any((p.rstrip("/") + "/").startswith(o) for o in OEFF_PFADE)
 KOPF = re.compile(r"^\s*(MODELL|THEMA|ORT)\s*:\s*(\S+)\s*$", re.M | re.I)
 
 
@@ -62,10 +94,28 @@ def schutzgruende(text, pfade=True):
     gruende += [f"marker '{m}'" for m in KONFIG["lokal_marker"] if m.lower() in low]
     home = os.path.expanduser("~")
     for p in (KONFIG["datenpfade"] if pfade else []):
-        if p.replace("~", home) in text or p in text:
+        if "/data/" in p:
+            # ~/data paths: each occurrence on its own; inside a released public folder it is no reason
+            if any(not _pfad_oeffentlich(t) for t in DATENPFAD_RX.findall(text)):
+                gruende.append(f"data path {p}")
+        elif p.replace("~", home) in text or p in text:
             gruende.append(f"data path {p}")
-    gruende += [f"pattern {rx.pattern[:24]}" for rx in ID_MUSTER if rx.search(text)]
-    return gruende
+    subs = set(SUB_RX.findall(text))
+    nur_oeffentlich = bool(subs) and subs <= OEFF_IDS
+    for rx in ID_MUSTER:
+        if not rx.search(text):
+            continue
+        if "sub-" in rx.pattern and subs and subs <= OEFF_IDS:
+            continue                                   # every subject id in the text is a released public case id
+        if "ses-" in rx.pattern and nur_oeffentlich:
+            continue                                   # session labels next to public subjects only
+        if ".nii" in rx.pattern:
+            bilder = BILD_RX.findall(text)
+            if bilder and all(_pfad_oeffentlich(b) if "/" in b else (set(SUB_RX.findall(b)) <= OEFF_IDS and SUB_RX.search(b))
+                              for b in bilder):
+                continue                               # image files only inside public folders / of public cases
+        gruende.append(f"pattern {rx.pattern[:24]}")
+    return list(dict.fromkeys(gruende))
 
 
 # --- 3. System One ----------------------------------------------------------------------------------------------------
@@ -160,6 +210,21 @@ def frag(messages, ort="auto", modell=None, max_tokens=4000, timeout=600, **extr
     text = "\n".join(m.get("content", "") if isinstance(m.get("content"), str) else "" for m in messages)
     if ort == "auto":
         ort = "lokal" if schutzgruende(text, pfade=False) else "cle"
+    # Through the relay when it runs (29.10.2026): works from inside Clara's sandbox (loopback only), applies the same
+    # fixed rules once more and keeps the hub key out of the caller. WEICHE_DIREKT=1 or a stopped relay: direct route.
+    relay = KONFIG.get("relay_url", "http://127.0.0.1:8770/v1").rstrip("/")
+    if os.environ.get("WEICHE_DIREKT") != "1":
+        body = {"x_quelle": os.path.basename(sys.argv[0] or "skript") or "skript",
+                "model": (modell or KONFIG["standard_modell"]) if ort == "cle" else "lokal", "messages": messages,
+                "max_tokens": max(max_tokens, 8000) if ort == "cle" else max_tokens, **extra}
+        try:
+            r = _post(relay + "/chat/completions", body, timeout=timeout)
+            return (r["choices"][0]["message"].get("content") or "",
+                    {"ort": ort, "modell": r.get("model") or body["model"], "usage": r.get("usage"), "via": "relay"})
+        except urllib.error.HTTPError:
+            raise                                   # the relay answered with an error: do not bypass its decision
+        except Exception:  # noqa: BLE001 -- relay not running: fall back to the direct route below
+            pass
     if ort == "cle":
         url, hdr = KONFIG["cle_url"].rstrip("/") + "/chat/completions", {"Authorization": f"Bearer {cle_key()}"}
         modell = modell or KONFIG["standard_modell"]
@@ -177,6 +242,26 @@ def frag(messages, ort="auto", modell=None, max_tokens=4000, timeout=600, **extr
     body = {"model": modell, "messages": messages, "max_tokens": max_tokens, **extra}
     r = _post(url, body, timeout=timeout, headers=hdr)
     return r["choices"][0]["message"].get("content") or "", {"ort": ort, "modell": modell, "usage": r.get("usage")}
+
+
+# --- usage --------------------------------------------------------------------------------------------------------------
+
+def verbrauch(tage=1, ab=None):
+    """Tokens per day and source from the relay log (exact counts the hub reported, since 29.10.2026 16:36)."""
+    import collections, datetime
+    log = os.path.join(ERGEBNISSE, "relay.jsonl")
+    start = (ab or (datetime.date.today() - datetime.timedelta(days=tage - 1))).isoformat()
+    tab = collections.defaultdict(lambda: [0, 0, 0])
+    for l in open(log, encoding="utf-8"):
+        try:
+            d = json.loads(l)
+        except ValueError:
+            continue
+        if d.get("ort") != "cle" or d.get("zeit", "") < start or d.get("prompt_tokens") is None:
+            continue
+        t = tab[(d["zeit"][:10], d.get("quelle") or "?")]
+        t[0] += 1; t[1] += d.get("prompt_tokens") or 0; t[2] += d.get("completion_tokens") or 0
+    return {f"{tag} {q}": {"anfragen": v[0], "prompt": v[1], "antwort": v[2]} for (tag, q), v in sorted(tab.items())}
 
 
 # --- measurement ------------------------------------------------------------------------------------------------------
@@ -211,6 +296,8 @@ def main():
     b = sub.add_parser("bewerten"); b.add_argument("--auftrag", required=True); b.add_argument("--ergebnis", required=True)
     f = sub.add_parser("frag"); f.add_argument("prompt"); f.add_argument("--ort", default="auto"); f.add_argument("-m")
     m = sub.add_parser("messen"); m.add_argument("--force", default="false")
+    v = sub.add_parser("verbrauch", help="Clé tokens per day and source (relay log)"); v.add_argument("--tage", type=int, default=1)
+    v.add_argument("--warnung", action="store_true", help="one line, and rc 1 above verbrauch_warnung_tag (for morgenkontrolle)")
     a = ap.parse_args()
     if a.cmd == "entscheiden":
         text = open(a.datei, encoding="utf-8", errors="replace").read() if a.datei else (a.text or sys.stdin.read())
@@ -224,6 +311,22 @@ def main():
         print(text); print(json.dumps(info), file=sys.stderr)
     elif a.cmd == "messen":
         messen(a.force.lower() == "true")
+    elif a.cmd == "verbrauch":
+        z = verbrauch(a.tage)
+        tage = {}
+        for k, w in z.items():
+            tag = k.split()[0]; t = tage.setdefault(tag, [0, 0, 0]); t[0] += w["anfragen"]; t[1] += w["prompt"]; t[2] += w["antwort"]
+        if a.warnung:
+            grenze = KONFIG.get("verbrauch_warnung_tag", 20000000)
+            schlimm = {t: v for t, v in tage.items() if v[1] + v[2] > grenze}
+            print("Clé-Verbrauch: " + ", ".join(f"{t} {(v[1] + v[2]) / 1e6:.1f} M Token ({v[0]} Anfragen)" for t, v in tage.items())
+                  + (f" -- UEBER der Warnschwelle {grenze / 1e6:.0f} M" if schlimm else ""))
+            sys.exit(1 if schlimm else 0)
+        print(f"{'day source':32s} {'requests':>8s} {'prompt':>12s} {'answer':>10s}")
+        for k, w in z.items():
+            print(f"{k:32s} {w['anfragen']:8d} {w['prompt']:12,d} {w['antwort']:10,d}")
+        for t, v in tage.items():
+            print(f"{t + ' total':32s} {v[0]:8d} {v[1]:12,d} {v[2]:10,d}")
 
 
 if __name__ == "__main__":

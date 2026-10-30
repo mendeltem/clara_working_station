@@ -6,6 +6,7 @@ Running on the target workstation (Ubuntu 24.04, kernel 7.0, Landlock ABI 8, Pyt
 
 - Approval service: `[permissions] approver_url` asks a local gate (Hermes smart-approval format, APPROVE / DENY / ESCALATE) after the rules and the mode and before the user; the request carries the project folder and Clara's own warnings. ESCALATE and any error fall through to the user.
 - Socket seal (`clara/netseal.py`): seccomp filter under Landlock, no root. Landlock limits TCP by port but does not see UDP, ICMP or Unix sockets, so a DNS query could carry data and `systemd-run --user` could start a process outside every lock. `sandbox.unix_sockets = "seqpacket"` (default) leaves only TCP and Unix SEQPACKET sockets (libcuda needs the latter); `"allow"` also allows Unix stream sockets, which PyTorch DataLoader workers need, and leaves the systemd/D-Bus route open. UDP, ICMP, raw sockets and io_uring are refused in both.
+- An empty final answer (the reasoning used the whole budget, or a small fallback model gave up) is no longer taken as the result: Clara asks the model once more, and after a second empty reply ends the turn with a visible note instead of silence.
 - `sandbox.extra_connect_ports`: more loopback TCP ports for the locked tree (for example a local research gateway).
 - Fix: the project root no longer climbs to `$HOME` because Clara's own `~/.clara` looked like a project marker; under `--yolo` that had made the whole home directory writable.
 - Fix: `list_files` with the default pattern `**/*` (and `**/*.py`) now finds files in the project root.
