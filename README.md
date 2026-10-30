@@ -379,6 +379,11 @@ means one sandbox, one approval path and one session format to audit.
   runs shows loopback only; `curl`, a DNS query to 8.8.8.8, `getent hosts` and `systemd-run` fail.
 - **What leaves the machine,** each through its own small service: model requests to Clé (relay), Telegram messages
   (the same bot as before, a new bridge), and checked literature questions (exit guard).
+- **Exit guard, since 30 October 2026.** Fixed rules (cohort names, subject ids, data paths, clinic references) check
+  every question first. The second check is the local large model; while it is off (it runs only on demand), System One
+  checks instead and lets a question out only at p(ok) >= 0.9 (8 of 8 test questions judged correctly). The open
+  literature APIs answer first; Claude with web search answers only when they do not, and the answer names who answered.
+  Before, every question was refused while the large model was off.
 - **Phone.** A Telegram bridge talks to `clara serve`; approvals that System One escalates arrive as buttons.
 - **Continuous runs.** The job queue and its driver now start `clara -p` per round; the round summary, the time
   fence and the loop check read clara-agent's session files.
