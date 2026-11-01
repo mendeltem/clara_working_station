@@ -241,6 +241,59 @@ What the agents learned along the way is collected in the wiki
   naming it. Before rebooting, check `dkms status` and `mokutil --list-enrolled`.
   [Entry](https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/risks/secure-boot-kernel-update-unloads-nvidia-dkms.md)
 
+### Operating machinery: how the parts keep each other honest (state 1 November 2026)
+
+The services above are only half of the system. The other half is the machinery that decides what runs when, what
+counts as done, and what happens when something hangs. Most of it was added after a concrete failure; the failure is
+named next to each rule. Everything here is model-independent and holds no data.
+
+**Jobs.** A job is a text file with a goal, a round time and start conditions, next to an acceptance list
+(`<job>.abnahme`). Folders are the states: `offen/` (waiting), `laeuft/` (running), `erledigt/` (accepted),
+`steckengeblieben/` (given up, with a reason). The `dauerlauf` service picks the next open job whose conditions hold and
+hands it to the `antreiber`, which runs up to four agent rounds and checks acceptance after each.
+- Start conditions are explicit (`BRAUCHT:` file exists, `BRAUCHT-BEFEHL:` shell test). Order by file name is not a
+  dependency: the folder is sorted by locale, which put a job ending in "b" before its prerequisite.
+- A condition that only tests "file exists" is not enough: two jobs started on placeholder files of an unfinished job.
+  Gates now test that the input is real (no placeholder markers) and that the producing job was accepted.
+
+**Acceptance.** Every job is checked by machine before any model judges it (`abnahme`: files exist and load, counts,
+columns, text present or absent, shell tests with a time limit). Since 31 October every job also needs a **job manifest**
+(model, inputs with SHA-256, outputs, code, **deviations**), checked by `spec_check.py` against optional `SPEC:` lines in
+the job (model name, input checksums, outputs, values inside result JSON files):
+- outputs that carry placeholder markers (synthetic test files, "pending" stubs) fail -- an agent had passed acceptance
+  with synthetic placeholders;
+- a deviation from the spec (another model, other data, a skipped arm) must be declared; an undeclared or unapproved
+  deviation fails -- an agent had silently replaced the specified 3D CNN with a random forest;
+- approvals live in a folder the agent cannot write to (kernel write lock); an `approved_by` field written by the agent
+  itself does not count.
+
+**One GPU, three users.** Trainings, the local language model and the small decision model share one 24 GB card.
+- Trainings go through one queue (`grossauftrag`): jobs are queued with their VRAM need; one worker stops the language
+  model, runs the queue entry by entry (re-reading the file after each, so new entries are picked up) and restores the
+  model at the end. Only one worker runs; a second one waits instead of starting work twice.
+- The worker never stops the model while an agent is mid-call. "Agent active" counts prompt-mode runs always, but an
+  interactive session only while its session log grows: an idle session that sat at its own question held the queue
+  for 15 hours.
+- Before the language model is restored, the small decision model is moved to the CPU (`systemone-platz cpu`); it had
+  moved onto the free card during the queue, and the restored model then waited forever for memory.
+- Model profiles (`models.json`) say how much VRAM they need and whether they respect the GPU lock. A small model next
+  to training fits in memory but shares compute: trainings ran 1.7-1.8x slower, so all profiles respect the lock now.
+- An agent job that has queued GPU work yields with "waiting for queue" and comes back when the queue is done.
+
+**Watchdogs.** `modellwache` brings the model server back when nobody needs the card (stop it first before stopping the
+server, or it restarts within a minute). A recurring blockage check looks at the queue, the GPU, the agent processes,
+the logs and the job folders; "queued" is not the same as "moving".
+
+**Morning jobs.** 04:00 morning research over the wiki areas, 06:00 morning study on improving the setup, 06:00 morning
+check of the machine. Research answers and summaries go to the institutional model hub by default and to the local
+model only when a subject or case identifier appears; the local model is no longer needed for them (they failed when the
+queue had switched it off).
+
+**Clara's morning show.** The morning check is rewritten as a short spoken show in Clara's voice: alarms first, then the
+good news, one opinion, a little humour. A persona file describes her; a show memory keeps one line per show (topics,
+gag, and a "next time" self-critique), and a listener-feedback file overrides her habits. The text is read by a small
+text-to-speech model on the CPU (so trainings keep the card) and sent as a voice message with the text.
+
 ---
 
 ## The shared wiki
@@ -438,6 +491,11 @@ licence CC BY-NC 4.0.
    systemd user units and checks paths, environments and weights.
 6. Run `system/werkzeuge/werkzeugtest --schnell`. It calls every tool on real
    input, so it says "computes", not just "installed".
+7. Create the job folders (`offen/`, `laeuft/`, `erledigt/`, `steckengeblieben/`, `manifeste/`) and the approval folder
+   outside the agent's write list; start `dauerlauf` only after one job with an acceptance list has passed by hand.
+8. Set the model profiles' VRAM needs and lock flags in `models.json`; queue one small training and check that the worker
+   stops and restores the model, moves the decision model to the CPU first, and leaves no second worker waiting.
+9. Secrets (hub key, chat bot token, Hugging Face token) are created anew on the new machine; nothing of that is in git.
 
 ---
 
