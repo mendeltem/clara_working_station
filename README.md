@@ -284,6 +284,30 @@ the job (model name, input checksums, outputs, values inside result JSON files):
 server, or it restarts within a minute). A recurring blockage check looks at the queue, the GPU, the agent processes,
 the logs and the job folders; "queued" is not the same as "moving".
 
+**Safeguards from an error catalogue (2 November 2026).** Two read-only agents went through all session transcripts
+and system logs since September: 88 incidents plus 34 failed queue entries and 29 stuck jobs. Only 8 of the 88 showed up
+as a crash; most looked like normal operation, and 11 kinds of error came back although a written rule already existed.
+The five root causes were silent fallbacks, acceptance that checks for files instead of plausible content, "waiting" read
+as "running", shared resources without one owner, and operator habits. Written rules were not enough, so each became a
+check:
+- **Smoke test at enqueue time.** `grossauftrag --einreihen` checks statically, without running anything, that the
+  program exists and is executable, the working folder exists, a Python file compiles, a `-m` module can be found and a
+  shell script parses (`bash -n`). 21 of 34 queue failures had died within 30 seconds, often after hours of waiting.
+- **Progress watchdog** (`fortschrittswache`, every 15 minutes, Telegram, one alarm per key per 3 hours): open queue
+  entries but no worker; a worker whose job tree used no CPU for 10 minutes while the GPU is idle; a worker waiting for
+  more than 45 minutes; the same fallback in at least half of a driver's blocks (a "zero candidates" fallback had fired
+  in every block for 1.5 days because of a wrong path); failed user services.
+- **Plausibility in acceptance.** `spec_check.py` refuses result JSON with a decision threshold at the grid edge,
+  sensitivity of at least 0.98 together with F1 of at least 0.85, or a lesion F1 of at least 0.90, unless an approval
+  line says why it is real. A nested threshold of 0.00 with sensitivity 0.99 had been accepted as "a real finding".
+- **Watchdog back-off.** At most three start or restart attempts of the model server within two hours without a healthy
+  answer; then a two-hour pause and one alarm. The server had been restarted 457 times without ever becoming healthy.
+- **Retries for the model hub.** Short 502/503 bursts of the hub had failed six of eight morning research tasks; hub
+  requests are now retried up to three times (after 30 and 90 seconds).
+- **A pre-command hook for the cloud assistant.** Process searches by a pattern that also matches the calling shell, and
+  in-place `sed` edits of scripts with `#` as delimiter, are blocked before they run (both had repeated several times).
+- Every new error goes into the error book the same day, with cause, how it was found and the fix.
+
 **Morning jobs.** 04:00 morning research over the wiki areas, 06:00 morning study on improving the setup, 06:00 morning
 check of the machine. Research answers and summaries go to the institutional model hub by default and to the local
 model only when a subject or case identifier appears; the local model is no longer needed for them (they failed when the
