@@ -217,14 +217,19 @@ def frag(messages, ort="auto", modell=None, max_tokens=4000, timeout=600, **extr
         body = {"x_quelle": os.path.basename(sys.argv[0] or "skript") or "skript",
                 "model": (modell or KONFIG["standard_modell"]) if ort == "cle" else "lokal", "messages": messages,
                 "max_tokens": max(max_tokens, 8000) if ort == "cle" else max_tokens, **extra}
-        try:
-            r = _post(relay + "/chat/completions", body, timeout=timeout)
-            return (r["choices"][0]["message"].get("content") or "",
-                    {"ort": ort, "modell": r.get("model") or body["model"], "usage": r.get("usage"), "via": "relay"})
-        except urllib.error.HTTPError:
-            raise                                   # the relay answered with an error: do not bypass its decision
-        except Exception:  # noqa: BLE001 -- relay not running: fall back to the direct route below
-            pass
+        versuche = (0, 30, 90) if ort == "cle" else (0,)   # 02.11.2026: the hub gave short 502/503 bursts at 04:00 -> 6 of 8
+        for i, warte in enumerate(versuche):                 # morning-research tasks failed; retry transient gateway errors
+            time.sleep(warte)
+            try:
+                r = _post(relay + "/chat/completions", body, timeout=timeout)
+                return (r["choices"][0]["message"].get("content") or "",
+                        {"ort": ort, "modell": r.get("model") or body["model"], "usage": r.get("usage"), "via": "relay"})
+            except urllib.error.HTTPError as e:
+                if e.code in (502, 503, 504) and i < len(versuche) - 1:
+                    continue
+                raise                               # the relay answered with an error: do not bypass its decision
+            except Exception:  # noqa: BLE001 -- relay not running: fall back to the direct route below
+                break
     if ort == "cle":
         url, hdr = KONFIG["cle_url"].rstrip("/") + "/chat/completions", {"Authorization": f"Bearer {cle_key()}"}
         modell = modell or KONFIG["standard_modell"]
