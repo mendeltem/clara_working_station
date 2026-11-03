@@ -324,7 +324,7 @@ text-to-speech model on the CPU (so trainings keep the card) and sent as a voice
 
 All agents and chats share one memory: the public repository
 **[blackbeard_wikki](https://github.com/mendeltem/blackbeard_wikki)** on GitHub.
-Clara on the workstation, the Claude sessions and the chat projects read it
+Clara on the workstation, the setup sessions and the chat projects read it
 before they work and write back what others can reuse, so no agent searches
 for or builds again what already exists. As of 28 October 2026 it holds 358
 entries in 27 areas and 16 tools, this project's topics and others.
@@ -339,7 +339,7 @@ entries in 27 areas and 16 tools, this project's topics and others.
 **Why a wiki next to a local agent.** A session forgets; the wiki does not.
 Clara's own README, which she reads at startup, tells her to visit the wiki: it
 is where knowledge is exchanged for the long term. It also connects agents that
-work outside the workstation, such as Claude sessions and chat projects, to the
+work outside the workstation, such as setup sessions and chat projects, to the
 same state, and it is where the meta information and the deeper material live:
 
 - findings and long-term experience, with source and date;
@@ -360,7 +360,7 @@ same state, and it is where the meta information and the deeper material live:
 `SUMMARY.md` of the areas its task touches, and goes deeper only when needed.
 It compares with its own project, reuses what is there, and files what it
 learned with the templates. Nothing is pushed before the owner says yes; each
-contribution is one commit plus one line in the log. For Claude the wiki is
+contribution is one commit plus one line in the log. For agents outside the workstation the wiki is
 packaged as a skill (`plugins/blackbeard-wiki`) that loads the matching areas
 before answering.
 
@@ -459,7 +459,7 @@ means one sandbox, one approval path and one session format to audit.
 - **Exit guard, since 30 October 2026.** Fixed rules (cohort names, subject ids, data paths, clinic references) check
   every question first. The second check is the local large model; while it is off (it runs only on demand), System One
   checks instead and lets a question out only at p(ok) >= 0.9 (8 of 8 test questions judged correctly). The open
-  literature APIs answer first; Claude with web search answers only when they do not, and the answer names who answered.
+  literature APIs answer first; an external model with web search answers only when they do not, and the answer names who answered.
   Before, every question was refused while the large model was off.
 - **Phone.** A Telegram bridge talks to `clara serve`; approvals that System One escalates arrive as buttons.
 - **Continuous runs.** The job queue and its driver now start `clara -p` per round; the round summary, the time
@@ -536,8 +536,8 @@ Cohort names and the institution's data folders stay in a local `weiche.json`; t
 ## Clara agent: the harness in this repository
 
 [clara-agent/](clara-agent/) is a coding agent written to replace Hermes Agent
-and OpenCode on this workstation with one program: a terminal session like
-Claude Code, a phone page served over the WLAN (prompts and tool approvals from
+and OpenCode on this workstation with one program: an interactive terminal
+session, a phone page served over the WLAN (prompts and tool approvals from
 the phone, which Hermes' gateway does today), and the model from `llama-server`
 on port 8000. Standard library only, no network path except the model server:
 an in-process allowlist with an audit log, a Landlock sandbox for writes, TCP

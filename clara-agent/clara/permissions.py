@@ -5,7 +5,7 @@ Modes
   accept-edits  writes inside the project run, shell commands ask
   yolo          everything runs (use with the Landlock sandbox)
 
-Rules (~/.clara/projects/<project>.json, like Claude Code's allow/deny lists,
+Rules (~/.clara/projects/<project>.json, allow/deny lists,
 but kept outside the project so a sandboxed model cannot edit them):
   "bash(git status*)"      allow a command pattern
   "write_file(src/**)"     allow writes under src/

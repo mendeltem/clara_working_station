@@ -1,4 +1,4 @@
-"""Skills: folders with a SKILL.md, the same layout Claude Code and Hermes use.
+"""Skills: folders with a SKILL.md, a common agent layout.
 
     ~/.clara/skills/<name>/SKILL.md          global
     <project>/.clara/skills/<name>/SKILL.md  per project

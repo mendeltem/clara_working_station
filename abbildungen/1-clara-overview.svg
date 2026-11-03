@@ -17,7 +17,7 @@
   <rect x="50" y="240" width="150" height="80" rx="10" fill="#fff" stroke="#8a96a3"/>
   <text x="125" y="270" font-size="15" text-anchor="middle" fill="#1b2430">Terminal</text>
   <text x="125" y="290" font-size="12" text-anchor="middle" fill="#5b6672">agent / clara,</text>
-  <text x="125" y="306" font-size="12" text-anchor="middle" fill="#5b6672">Claude Code</text>
+  <text x="125" y="306" font-size="12" text-anchor="middle" fill="#5b6672">setup tools</text>
 
   <!-- workstation -->
   <rect x="250" y="100" width="770" height="670" rx="18" fill="#fbfcfd" stroke="#1b2430" stroke-width="2"/>
@@ -96,7 +96,7 @@
   <rect x="1065" y="460" width="170" height="96" rx="10" fill="#fff" stroke="#8a96a3"/>
   <text x="1150" y="488" font-size="14" text-anchor="middle" fill="#1b2430">Literature APIs</text>
   <text x="1150" y="508" font-size="12" text-anchor="middle" fill="#5b6672">arXiv, PubMed, OpenAlex;</text>
-  <text x="1150" y="524" font-size="12" text-anchor="middle" fill="#5b6672">Claude Code web search</text>
+  <text x="1150" y="524" font-size="12" text-anchor="middle" fill="#5b6672">external web search</text>
 
   <!-- arrows -->
   <path d="M200,185 H232 V84 H1270 V295 H1237" fill="none" stroke="#4a5560" stroke-width="1.6" marker-end="url(#a)" marker-start="url(#a)"/>

@@ -4,7 +4,7 @@
   </defs>
   <rect width="1280" height="800" fill="#ffffff"/>
   <text x="40" y="44" font-size="26" font-weight="bold" fill="#1b2430">Continuous runs: from a job file to an accepted result</text>
-  <text x="40" y="70" font-size="14" fill="#5b6672">Claude (or you) writes the job and a countable acceptance list; Clara works in rounds until every criterion holds.</text>
+  <text x="40" y="70" font-size="14" fill="#5b6672">You write the job and a countable acceptance list; Clara works in rounds until every criterion holds.</text>
 
   <!-- column 1 -->
   <rect x="40" y="110" width="250" height="120" rx="12" fill="#f3f5f7" stroke="#8a96a3"/>

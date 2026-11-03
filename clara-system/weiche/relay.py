@@ -118,7 +118,7 @@ def route(body):
     # a data path): subject/session ids and cohort names count in every text. Data paths and image files count where
     # data is ACCESSED: the project line of the system prompt and the arguments of tool calls (read, write, bash).
     # A path that is only mentioned in text (a log, a script, the brief) is structure, not content -- the same line as
-    # for Claude in system/CLAUDE.md. Plain-word markers count in user and tool text outside the topic brief.
+    # in the setup notes. Plain-word markers count in user and tool text outside the topic brief.
     # Reading a public file (the wiki on GitHub, Clara's own skills) is not data: drop those tool results before the
     # checks (29.10.2026, the wiki areas name cohorts and every planning turn went to the GPU)
     aufrufe = {tc.get("id"): tc.get("function", {}) for m in msgs for tc in (m.get("tool_calls") or [])}

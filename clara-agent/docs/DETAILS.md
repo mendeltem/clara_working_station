@@ -91,7 +91,7 @@ Slash commands inside a session: `/help /status /mode /think /compact /clear /se
 - `CLARA.md` (or `AGENTS.md`) in the project root: instructions that go into the system prompt (kept under 12k characters).
 - `~/.clara/projects/<project>.json`: `{"allow": ["bash(pytest*)"], "deny": ["read_file(/media/**)"]}`. Patterns are `tool(glob)` matched against the command or path. Kept outside the project (and read-only under the sandbox) so the model cannot edit its own rules; the file name is the project folder name plus a hash of its full path.
 - `.clara/memory.md` and `~/.clara/memory.md`: notes saved with the `remember` tool; the last 40 lines of each are in the system prompt.
-- `.clara/skills/<name>/SKILL.md` and `~/.clara/skills/<name>/SKILL.md`: skills in the Claude Code / Hermes layout. Only name, description and path enter the prompt; the model reads the file when it matches.
+- `.clara/skills/<name>/SKILL.md` and `~/.clara/skills/<name>/SKILL.md`: skills in the common agent layout. Only name, description and path enter the prompt; the model reads the file when it matches.
 
 ## Phone app protocol
 

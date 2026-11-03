@@ -1,6 +1,6 @@
 # Clara
 
-Clara is a coding agent for your own computer: a terminal tool like Claude Code and a phone app over WLAN, driven by a local model server, with no network path anywhere else.
+Clara is a coding agent for your own computer: a terminal tool and a phone app over WLAN, driven by a local model server, with no network path anywhere else.
 
 ```
  phone (WLAN) ──► clara serve ──┐
@@ -37,7 +37,7 @@ Reads `~/.clara/config.toml` (created on first run; default server `http://127.0
 cd ~/some-project
 clara
 ```
-Interactive session like Claude Code: streaming answers, tool cards, a prompt before every file write and shell command (`y` once, `s` this session, `p` save as rule, `n` deny). `/help` lists commands, Ctrl+C interrupts, Ctrl+D leaves. Sessions are recorded in `~/.clara/sessions` (`--no-record` to keep nothing, `--resume last` to continue).
+Interactive session: streaming answers, tool cards, a prompt before every file write and shell command (`y` once, `s` this session, `p` save as rule, `n` deny). `/help` lists commands, Ctrl+C interrupts, Ctrl+D leaves. Sessions are recorded in `~/.clara/sessions` (`--no-record` to keep nothing, `--resume last` to continue).
 
 ```bash
 clara -p "run the tests and fix the first failure"

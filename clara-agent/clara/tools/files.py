@@ -142,7 +142,7 @@ class ListFiles(Tool):
             rel_dir = os.path.relpath(dirpath, root)
             for fn in sorted(filenames):
                 rel = fn if rel_dir == "." else os.path.join(rel_dir, fn)
-                # "**/" also matches zero folders: **/*.py must find setup.py in the root, as in git and Claude Code
+                # "**/" also matches zero folders: **/*.py must find setup.py in the root, as in git
                 tail = pattern[3:] if pattern.startswith("**/") else None
                 if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(fn, pattern) or (tail and fnmatch.fnmatch(rel, tail)):
                     total += 1
