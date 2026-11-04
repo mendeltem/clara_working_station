@@ -7,9 +7,11 @@ What is computed on **Alita**, and what of it is published.
 *Work computed on Alita by the local agent. This is a workbench, not a
 portfolio: only what was produced here is listed.*
 
-**Film (10 min, English):** https://mendeltem.github.io/clara_working_station/film/
+**Films (English):**
 
-**Harness film (3 min, English):** https://mendeltem.github.io/clara_working_station/film/clara-agent.html
+- **Explanation of the working station (10 min):** https://mendeltem.github.io/clara_working_station/film/
+- **Clara agent, the harness (3 min):** https://mendeltem.github.io/clara_working_station/film/clara-agent.html
+- **How to build the film machine (2 min, fast style):** https://mendeltem.github.io/clara_working_station/film/film-machine.html
 
 **Video (10 min):** [the workstation explained](video/clara_working_station.mp4): what Alita, Clara, Clé and System One
 are, why not just the cluster, one request from start to finish, three failures that looked like success, what stays
