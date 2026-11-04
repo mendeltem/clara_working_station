@@ -7,6 +7,10 @@ What is computed on **Alita**, and what of it is published.
 *Work computed on Alita by the local agent. This is a workbench, not a
 portfolio: only what was produced here is listed.*
 
+**Video (10 min):** [the workstation explained](video/clara_working_station.mp4): what Alita, Clara, Clé and System One
+are, why not just the cluster, one request from start to finish, three failures that looked like success, what stays
+private, and how Clé wrote this film (narration by Clé, animation with Manim). No patient data in it.
+
 ---
 
 ## Workflow
