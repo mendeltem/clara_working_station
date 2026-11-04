@@ -12,6 +12,7 @@ portfolio: only what was produced here is listed.*
 - **Explanation of the working station (10 min):** https://mendeltem.github.io/clara_working_station/film/
 - **Clara agent, the harness (3 min):** https://mendeltem.github.io/clara_working_station/film/clara-agent.html
 - **How to build the film machine (2 min, fast style):** https://mendeltem.github.io/clara_working_station/film/film-machine.html
+- **Clara's own film, watchdogs (3 min, made by Clara with Clé):** https://mendeltem.github.io/clara_working_station/film/clara-watchdogs.html
 
 **Video (10 min):** [the workstation explained](video/clara_working_station.mp4): what Alita, Clara, Clé and System One
 are, why not just the cluster, one request from start to finish, three failures that looked like success, what stays
