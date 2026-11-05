@@ -20,7 +20,7 @@ portfolio: only what was produced here is listed.*
 are, why not just the cluster, one request from start to finish, three failures that looked like success, what stays
 private, and how Clé wrote this film (narration by Clé, animation with Manim). No patient data in it.
 
-**Tried to create animation (39 s):** [Ziggy Turbo v1](video/ziggy_turbo_v1.mp4): a first test of a short cartoon with an
+**Tried to create animation (39 s):** [Ziggy Turbo v1](https://mendeltem.github.io/clara_working_station/video/ziggy_turbo_v1.mp4): a first test of a short cartoon with an
 invented character, made locally: FLUX.1-schnell keyframes, Wan 2.2 TI2V-5B image-to-video, Kokoro voice. AI-generated;
 face and hands lose coherence after a few seconds.
 
