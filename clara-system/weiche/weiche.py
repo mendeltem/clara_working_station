@@ -18,6 +18,7 @@ CLI (werkzeuge/weiche):
   weiche messen [--force true]                       routing accuracy on the labelled cases (ergebnisse/weiche)
 Log: one JSON line per decision in ~/local_agentic_system/ergebnisse/weiche/log.jsonl (private: job texts).
 """
+import http.client
 import argparse
 import json
 import os
@@ -205,6 +206,34 @@ def cle_key():
     return open(os.path.expanduser(KONFIG["cle_keydatei"])).read().strip()
 
 
+class HubFehler(Exception):
+    """Clé answered, but not with a result: empty, cut off, or its error sentence in place of the text."""
+
+
+def _post_stream(url, body, timeout):
+    """05.11.2026: without streaming the hub ends a call at 50 s: 502, or 'I'm sorry, an internal error has occurred.'
+    as if it were the answer, and that sentence landed in reports. Streamed, 7 of 7 long answers came back whole (up to 82 s)."""
+    body = {**body, "stream": True, "stream_options": {"include_usage": True}}
+    req = urllib.request.Request(url, json.dumps(body).encode(), {"Content-Type": "application/json"}, method="POST")
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    teile, ende, usage, modell = [], None, None, None
+    with opener.open(req, timeout=timeout) as r:
+        for zeile in r:
+            if not zeile.startswith(b"data: ") or b"[DONE]" in zeile:
+                continue
+            d = json.loads(zeile[6:])
+            if d.get("error"):
+                raise HubFehler(str(d["error"])[:200])
+            usage = d.get("usage") or usage; modell = d.get("model") or modell
+            for c in d.get("choices") or []:
+                teile.append((c.get("delta") or {}).get("content") or "")
+                ende = c.get("finish_reason") or ende
+    text = "".join(teile)
+    if not text.strip() or ende is None or re.search(r"an internal error has occurred", text[:200], re.I):
+        raise HubFehler(f"no usable answer (finish {ende}): {text[:80]!r}")
+    return text, modell, usage
+
+
 def frag(messages, ort="auto", modell=None, max_tokens=4000, timeout=600, **extra):
     """One chat completion. ort=auto decides by the fixed rules on the message text (no System One call)."""
     text = "\n".join(m.get("content", "") if isinstance(m.get("content"), str) else "" for m in messages)
@@ -221,9 +250,16 @@ def frag(messages, ort="auto", modell=None, max_tokens=4000, timeout=600, **extr
         for i, warte in enumerate(versuche):                 # morning-research tasks failed; retry transient gateway errors
             time.sleep(warte)
             try:
+                if ort == "cle":
+                    inhalt, m, usage = _post_stream(relay + "/chat/completions", body, timeout)
+                    return inhalt, {"ort": ort, "modell": m or body["model"], "usage": usage, "via": "relay"}
                 r = _post(relay + "/chat/completions", body, timeout=timeout)
                 return (r["choices"][0]["message"].get("content") or "",
                         {"ort": ort, "modell": r.get("model") or body["model"], "usage": r.get("usage"), "via": "relay"})
+            except (HubFehler, http.client.HTTPException, ConnectionResetError, TimeoutError):
+                if i < len(versuche) - 1:
+                    continue
+                raise
             except urllib.error.HTTPError as e:
                 if e.code in (502, 503, 504) and i < len(versuche) - 1:
                     continue

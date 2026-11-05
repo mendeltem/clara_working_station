@@ -321,6 +321,12 @@ check:
   answer; then a two-hour pause and one alarm. The server had been restarted 457 times without ever becoming healthy.
 - **Retries for the model hub.** Short 502/503 bursts of the hub had failed six of eight morning research tasks; hub
   requests are now retried up to three times (after 30 and 90 seconds).
+- **Streaming to the model hub.** Without streaming the hub ends a call at 50 seconds, sometimes with an error sentence
+  in place of the answer, and that sentence had landed in reports as a finished section. `weiche.frag` now streams and
+  treats an empty answer, a missing finish reason or that sentence as a failure. A model silent for 50 seconds before
+  its first token still fails, so long checks go in pieces.
+- **Queue for the privacy gate.** Research questions wait in line for the one System One slot, and retry only when it
+  is unreachable, so a busy GPU no longer turns a burst of questions into refusals. Refusal on doubt stays.
 - **A pre-command hook for the cloud assistant.** Process searches by a pattern that also matches the calling shell, and
   in-place `sed` edits of scripts with `#` as delimiter, are blocked before they run (both had repeated several times).
 - Every new error goes into the error book the same day, with cause, how it was found and the fix.
