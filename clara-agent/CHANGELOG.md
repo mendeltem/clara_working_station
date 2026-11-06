@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.1.2 (2026-11-06)
+
+- Terminal: dark theme with a welcome box, `⏺` for answers and tool calls, `⎿` for results, a live line
+  "Working… (time · tokens · where it runs)" and one plain summary per answer ("Done in 32s · 3 model calls · read 12.6k
+  tokens (0 from cache) · wrote 158 · on Clé"). Keys typed while Clara works are not echoed. `CLARA_THEME=plain` keeps
+  the old look.
+- Input: typing `/` at the line start lists every command with its description; Tab completes commands, `/mode`,
+  `/resume` and file paths (standard library readline). `/help` lists all commands, keys and settings; `/neu` and `/new`
+  start a new session; `/work` shows the work sessions.
+- `clara connect`: the terminal attaches to the main conversation in `clara serve`, the same one the phone uses.
+  Messages from the phone appear marked 📱, a line typed while Clara answers is queued, approvals and questions are
+  answered with the next line. Several terminals may attach at once.
+- Work sessions (`[work] tools = true` or `CLARA_WORK_TOOLS=1`, chat sessions only): `start_work` hands a long job to an
+  independent session with its own context, `work_status` reads the state (no approval needed), `stop_work` stops one.
+  The chat Clara sees a one-line overview of her work sessions in every turn, marked as background.
+- Long-term memory that filters (`clara/hippocampus.py`, `[memory] hippocampus = true`): at every summary the model
+  proposes memories with a kind, importance 1-5 and emotion 0-3; a fixed gate keeps decisions, rules, preferences and
+  promises, lets emotion lift a memory, and never stores paths, commands, case ids or bare numbers. Recall strengthens a
+  memory, a weekly `clara memory sleep` merges duplicates, shortens old entries and lets unused ones fade into a
+  searchable archive; rules never fade; at most 150 lines. `clara memory show|sleep|search|log`, `/remember`.
+- Compaction at a threshold (`[memory] compact_at`, after arXiv 2611.05306 "You don't need long context"): when the
+  prompt reaches the threshold, memory is updated first, then the conversation continues from a summary; the newest
+  message stays the open request.
+- `CLARA_PERSONA`: a persona file that the chat Clara carries in every folder; work sessions and jobs run without it.
+  `CLARA_QUELLE` is sent as `x_quelle`, so a relay can put chat before background work.
+- Usage events: `clara serve` sends `usage` and `turn_stats` events with numbers, so a client can show tokens and time.
+
 ## 0.1.1 (2026-10-29)
 
 Running on the target workstation (Ubuntu 24.04, kernel 7.0, Landlock ABI 8, Python 3.13, RTX A5000) in place of Hermes Agent and OpenCode.

@@ -9,6 +9,7 @@ path travel in the first user message instead.
 from __future__ import annotations
 
 import time
+import os
 from pathlib import Path
 
 from .toolcalls import prompt_tools_section
@@ -40,6 +41,10 @@ def read_memory(paths: list[Path], max_lines: int = 40, max_chars: int = 4000) -
     for p in paths:
         if p.is_file():
             lines = [ln for ln in p.read_text(encoding="utf-8", errors="replace").splitlines() if ln.strip()]
+            if lines and lines[0].startswith("# Long-term memory (hippocampus)"):
+                out.extend(lines[:200])          # already filtered and capped by the hippocampus: read it whole
+                max_chars = max(max_chars, 20000)
+                continue
             out.extend(lines[-max_lines:])
     text = "\n".join(out)
     return text[-max_chars:] if len(text) > max_chars else text
@@ -48,7 +53,14 @@ def read_memory(paths: list[Path], max_lines: int = 40, max_chars: int = 4000) -
 def build_system_prompt(project_root: Path, home: Path, skills: list[dict], tool_schemas: list[dict] | None,
                         prompt_mode_tools: bool) -> str:
     parts = [CORE]
+    # 06.11.2026: the chat Clara carries her persona wherever she is started (CLARA_PERSONA = file); work sessions
+    # and jobs are started without it and only read the project's CLARA.md
+    persona = os.environ.get("CLARA_PERSONA", "")
+    if persona and Path(persona).is_file():
+        parts.append("# Who you are (persona)\n" + Path(persona).read_text(encoding="utf-8", errors="replace")[:12000])
     proj = read_project_instructions(project_root)
+    if persona and proj and Path(persona).resolve() == (project_root / "CLARA.md").resolve():
+        proj = ""                                   # the same file twice would waste the prompt
     if proj:
         parts.append("# Project instructions (CLARA.md)\n" + proj)
     mem = read_memory([home / "memory.md", project_root / ".clara" / "memory.md"])

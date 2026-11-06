@@ -156,3 +156,57 @@ def test_interrupt_stops_the_turn(project, clara_home):
     agent.run("go")
     assert len(prov.calls) == 1
     assert session.messages[-1]["content"] == "[interrupted by user]"
+
+
+def test_deadline_note_waits_then_appears_once(monkeypatch):
+    import time
+    from clara.agent import Agent
+    a = Agent.__new__(Agent)
+    monkeypatch.delenv("CLARA_SOFT_DEADLINE", raising=False)
+    assert a._deadline_note() == ""
+    monkeypatch.setenv("CLARA_SOFT_DEADLINE", str(time.time() + 100))
+    assert a._deadline_note() == ""
+    monkeypatch.setenv("CLARA_SOFT_DEADLINE", str(time.time() - 1))
+    assert "TIME LIMIT" in a._deadline_note()
+    assert a._deadline_note() == ""
+    monkeypatch.setenv("CLARA_SOFT_DEADLINE", "not a number")
+    a._deadline_said = 0.0
+    assert a._deadline_note() == ""
+
+
+def _same_call(command="python check.py"):
+    return {"tool_calls": [{"name": "bash", "arguments": {"command": command}}]}
+
+
+def test_same_call_same_result_warns_then_stops(project, clara_home):
+    agent, prov, ui, session = make_agent(project, clara_home, [_same_call("echo same")] * 9 + ["never reached"], mode="bypass")
+    out = agent.run("go")
+    assert out.startswith("[no answer: stopped") and "6 times" in out
+    tools = [m["content"] for m in session.messages if m.get("role") == "tool"]
+    assert len(tools) == 6
+    assert ["REPEAT" in c for c in tools] == [False, False, True, True, True, False]
+
+
+def test_different_results_are_not_a_loop(project, clara_home):
+    script = [_same_call(f"echo {i}") for i in range(8)] + ["done"]
+    agent, prov, ui, session = make_agent(project, clara_home, script, mode="bypass")
+    assert agent.run("go") == "done"
+    assert not any("REPEAT" in m["content"] for m in session.messages if m.get("role") == "tool")
+
+
+def test_waiting_with_sleep_is_not_a_loop(project, clara_home):
+    script = [_same_call("sleep 0")] * 8 + ["done"]
+    agent, prov, ui, session = make_agent(project, clara_home, script, mode="bypass")
+    assert agent.run("go") == "done"
+
+
+def test_empty_after_a_cut_off_reply_says_context_full(project, clara_home):
+    agent, prov, ui, session = make_agent(project, clara_home, ["", ""])
+    agent.meter.last_prompt_tokens = 65321
+    real = agent._request
+    def cut(*a, **k):
+        agent._context_full = 65321
+        return real(*a, **k)
+    agent._request = cut
+    out = agent.run("go")
+    assert out.startswith("[no answer: the context is full (65321 tokens")

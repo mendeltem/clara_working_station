@@ -185,6 +185,8 @@ class LocalOpenAIProvider(Provider):
             return
         body = self._body(messages, tools, True, opts)
         resp = self._request("POST", self.base_url + "/chat/completions", body, stream=True)
+        # the Weiche relay says where the reply was computed ("cle/<model>" or "lokal/<model>")
+        self.last_route = (getattr(resp, "headers", None) or {}).get("X-Weiche") or ""
         router = StreamRouter()
         native: dict[int, dict] = {}
         finish_reason = None
@@ -247,7 +249,7 @@ class LocalOpenAIProvider(Provider):
         for tc in calls:
             yield Event("tool_call", tool_call=tc)
         if usage or timings:
-            yield Event("usage", data={"usage": usage, "timings": timings})
+            yield Event("usage", data={"usage": usage, "timings": timings, "route": getattr(self, "last_route", "")})
         yield Event("done", text=text, data={"finish_reason": finish_reason, "reasoning": reasoning,
                                              "native_tool_calls": bool(native)})
 

@@ -49,6 +49,15 @@ clara --yolo
 ```
 No questions. The Landlock sandbox is applied automatically: writes only inside the project, `/tmp` and Clara's session folders; TCP only to the model server port; Clara's own config, skills and rules stay read-only; folders listed under `read_deny` in `config.toml` cannot be read at all, not even by `cat` through a symlink. Every child process inherits that. `clara sandbox-check` proves it on your kernel (22 checks).
 
+## One Clara for terminal and phone
+
+```bash
+clara connect
+```
+Attaches this terminal to the main conversation in `clara serve` (the same one the phone uses): same history, same
+memory; phone messages appear marked 📱. A chat Clara can hand long jobs to work sessions (`start_work`, `work_status`,
+`/work`) and keeps a filtered long-term memory (`clara memory show`). Details in `CHANGELOG.md` (0.1.2).
+
 ## Phone app
 
 ```bash

@@ -97,8 +97,13 @@ class Settings:
     approver_url: str = ""
     approver_timeout: float = 90.0
     read_deny: list[str] = field(default_factory=list)
+    read_allow: list[str] | None = None
     max_turns: int = 60
     context_warn_fraction: float = 0.85
+    # 06.11.2026: long-term memory that filters (hippocampus) and compaction at a threshold (arXiv 2611.05306)
+    hippocampus: bool = False
+    compact_at: int = 0          # prompt tokens; 0 = never compact by itself
+    memory_cap: int = 150
     show_reasoning: bool = True
     serve_host: str = "127.0.0.1"
     serve_port: int = 8765
@@ -185,6 +190,7 @@ def load_settings(home: Path | None = None) -> Settings:
     s.sandbox_mode = str(sandbox.get("mode", s.sandbox_mode))
     s.extra_write_paths = list(sandbox.get("extra_write_paths", []))
     s.read_deny = list(sandbox.get("read_deny", []))
+    s.read_allow = list(sandbox["read_allow"]) if "read_allow" in sandbox else None
     s.extra_connect_ports = [int(x) for x in sandbox.get("extra_connect_ports", [])]
     s.unix_sockets = str(sandbox.get("unix_sockets", s.unix_sockets))
     perm = raw.get("permissions", {})
@@ -193,6 +199,10 @@ def load_settings(home: Path | None = None) -> Settings:
     s.max_turns = int(agent.get("max_turns", s.max_turns))
     s.context_warn_fraction = float(agent.get("context_warn_fraction", s.context_warn_fraction))
     s.show_reasoning = bool(agent.get("show_reasoning", s.show_reasoning))
+    mem = raw.get("memory", {})
+    s.hippocampus = bool(mem.get("hippocampus", s.hippocampus))
+    s.compact_at = int(mem.get("compact_at", s.compact_at))
+    s.memory_cap = int(mem.get("cap", s.memory_cap))
     s.serve_host = str(serve.get("host", s.serve_host))
     s.serve_port = int(serve.get("port", s.serve_port))
     s.serve_serialize = bool(serve.get("serialize", s.serve_serialize))

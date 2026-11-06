@@ -57,7 +57,7 @@ def test_native_tool_calls_streamed_as_deltas(project, clara_home, fake_llama):
     assert session.messages[3] == {"role": "tool", "tool_call_id": "call0", "name": "read_file",
                                    "content": "1\tThe secret word is PELICAN.\n2\tSecond line."}
     # status line from timings: measured numbers, not guesses
-    assert any("tok/s" in t for t in ui.of("status"))
+    assert any("tokens/s" in t for t in ui.of("status"))   # plain words since 06.11.2026
     assert agent.meter.calibrated and agent.meter.last_prompt_tokens > 0
 
 

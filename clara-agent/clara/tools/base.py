@@ -117,6 +117,19 @@ def default_registry(include: list[str] | None = None, exclude: list[str] | None
     return ToolRegistry(tools)
 
 
+def session_registry(settings) -> ToolRegistry:
+    """Tools of an interactive or served session: the default set, plus the work-session tools only where the config
+    says so ([work] tools = true: the chat Clara). Work sessions themselves never get them (no jobs spawning jobs)."""
+    reg = default_registry()
+    import os
+    if (getattr(settings, "raw", {}) or {}).get("work", {}).get("tools") or os.environ.get("CLARA_WORK_TOOLS") == "1":
+        from .work import StartWork, WorkStatus, StopWork
+        reg.add(StartWork())
+        reg.add(WorkStatus())
+        reg.add(StopWork())
+    return reg
+
+
 def arg_str(args: dict, key: str, default: Any = None) -> Any:
     v = args.get(key, default)
     return v if v is not None else default

@@ -201,8 +201,12 @@ def read_grant_rules(denied: list[str]) -> list[tuple[str, bool]]:
 
 
 def apply(write_paths, connect_ports=(), bind_ports=(), file_only_paths=("/dev", "/proc"),
-          restrict_net: bool = True, write_files=(), read_deny=(), unix_sockets: str = "seqpacket") -> SandboxReport:
+          restrict_net: bool = True, write_files=(), read_deny=(), unix_sockets: str = "seqpacket",
+          read_allow=None) -> SandboxReport:
     """Restrict the calling thread (and everything it starts from now on).
+
+    read_allow, when a list: reading is denied everywhere except beneath these paths and the
+    write paths, so a new folder is closed by default. It replaces read_deny.
 
     Call this from the main thread before any other thread exists. Raises
     nothing: the report says what was and was not applied, so the caller can
@@ -219,8 +223,11 @@ def apply(write_paths, connect_ports=(), bind_ports=(), file_only_paths=("/dev",
     libc = _libc()
     fs_rights = _write_rights(abi)
     read_rights = FS_READ_FILE | FS_READ_DIR
-    read_grants = read_grant_rules(list(read_deny)) if read_deny else []
-    handled = fs_rights | (read_rights if read_deny else 0)
+    read_locked = bool(read_deny) or read_allow is not None
+    read_grants = [(os.path.realpath(os.path.expanduser(str(p))), os.path.isdir(os.path.expanduser(str(p))))
+                   for p in (read_allow or []) if os.path.exists(os.path.expanduser(str(p)))] if read_allow is not None \
+        else (read_grant_rules(list(read_deny)) if read_deny else [])
+    handled = fs_rights | (read_rights if read_locked else 0)
     attr = RulesetAttr(handled_access_fs=handled, handled_access_net=0, scoped=0)
     want_net = restrict_net and abi >= 4
     if want_net:
@@ -236,7 +243,7 @@ def apply(write_paths, connect_ports=(), bind_ports=(), file_only_paths=("/dev",
         rep.reason = f"landlock_create_ruleset failed: {os.strerror(err)}"
         return rep
     try:
-        dir_write = fs_rights | (read_rights if read_deny else 0)
+        dir_write = fs_rights | (read_rights if read_locked else 0)
         for p in write_paths:
             p = str(Path(p).expanduser())
             if not os.path.isdir(p):
@@ -245,13 +252,13 @@ def apply(write_paths, connect_ports=(), bind_ports=(), file_only_paths=("/dev",
             _add_path_rule(libc, ruleset_fd, p, dir_write, directory=True)
             rep.write_paths.append(p)
         file_rights = FS_WRITE_FILE | (FS_TRUNCATE if abi >= 3 else 0)
-        if read_deny:
+        if read_locked:
             for path, is_dir in read_grants:
                 try:
                     _add_path_rule(libc, ruleset_fd, path, read_rights if is_dir else FS_READ_FILE, directory=is_dir)
                 except OSError:
                     continue   # vanished or unreadable entry: it simply stays unreadable
-            rep.read_denied = [os.path.realpath(os.path.expanduser(d)) for d in read_deny]
+            rep.read_denied = ["everything else"] if read_allow is not None else [os.path.realpath(os.path.expanduser(d)) for d in read_deny]
             file_rights |= FS_READ_FILE
         for p in file_only_paths:
             if os.path.isdir(p):

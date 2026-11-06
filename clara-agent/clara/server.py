@@ -32,7 +32,8 @@ from .providers.base import Provider, ProviderError
 from .providers.mock import MockProvider
 from .providers.openai_local import LocalOpenAIProvider
 from .sessions import Session, list_sessions
-from .tools.base import default_registry
+from .tools.base import default_registry, session_registry
+from .cli import quelle_body
 
 APP_DIR = Path(__file__).parent / "app"
 PERMISSION_TIMEOUT = 15 * 60
@@ -68,6 +69,15 @@ class WebUI(UI):
 
     def on_warning(self, text):
         self.emit("warning", text=text)
+
+    # 06.11.2026: numbers instead of status sentences, so a client (Telegram) can show "Working… (· ↓ tokens)"
+    _KEYS = ("calls", "prompt", "cached", "completion", "context", "routes", "seconds")
+
+    def on_usage(self, stats):
+        self.emit("usage", **{k: stats.get(k) for k in self._KEYS})
+
+    def on_turn_stats(self, stats):
+        self.emit("turn_stats", **{k: stats.get(k) for k in self._KEYS})
 
     def on_turn_end(self, text):
         self.emit("turn_end", text=text)
@@ -130,7 +140,7 @@ class ServerSession:
         from .cli import _approver
         self.permissions = Permissions(ps, mode=mode, approver=_approver(app.settings), asker=self.ui.ask_permission, project_root=project_root,
                                        home=app.settings.home)
-        self.agent = Agent(app.settings, app.provider, default_registry(), self.permissions, session, self.ui,
+        self.agent = Agent(app.settings, app.provider, session_registry(app.settings), self.permissions, session, self.ui,
                            project_root, tool_mode=app.settings.tool_mode)
 
     def push(self, ev: dict) -> None:
@@ -677,7 +687,8 @@ def serve_command(args) -> int:
         provider: Provider = MockProvider(list(DEMO_SCRIPT) * 50)
     else:
         provider = LocalOpenAIProvider(settings.base_url, settings.model, timeout=settings.timeout,
-                                       temperature=settings.temperature)
+                                       temperature=settings.temperature,
+                                       extra_body=quelle_body())
         if getattr(args, "wait", 0):
             provider.wait_until_up(args.wait, status_cb=lambda t: print(t, file=sys.stderr))
         if not provider.model:

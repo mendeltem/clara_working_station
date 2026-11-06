@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
-from . import __version__, netguard, sandbox
+from . import __version__, netguard, sandbox, terminal
 from .agent import Agent
 from .config import ProjectSettings, Settings, find_project_root, load_settings
 from .permissions import MODES, Permissions
@@ -20,7 +20,7 @@ from .providers.mock import MockProvider
 from .providers.openai_local import LocalOpenAIProvider
 from .sessions import Session, list_sessions
 from .terminal import BOLD, CYAN, DIM, YELLOW, HeadlessUI, TerminalUI, c
-from .tools.base import default_registry
+from .tools.base import default_registry, session_registry
 
 DEMO_SCRIPT = [
     "<think>The user wants to see how I work. I will list the project files first.</think>"
@@ -70,6 +70,10 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--last", type=int, default=30)
     a.add_argument("--clear", action="store_true")
     sub.add_parser("sessions", help="list recorded sessions")
+    sub.add_parser("connect", help="attach this terminal to the main Clara in clara serve (same conversation as Telegram)")
+    mp = sub.add_parser("memory", help="long-term memory (hippocampus): show, sleep, search, log")
+    mp.add_argument("action", nargs="?", default="show", choices=["show", "sleep", "search", "log"])
+    mp.add_argument("query", nargs="*", help="for search: words to look for among faded memories")
     s = sub.add_parser("serve", help="start the local API and the phone app")
     s.add_argument("--lan", action="store_true", help="listen on all interfaces (phone over WLAN)")
     s.add_argument("--host")
@@ -137,7 +141,8 @@ def make_provider(settings: Settings, args, status=None) -> Provider:
     if getattr(args, "mock", False):
         return MockProvider(list(DEMO_SCRIPT))
     prov = LocalOpenAIProvider(settings.base_url, settings.model, timeout=settings.timeout,
-                               temperature=settings.temperature)
+                               temperature=settings.temperature,
+                               extra_body=quelle_body())
     if args.wait:
         prov.wait_until_up(args.wait, status_cb=status)
     if not prov.model:
@@ -175,7 +180,7 @@ def apply_sandbox(settings: Settings, project_root: Path, perm_mode: str, sandbo
                                                     rules_writable=(perm_mode != "yolo")),
                         connect_ports=connect_ports, bind_ports=list(bind_ports),
                         write_files=sandbox.default_write_files(settings.home), read_deny=settings.read_deny,
-                        unix_sockets=settings.unix_sockets)
+                        unix_sockets=settings.unix_sockets, read_allow=settings.read_allow)
     if not rep.applied:
         print(c(YELLOW, f"! sandbox requested but not applied: {rep.reason}"), file=sys.stderr)
     if rep.missing_paths:
@@ -217,7 +222,7 @@ def bootstrap(args, interactive: bool, ui) -> Runtime:
             project_root = Path(session.project_root)
     else:
         session = Session.new(settings.sessions_dir, project_root, record=not args.no_record)
-    agent = Agent(settings, provider, default_registry(), perms, session, ui, project_root,
+    agent = Agent(settings, provider, session_registry(settings), perms, session, ui, project_root,
                   tool_mode=settings.tool_mode)
     return Runtime(settings, project_root, provider, perms, session, agent, rep)
 
@@ -244,20 +249,51 @@ HELP = """commands
   /help            this list
   /status          model, context use, sandbox, guard
   /mode [m]        show or set permission mode: default | accept-edits | yolo
+  /yolo            same as /mode yolo: every tool call runs without asking
   /think           toggle showing the model's reasoning
-  /compact         summarise the conversation (flushes the server prefix cache)
-  /clear           start a new session
-  /sessions        list recorded sessions      /resume ID   switch to one
-  /tools           list tools                  /skills      list skills
+  /compact         summarise the conversation (memory first, then a fresh start)
+  /remember        let the memory (hippocampus) take what mattered from this conversation now
+  /clear           start a new session (also /neu, /new as on Telegram)
+  /sessions        list recorded sessions
+  /resume ID       switch to a recorded session (ID or last)
+  /tools           list tools
+  /skills          list skills
   /audit           last network audit entries
   /memory          show notes from earlier sessions
-  /exit            leave (Ctrl+D also works)
-Ctrl+C while the model works interrupts the turn."""
+  /work            overview of the work sessions and the job queue
+  /exit            leave (also /quit, /q or Ctrl+D)
+
+keys
+  typing a slash at the line start shows the command menu
+  Tab              complete a command, its argument (mode, session id) or a file path
+  Up / Down        earlier inputs (history is kept between sessions)
+  Ctrl+C           interrupt the model while it works
+  Ctrl+D           leave
+  Ctrl-b d         detach from the tmux window; Clara keeps running (clara --an to come back)
+
+permission prompts
+  y once · s for this session · p save as rule · n deny
+
+settings (environment, before starting)
+  CLARA_THEME=plain      old colours          CLARA_BG=off         keep the terminal background
+  CLARA_SLASH_MENU=off   no menu on slash     NO_COLOR=1           no colours at all
+
+outside the session
+  clara --help lists every start option; clara --liste shows all open sessions"""
+
+
+def quelle_body() -> dict:
+    """06.11.2026: who is asking (CLARA_QUELLE, e.g. chat/terminal, arbeit/<name>) -- the Weiche relay reads x_quelle
+    to put chat requests ahead of background work on the local model."""
+    q = os.environ.get("CLARA_QUELLE", "")
+    return {"x_quelle": q[:40]} if q else {}
 
 
 def banner(rt: Runtime) -> None:
     prov = rt.provider
     model = getattr(prov, "model", prov.name)
+    if terminal.THEME != "plain":
+        return banner_dark(rt)
     print(c(BOLD, f"Clara {__version__}") + c(DIM, " · offline agent · /help for commands"))
     line = f"model    {model} @ {rt.settings.base_url}"
     if isinstance(prov, LocalOpenAIProvider):
@@ -282,6 +318,73 @@ def banner(rt: Runtime) -> None:
     print(c(DIM, f"guard    allowed hosts {sorted(netguard.allowed_hosts())} · audit {rt.settings.audit_log}"))
 
 
+def banner_dark(rt: Runtime) -> None:
+    """Welcome box. No model call: the server is only asked for its model list."""
+    prov = rt.provider
+    model = getattr(prov, "model", prov.name)
+    w = min(terminal.width(), 100)
+    home = os.path.expanduser("~")
+    proj = str(rt.project_root).replace(home, "~", 1)
+    sb = rt.sandbox_report.summary() if rt.sandbox_report else "sandbox off"
+    rows = [(c(terminal.ACCENT, "✻ ") + c(terminal.BOLD, f"Clara {__version__}") + c(DIM, " · welcome back"), 2 + 6 + len(__version__) + 15),
+            ("", 0),
+            (c(DIM, "  /help for commands · Ctrl+C interrupts · Ctrl+D leaves"), 56),
+            ("", 0),
+            (c(DIM, "  cwd:   ") + proj, 9 + len(proj)),
+            (c(DIM, "  model: ") + f"{model}" + c(DIM, f" @ {rt.settings.base_url}"), 9 + len(str(model)) + 3 + len(rt.settings.base_url)),
+            (c(DIM, f"  mode:  {rt.permissions.mode} · {sb}"), 9 + len(f"{rt.permissions.mode} · {sb}"))]
+    print(c(terminal.ACCENT, "╭" + "─" * (w - 2) + "╮"))
+    for text, n in rows:
+        if n > w - 4:   # too long for the box: cut the plain part, colours are lost, still readable
+            import re as _re
+            plain = _re.sub(r"\x1b\[[0-9;]*m", "", text)[: w - 5] + "…"
+            text, n = plain, len(plain)
+        print(c(terminal.ACCENT, "│") + " " + text + " " * max(0, w - 3 - n) + c(terminal.ACCENT, "│"))
+    print(c(terminal.ACCENT, "╰" + "─" * (w - 2) + "╯"))
+
+
+def work_overview() -> list[str]:
+    """Lines for the work sessions (clara-arbeit) and the job queue (dauerlauf), newest first. Read-only, files only."""
+    from .tools.work import BASES, _status
+    rows = []
+    for place in ("cle", "lokal"):
+        base = Path(os.path.expanduser(BASES[place]))
+        if not base.is_dir():
+            continue
+        for d in base.iterdir():
+            if d.is_dir() and (d / "AUFTRAG.txt").exists():
+                st = _status(d)
+                start = st.get("started") or (d / "AUFTRAG.txt").stat().st_mtime
+                end = st.get("finished") or time.time()
+                mins = int(end - start) // 60
+                dur = f"{mins // 60}h {mins % 60:02d}m" if mins >= 60 else f"{mins}m"
+                rows.append((start, st.get("state", "?"), d.name, dur, "Clé" if place == "cle" else "local GPU"))
+    rows.sort(reverse=True)
+    out = []
+    marks = {"running": "▶", "done": "✔", "waiting to start": "…"}
+    for _, state, name, dur, where in rows[:12]:
+        mark = marks.get(state, "✖" if state in ("failed", "timed out") else "■")
+        out.append(f"  {mark} {name:<28} {state:<18} {dur:>7}  {where}")
+    if len(rows) > 12:
+        out.append(f"  … {len(rows) - 12} older (work_status lists all)")
+    queue = Path(os.path.expanduser("~/data/work/auftraege"))
+    if queue.is_dir():
+        n = {k: len(list((queue / k).glob("*.txt"))) for k in ("laeuft", "offen", "steckengeblieben")}
+        out.append(f"  queue: {n['laeuft']} running · {n['offen']} waiting · {n['steckengeblieben']} stuck")
+    return out
+
+
+def print_work_overview(title: bool = True) -> None:
+    lines = work_overview()
+    if not lines:
+        return
+    if title:
+        print(c(terminal.ACCENT, "  Work sessions"))
+    for ln in lines:
+        color = terminal.TEXT if "▶" in ln else DIM
+        print(c(color, ln))
+
+
 def run_turn(rt: Runtime, text: str) -> None:
     """Run the agent in a worker thread so Ctrl+C can interrupt it."""
     result: dict = {}
@@ -296,6 +399,9 @@ def run_turn(rt: Runtime, text: str) -> None:
             done.set()
 
     t = threading.Thread(target=work, daemon=True)
+    begin, end = getattr(rt.agent.ui, "begin_turn", None), getattr(rt.agent.ui, "end_turn", None)
+    if begin:
+        begin()
     t.start()
     while not done.is_set():
         try:
@@ -303,6 +409,8 @@ def run_turn(rt: Runtime, text: str) -> None:
         except KeyboardInterrupt:
             rt.agent.interrupt()
             print(c(YELLOW, "\n! interrupting (press Enter if a prompt is waiting)"))
+    if end:
+        end()
     if "error" in result:
         print(c(YELLOW, f"! {result['error']}"))
 
@@ -344,8 +452,17 @@ def slash(rt: Runtime, ui: TerminalUI, line: str) -> Runtime | None:
         print(f"reasoning {'shown' if s.show_reasoning else 'hidden'}")
     elif cmd == "/compact":
         print(c(DIM, "compacting…"))
+        got = rt.agent.remember()
+        if got:
+            print(c(DIM, f"memory: {got['kept']} new, {got['strengthened']} strengthened, {got['rejected']} let go"))
         print(rt.agent.compact())
-    elif cmd == "/clear":
+    elif cmd == "/work":
+        print_work_overview(title=False) if work_overview() else print(c(DIM, "no work sessions yet"))
+    elif cmd == "/remember":
+        got = rt.agent.remember()
+        print(c(DIM, "memory is off ([memory] hippocampus = true in config.toml)") if got is None else
+              c(DIM, f"memory: {got['kept']} new, {got['strengthened']} strengthened, {got['rejected']} let go"))
+    elif cmd in ("/clear", "/neu", "/new"):
         session = Session.new(s.sessions_dir, rt.project_root, record=rt.session.path is not None)
         rt.session = session
         rt.agent = Agent(s, rt.provider, rt.agent.tools, rt.permissions, session, ui, rt.project_root,
@@ -383,8 +500,13 @@ def slash(rt: Runtime, ui: TerminalUI, line: str) -> Runtime | None:
 
 def chat(args) -> int:
     ui = TerminalUI(show_reasoning=not args.quiet)
+    terminal.dark_background(True)
+    import atexit
+    atexit.register(terminal.dark_background, False)
     rt = bootstrap(args, interactive=True, ui=ui)
     banner(rt)
+    if os.environ.get("CLARA_WORK_TOOLS") == "1" or (rt.settings.raw.get("work") or {}).get("tools"):
+        print_work_overview()           # 06.11.2026: the chat Clara opens with the overview of her work sessions
     histfile = rt.settings.history_file
     try:
         import readline  # noqa: F401
@@ -393,12 +515,24 @@ def chat(args) -> int:
         except (OSError, ValueError):
             pass
         readline.set_history_length(2000)
+        # 06.11.2026: "/" shows the command menu, Tab completes commands, /mode, /resume and paths
+        from . import completion
+        prompt = ("\x01\x1b[" + terminal.ACCENT + "m\x02❯ \x01\x1b[0m\x02") if terminal.COLOR else "❯ "
+        completion.install(completion.Completer(
+            completion.commands_from_help(HELP), prompt, dim=terminal.DIM, accent=terminal.ACCENT,
+            sessions=lambda: [it["id"] for it in list_sessions(rt.settings.sessions_dir)]),
+            auto_slash=sys.stdin.isatty())
     except ImportError:
         readline = None
     try:
         while True:
             try:
-                line = input(c(CYAN, "\nclara ❯ "))
+                if terminal.THEME != "plain":
+                    print("\n" + terminal.rule())
+                    line = input("\x01" + "\x1b[" + terminal.ACCENT + "m\x02❯ \x01\x1b[0m\x02" if terminal.COLOR else "❯ ")
+                    print(terminal.rule())
+                else:
+                    line = input(c(CYAN, "\nclara ❯ "))
             except KeyboardInterrupt:
                 print(c(DIM, "\n(Ctrl+D or /exit to leave)"))
                 continue
@@ -415,6 +549,11 @@ def chat(args) -> int:
                 continue
             run_turn(rt, line)
     finally:
+        if rt.settings.hippocampus and any(m.get("role") == "user" for m in rt.agent.messages):
+            print(c(DIM, "✻ remembering what mattered…"))
+            got = rt.agent.remember()
+            if got:
+                print(c(DIM, f"  {got['kept']} new, {got['strengthened']} strengthened, {got['rejected']} let go"))
         if readline is not None:
             try:
                 readline.write_history_file(histfile)
@@ -427,6 +566,9 @@ def one_shot(args) -> int:
     ui = HeadlessUI(show_reasoning=False, verbose=True)
     rt = bootstrap(args, interactive=False, ui=ui)
     text = rt.agent.run(args.prompt)
+    if text.startswith("[no answer:"):
+        sys.stderr.write("clara: " + text + "\n")   # no result is a failure, also for a supervisor that only sees the exit code
+        return 1
     if text:
         sys.stdout.write(text.rstrip() + "\n")
         return 0
@@ -533,6 +675,30 @@ def audit(args) -> int:
     return 0
 
 
+def memory_cmd(args) -> int:
+    """clara memory [show|sleep|search WORDS|log]"""
+    from .hippocampus import Hippocampus, strength
+    settings = load_settings()
+    hc = Hippocampus(settings.home, cap=settings.memory_cap)
+    if args.action == "sleep":
+        prov = LocalOpenAIProvider(settings.base_url, settings.model, timeout=settings.timeout)
+        print(hc.sleep(prov))
+        return 0
+    if args.action == "search":
+        for e in hc.search_faded(" ".join(args.query)):
+            print(f"{time.strftime('%F', time.localtime(e.get('faded', 0)))}  {e['text']}")
+        return 0
+    if args.action == "log":
+        print(hc.log.read_text(encoding="utf-8")[-6000:] if hc.log.is_file() else "no memory log yet")
+        return 0
+    entries = sorted(hc.load(), key=lambda e: -strength(e))
+    for e in entries:
+        pin = "rule" if e.get("pinned") else f"{strength(e):4.1f}"
+        print(f"{pin:>5}  {e['kind']:<10} {e['text']}")
+    print(f"{len(entries)} memories (cap {settings.memory_cap}) in {hc.store}")
+    return 0
+
+
 def sessions_cmd(args) -> int:
     settings = load_settings()
     items = list_sessions(settings.sessions_dir, limit=50)
@@ -558,6 +724,11 @@ def main(argv: list[str] | None = None) -> int:
             return audit(args)
         if args.command == "sessions":
             return sessions_cmd(args)
+        if args.command == "memory":
+            return memory_cmd(args)
+        if args.command == "connect":
+            from .remote import connect_command
+            return connect_command(args)
         if args.command == "sandbox-check":
             return sandbox_check(args)
         if args.command in ("serve", "pair", "desktop"):
