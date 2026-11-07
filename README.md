@@ -12,6 +12,7 @@ portfolio: only what was produced here is listed.*
 - **Explanation of the working station (10 min):** https://mendeltem.github.io/clara_working_station/film/
 - **Clara agent, the harness (3 min):** https://mendeltem.github.io/clara_working_station/film/clara-agent.html
 - **The new Clara (3 min, 06.11.2026):** https://mendeltem.github.io/clara_working_station/film/clara-neu.html
+- **The smuggling test (5 min, 07.11.2026), can patient data slip out? Two doors, 13 routing cases, 30 harmless and 15 sensitive searches:** https://mendeltem.github.io/clara_working_station/film/smuggling-test.html
 - **You don't need long context, explained (3 min):** https://mendeltem.github.io/clara_working_station/film/long-context.html
 - **The film machine, with a voice (4 min, fast style, animation by Clara with Clé):** https://mendeltem.github.io/clara_working_station/film/film-machine-v3.html
 - **How to build the film machine (2 min, fast style):** https://mendeltem.github.io/clara_working_station/film/film-machine.html
