@@ -7,26 +7,22 @@ What is computed on **Alita**, and what of it is published.
 *Work computed on Alita by the local agent. This is a workbench, not a
 portfolio: only what was produced here is listed.*
 
-**Films (English):**
+**Films (English), all with thumbnails:** https://mendeltem.github.io/clara_working_station/film/
+
+[![The updated working station, November 2026](film/thumbs/clara_working_station_november.jpg)](https://mendeltem.github.io/clara_working_station/film/clara-november.html)
 
 - **The updated working station, November 2026 (23 min, 4 parts, clickable chapters): one Clara for phone and terminal, small staged work sessions, two safety doors, how Clara is tested:** https://mendeltem.github.io/clara_working_station/film/clara-november.html
-- **Explanation of the working station (10 min):** https://mendeltem.github.io/clara_working_station/film/
-- **Clara agent, the harness (3 min):** https://mendeltem.github.io/clara_working_station/film/clara-agent.html
-- **The new Clara (3 min, 06.11.2026):** https://mendeltem.github.io/clara_working_station/film/clara-neu.html
 - **The smuggling test (5 min, 07.11.2026), can patient data slip out? Two doors, 13 routing cases, 30 harmless and 15 sensitive searches:** https://mendeltem.github.io/clara_working_station/film/smuggling-test.html
-- **You don't need long context, explained (3 min):** https://mendeltem.github.io/clara_working_station/film/long-context.html
-- **The film machine, with a voice (4 min, fast style, animation by Clara with Clé):** https://mendeltem.github.io/clara_working_station/film/film-machine-v3.html
-- **How to build the film machine (2 min, fast style):** https://mendeltem.github.io/clara_working_station/film/film-machine.html
-- **Clara's own film, watchdogs (3 min, made by Clara with Clé):** https://mendeltem.github.io/clara_working_station/film/clara-watchdogs.html
 - **Carbon-X explained (8 min), a DNA language model running locally on the working station:** https://mendeltem.github.io/clara_working_station/film/carbon-x.html
+- **The film machine, with a voice (4 min, fast style, animation by Clara with Clé):** https://mendeltem.github.io/clara_working_station/film/film-machine-v3.html
+- **Clara agent, the harness (3 min):** https://mendeltem.github.io/clara_working_station/film/clara-agent.html
+- **You don't need long context, explained (3 min):** https://mendeltem.github.io/clara_working_station/film/long-context.html
 
-**Video (10 min):** [the workstation explained](video/clara_working_station.mp4): what Alita, Clara, Clé and System One
-are, why not just the cluster, one request from start to finish, three failures that looked like success, what stays
-private, and how Clé wrote this film (narration by Clé, animation with Manim). No patient data in it.
-
-**Tried to create animation (39 s):** [Ziggy Turbo v1](https://mendeltem.github.io/clara_working_station/video/ziggy_turbo_v1.mp4): a first test of a short cartoon with an
-invented character, made locally: FLUX.1-schnell keyframes, Wan 2.2 TI2V-5B image-to-video, Kokoro voice. AI-generated;
-face and hands lose coherence after a few seconds.
+**Archive** (older versions, replaced by the films above; in `film/archive/`):
+the 10-minute tour, the new Clara (06.11.2026), Clara's own film "watchdogs", how to build the film machine (2 min),
+the first workstation video (10 min) and Ziggy Turbo v1 (39 s, a first animation test with an invented character,
+made locally: FLUX.1-schnell keyframes, Wan 2.2 TI2V-5B image-to-video, Kokoro voice; AI-generated, face and hands
+lose coherence after a few seconds). All listed with thumbnails on the film page.
 
 ---
 

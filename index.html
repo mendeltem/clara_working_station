@@ -39,13 +39,36 @@
  table.p td:first-child{color:var(--ink);font-weight:700;white-space:nowrap}
  code{color:var(--accent);font-size:12px}
  .chart{margin:4px 0 14px;border-radius:12px}
+ .fv{display:grid;grid-template-columns:1.3fr 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+     background:var(--panel);text-decoration:none;color:inherit;margin:18px 0 12px;transition:border-color .12s}
+ .fv:hover,.fs a:hover{border-color:var(--accent2)}
+ .fi{position:relative;display:block;aspect-ratio:16/9;max-width:100%;background:#000;overflow:hidden}
+ .fi img{width:100%;height:100%;object-fit:cover;display:block}
+ .du{position:absolute;right:7px;bottom:7px;background:rgba(0,0,0,.78);color:#fff;font-size:10.5px;padding:1px 6px;border-radius:4px}
+ .fb{display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px 16px;min-width:0}
+ .fl{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+ .ft{font-weight:800;font-size:16.5px;color:var(--accent2)}
+ .fd{color:var(--muted);font-size:12px}
+ .fs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+ .fs a{display:block;border:1px solid var(--line);border-radius:10px;overflow:hidden;text-decoration:none;background:var(--panel);transition:border-color .12s}
+ .fn{display:block;padding:7px 9px;font-size:11.5px;color:var(--ink)}
+ .fa{display:inline-block;margin:12px 0 22px;color:var(--accent2);font-size:12.5px;text-decoration:none}.fa:hover{text-decoration:underline}
+ @media (max-width:560px){.fv{grid-template-columns:1fr}.fs{grid-template-columns:1fr 1fr}.fs a:last-child{display:none}}
  @media (max-width:560px){table.r td:last-child{white-space:normal}}
 </style></head><body>
 <h1>Clara <span class="a">Working Station</span></h1>
 <div class="sub">Alita · local agent, no network</div>
-<a class="k" href="film/clara-agent.html"><div class="t">The harness film</div><div class="d">Clara agent in 3 minutes: one turn, what the kernel enforces, what is proven (English).</div></a>
-<a class="k" href="film/film-machine-v3.html"><div class="t">The film machine</div><div class="d">How the video pipeline works, with a voice that has moods, in 4 fast minutes (English).</div></a>
-<a class="k" href="film/"><div class="t">The film</div><div class="d">A 10-minute narrated tour of the working station (English).</div></a>
+<a class="fv" href="film/clara-november.html">
+ <span class="fi"><img src="film/thumbs/clara_working_station_november.jpg" alt="Still from the November film" loading="eager"><span class="du">23:16</span></span>
+ <span class="fb"><span class="fl">Newest film · November 2026</span><span class="ft">The updated working station</span>
+ <span class="fd">One Clara for phone and terminal, small staged work sessions, two safety doors, nightly tests. 25 clickable chapters.</span></span>
+</a>
+<div class="fs">
+ <a href="film/smuggling-test.html"><span class="fi"><img src="film/thumbs/smuggling_test.jpg" alt="" decoding="async"><span class="du">5:04</span></span><span class="fn">The smuggling test</span></a>
+ <a href="film/clara-agent.html"><span class="fi"><img src="film/thumbs/clara_agent_harness.jpg" alt="" decoding="async"><span class="du">3:13</span></span><span class="fn">The harness</span></a>
+ <a href="film/film-machine-v3.html"><span class="fi"><img src="film/thumbs/film_machine_v3.jpg" alt="" decoding="async"><span class="du">3:45</span></span><span class="fn">The film machine</span></a>
+</div>
+<a class="fa" href="film/">All films and the archive →</a>
 <p class="intro">What is computed on this machine, and what of it is published.
 A workbench, not a portfolio: only what was produced here is listed.</p>
 

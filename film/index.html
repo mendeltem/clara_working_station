@@ -1,24 +1,129 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Clara Working Station: the film</title>
-<meta name="description" content="A 10-minute narrated tour of the Clara working station: what it is, why it exists, its parts, three failures and its limits.">
+<title>Clara Working Station: films</title>
+<meta name="description" content="Narrated films about the Clara working station: how it works, how it is tested, and what it made. Newest first, older versions in the archive.">
+<meta property="og:title" content="Clara Working Station: films">
+<meta property="og:image" content="thumbs/clara_working_station_november.jpg">
 <style>
- :root{--bg:#080c0f;--ink:#e8f1f3;--muted:#7d99a2;--accent:#33c6b6}
+ :root{--bg:#080c0f;--panel:#0f1a20;--panel2:#132129;--line:#22363f;--ink:#e8f1f3;--muted:#7d99a2;
+       --accent:#f0a830;--accent2:#33c6b6;color-scheme:dark}
  *{box-sizing:border-box;margin:0;padding:0}
- body{background:var(--bg);color:var(--ink);font-family:ui-monospace,monospace;font-size:14px;line-height:1.55;padding:28px 16px;max-width:1000px;margin:0 auto}
- h1{font-size:24px;margin-bottom:6px}
- p{color:var(--muted);font-size:13px;margin:8px 0 16px}
- video{width:100%;height:auto;display:block;border-radius:10px;background:#000}
- a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
- ol{color:var(--muted);font-size:13px;margin:18px 0 0 22px}
+ body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+      font-size:15px;line-height:1.55;padding:40px max(16px,env(safe-area-inset-right)) 60px max(16px,env(safe-area-inset-left));
+      max-width:1080px;margin:0 auto}
+ a{color:inherit;text-decoration:none}
+ .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+ .home{font-family:ui-monospace,monospace;font-size:12px;color:var(--accent2)}
+ .home:hover{text-decoration:underline}
+ h1{font-size:30px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+ h1 .a{color:var(--accent)}
+ .sub{color:var(--muted);font-size:14px;margin:8px 0 28px;max-width:62ch}
+ h2{font-family:ui-monospace,monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    margin:44px 0 14px;padding-bottom:7px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+ h2 span{letter-spacing:.04em;text-transform:none}
+ .thumb{position:relative;display:block;aspect-ratio:16/9;max-width:100%;overflow:hidden;background:#000;border-bottom:1px solid var(--line)}
+ .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s ease}
+ .dur{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.78);color:#fff;font-family:ui-monospace,monospace;
+      font-size:11.5px;padding:2px 7px;border-radius:5px}
+ .play{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .2s;background:rgba(8,12,15,.35)}
+ .play i{width:54px;height:54px;border-radius:50%;background:var(--accent2);display:grid;place-items:center}
+ .play i::after{content:"";border-style:solid;border-width:10px 0 10px 16px;border-color:transparent transparent transparent #061014;margin-left:4px}
+ .card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+       transition:border-color .15s,transform .15s}
+ .card:hover{border-color:var(--accent2);transform:translateY(-2px)}
+ .card:hover .play{opacity:1}.card:hover .thumb img{transform:scale(1.03)}
+ .body{padding:13px 15px 15px;display:flex;flex-direction:column;gap:5px;min-width:0}
+ .t{font-weight:700;font-size:15.5px;color:var(--ink)}
+ .d{color:var(--muted);font-size:13px}
+ .tag{font-family:ui-monospace,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+ .feat{display:grid;grid-template-columns:1.55fr 1fr;background:var(--panel2)}
+ .feat .thumb{border-bottom:0;border-right:1px solid var(--line)}
+ .feat .body{padding:22px 24px;justify-content:center;gap:9px}
+ .feat .t{font-size:22px;line-height:1.25;text-wrap:balance}
+ .feat .d{font-size:14px}
+ .feat ul{color:var(--muted);font-size:13px;margin:4px 0 0 18px}
+ .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+ .arch .card{background:transparent}
+ .arch .thumb img{filter:saturate(.55) brightness(.8)}
+ .arch .card:hover .thumb img{filter:none}
+ .arch .t{font-size:14.5px}
+ .why{font-size:12px;color:var(--muted);font-style:italic}
+ .foot{color:var(--muted);font-size:12.5px;margin-top:48px;border-top:1px solid var(--line);padding-top:16px}
+ .foot a{color:var(--accent2)}.foot a:hover{text-decoration:underline}
+ @media (max-width:720px){.feat{grid-template-columns:1fr}.feat .thumb{border-right:0;border-bottom:1px solid var(--line)}
+   .feat .body{padding:16px}.feat .t{font-size:19px}h1{font-size:25px}}
+ @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head><body>
-<h1>Clara Working Station</h1>
-<p>A 10-minute narrated tour. English, 1080p.</p>
-<video controls playsinline preload="metadata" src="clara_working_station_10min.mp4"></video>
-<ol>
- <li>What this thing is, in one breath</li><li>Why not just use the cluster?</li><li>One request, start to finish</li><li>The parts</li>
- <li>Three failures that looked like success</li><li>What we do not know, and what stays private</li><li>A use case: Clé makes a video</li><li>How it went: the honest log</li>
-</ol>
-<p><a href="clara_working_station_10min.mp4" download>Download the video</a> · <a href="clara-november.html">The updated working station, November 2026, 23 min</a> · <a href="clara-agent.html">The harness film, 3 min</a> · <a href="clara-neu.html">The new Clara, 3 min</a> · <a href="long-context.html">You don't need long context, explained</a> · <a href="../">Working station home</a></p>
+
+<div class="top">
+ <h1>Clara <span class="a">Working Station</span> · films</h1>
+ <a class="home" href="../">← working station home</a>
+</div>
+<p class="sub">Narrated films about the working station: how it works, how it is tested, what it made.
+English, 1080p. Newest first; older versions are kept in the archive below.</p>
+
+<a class="card feat" href="clara-november.html">
+ <span class="thumb"><img src="thumbs/clara_working_station_november.jpg" alt="Still from the November film: the deep test went from 16 of 24 to 18 of 24 passed" loading="eager"><span class="dur">23:16</span><span class="play"><i></i></span></span>
+ <span class="body">
+  <span class="tag">Newest · November 2026 · 4 parts</span>
+  <span class="t">The updated working station</span>
+  <span class="d">The whole system as it runs now, with 25 clickable chapters:</span>
+  <ul><li>one Clara for phone and terminal</li><li>small staged work sessions</li><li>two safety doors for data</li><li>how Clara is tested every night</li></ul>
+ </span>
+</a>
+
+<h2>Current films <span>6</span></h2>
+<div class="grid">
+ <a class="card" href="smuggling-test.html">
+  <span class="thumb"><img src="thumbs/smuggling_test.jpg" alt="" decoding="async"><span class="dur">5:04</span><span class="play"><i></i></span></span>
+  <span class="body"><span class="t">The smuggling test</span><span class="d">The nightly test that checks patient data cannot leave the working station: two doors, 13 routing cases, 45 searches.</span></span>
+ </a>
+ <a class="card" href="carbon-x.html">
+  <span class="thumb"><img src="thumbs/carbon_x_explained.jpg" alt="" decoding="async"><span class="dur">7:55</span><span class="play"><i></i></span></span>
+  <span class="body"><span class="t">Carbon-X explained</span><span class="d">An open 14B model that reads DNA and English: what it can do, a small own test on public ClinVar variants, and how it runs locally.</span></span>
+ </a>
+ <a class="card" href="film-machine-v3.html">
+  <span class="thumb"><img src="thumbs/film_machine_v3.jpg" alt="" decoding="async"><span class="dur">3:45</span><span class="play"><i></i></span></span>
+  <span class="body"><span class="t">The film machine, with a voice</span><span class="d">How the video pipeline works: two players, six steps, a voice with emotions, and what still needs a person.</span></span>
+ </a>
+ <a class="card" href="clara-agent.html">
+  <span class="thumb"><img src="thumbs/clara_agent_harness.jpg" alt="" decoding="async"><span class="dur">3:13</span><span class="play"><i></i></span></span>
+  <span class="body"><span class="t">Clara agent: the harness</span><span class="d">One turn, what the kernel enforces, what is proven.</span></span>
+ </a>
+ <a class="card" href="long-context.html">
+  <span class="thumb"><img src="thumbs/long_context_explained.jpg" alt="" decoding="async"><span class="dur">3:15</span><span class="play"><i></i></span></span>
+  <span class="body"><span class="t">You don't need long context</span><span class="d">A paper explained (Belcak et al., NVIDIA, 2026): compaction and selective reading instead of long context.</span></span>
+ </a>
+</div>
+
+<h2>Archive <span>older versions, replaced by the films above</span></h2>
+<div class="grid arch">
+ <a class="card" href="archive/tour-10min.html">
+  <span class="thumb"><img src="thumbs/clara_working_station_10min.jpg" alt="" decoding="async"><span class="dur">9:55</span></span>
+  <span class="body"><span class="t">The 10-minute tour</span><span class="why">Replaced by the November film.</span></span>
+ </a>
+ <a class="card" href="archive/clara-neu.html">
+  <span class="thumb"><img src="thumbs/clara_neu.jpg" alt="" decoding="async"><span class="dur">2:54</span></span>
+  <span class="body"><span class="t">The new Clara</span><span class="why">06.11.2026 · now part of the November film.</span></span>
+ </a>
+ <a class="card" href="archive/clara-watchdogs.html">
+  <span class="thumb"><img src="thumbs/clara_film_watchdogs.jpg" alt="" decoding="async"><span class="dur">2:44</span></span>
+  <span class="body"><span class="t">Clara's own film: watchdogs</span><span class="why">Clara's first film, made with Clé.</span></span>
+ </a>
+ <a class="card" href="archive/film-machine.html">
+  <span class="thumb"><img src="thumbs/film_machine_fast.jpg" alt="" decoding="async"><span class="dur">2:04</span></span>
+  <span class="body"><span class="t">How to build the film machine</span><span class="why">Replaced by the version with a voice.</span></span>
+ </a>
+ <a class="card" href="archive/clara_working_station_first.mp4">
+  <span class="thumb"><img src="thumbs/clara_working_station_first.jpg" alt="" decoding="async"><span class="dur">10:20</span></span>
+  <span class="body"><span class="t">The first workstation video</span><span class="why">The very first explanation, video only.</span></span>
+ </a>
+ <a class="card" href="archive/ziggy_turbo_v1.mp4">
+  <span class="thumb"><img src="thumbs/ziggy_turbo_v1.jpg" alt="" decoding="async"><span class="dur">0:39</span></span>
+  <span class="body"><span class="t">Ziggy Turbo v1</span><span class="why">A first animation test, AI-generated cartoon.</span></span>
+ </a>
+</div>
+
+<p class="foot">Made on the working station by Clara with Clé. <a href="../">Working station home</a> · <a href="https://github.com/mendeltem/clara_working_station">Source on GitHub</a></p>
 </body></html>
