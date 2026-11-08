@@ -9,6 +9,7 @@ portfolio: only what was produced here is listed.*
 
 **Films (English):**
 
+- **The updated working station, November 2026 (23 min, 4 parts, clickable chapters): one Clara for phone and terminal, small staged work sessions, two safety doors, how Clara is tested:** https://mendeltem.github.io/clara_working_station/film/clara-november.html
 - **Explanation of the working station (10 min):** https://mendeltem.github.io/clara_working_station/film/
 - **Clara agent, the harness (3 min):** https://mendeltem.github.io/clara_working_station/film/clara-agent.html
 - **The new Clara (3 min, 06.11.2026):** https://mendeltem.github.io/clara_working_station/film/clara-neu.html

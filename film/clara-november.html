@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Clara Working Station, November 2026</title>
+<meta name="description" content="A 23-minute narrated film in four parts: the updated working station with the Clara agent, its work sessions, its two safety doors and how Clara is tested.">
+<style>
+ :root{--bg:#080c0f;--ink:#e8f1f3;--muted:#7d99a2;--accent:#33c6b6}
+ *{box-sizing:border-box;margin:0;padding:0}
+ body{background:var(--bg);color:var(--ink);font-family:ui-monospace,monospace;font-size:14px;line-height:1.55;padding:28px 16px;max-width:1000px;margin:0 auto}
+ h1{font-size:24px;margin-bottom:6px}
+ p{color:var(--muted);font-size:13px;margin:8px 0 16px}
+ video{width:100%;height:auto;display:block;border-radius:10px;background:#000}
+ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+ ul.ch{list-style:none;color:var(--muted);font-size:13px;margin:18px 0 0;columns:2 320px}
+ ul.ch li{margin:3px 0;break-inside:avoid} ul.ch b{color:var(--ink);display:inline-block;min-width:3.4em}
+</style></head><body>
+<h1>Clara Working Station: the updated system, November 2026</h1>
+<p>A 23-minute narrated film in four parts (08.11.2026). English, 720p. Part 1: one Clara for phone and terminal, two brains and the Weiche. Part 2: work sessions as small stages with fresh context. Part 3: the two safety doors and the nightly smuggling test. Part 4: how Clara is tested, who judges the judge, and a memory that sleeps. Written and animated by Clara with Clé, in five stages per part.</p>
+<video id="v" controls playsinline preload="metadata" src="clara_working_station_november.mp4"></video>
+<ul class="ch">
+<li><a href="#t=0" data-t="0"><b>0:00</b> Part 1: What this thing is, in one breath</a></li>
+<li><a href="#t=53" data-t="53"><b>0:53</b> Part 1: Two doors, one Clara</a></li>
+<li><a href="#t=114" data-t="114"><b>1:54</b> Part 1: Two brains, one of them awake</a></li>
+<li><a href="#t=178" data-t="178"><b>2:58</b> Part 1: The chat talks, work sessions work</a></li>
+<li><a href="#t=249" data-t="249"><b>4:09</b> Part 1: One card, three users</a></li>
+<li><a href="#t=290" data-t="290"><b>4:50</b> Part 1: What changed this week</a></li>
+<li><a href="#t=316" data-t="316"><b>5:16</b> Part 2: One big session got lost</a></li>
+<li><a href="#t=379" data-t="379"><b>6:19</b> Part 2: Five small sessions, fresh heads</a></li>
+<li><a href="#t=463" data-t="463"><b>7:43</b> Part 2: How a work session runs</a></li>
+<li><a href="#t=516" data-t="516"><b>8:36</b> Part 2: A full memory</a></li>
+<li><a href="#t=571" data-t="571"><b>9:31</b> Part 2: The film engine and its gate</a></li>
+<li><a href="#t=612" data-t="612"><b>10:12</b> Part 2: What came out</a></li>
+<li><a href="#t=654" data-t="654"><b>10:54</b> Part 3: Patient data never leaves the workstation</a></li>
+<li><a href="#t=690" data-t="690"><b>11:30</b> Part 3: Door 1: the Weiche on the conversation</a></li>
+<li><a href="#t=758" data-t="758"><b>12:38</b> Part 3: Door 2: the exit guard on web searches</a></li>
+<li><a href="#t=797" data-t="797"><b>13:17</b> Part 3: The nightly smuggling test</a></li>
+<li><a href="#t=854" data-t="854"><b>14:14</b> Part 3: The local model, since 7th of November 2026</a></li>
+<li><a href="#t=916" data-t="916"><b>15:16</b> Part 3: The agent carries its own locks</a></li>
+<li><a href="#t=994" data-t="994"><b>16:34</b> Part 3: A set of doors, a test, a scoreboard</a></li>
+<li><a href="#t=1021" data-t="1021"><b>17:01</b> Part 4: How fluent is Clara?</a></li>
+<li><a href="#t=1089" data-t="1089"><b>18:09</b> Part 4: The deep test</a></li>
+<li><a href="#t=1160" data-t="1160"><b>19:20</b> Part 4: What the tests found</a></li>
+<li><a href="#t=1209" data-t="1209"><b>20:09</b> Part 4: Who judges the judge?</a></li>
+<li><a href="#t=1280" data-t="1280"><b>21:20</b> Part 4: The memory shelf</a></li>
+<li><a href="#t=1345" data-t="1345"><b>22:25</b> Part 4: One loop, four stations</a></li>
+</ul>
+<p><a href="clara_working_station_november.mp4" download>Download the video</a> · <a href="smuggling-test.html">The smuggling test, 5 min</a> · <a href="./">The working station film</a> · <a href="../">Working station home</a></p>
+<script>
+const v=document.getElementById("v");
+document.querySelectorAll("ul.ch a").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();v.currentTime=+a.dataset.t;v.play();}));
+const m=location.hash.match(/t=(\d+)/); if(m) v.addEventListener("loadedmetadata",()=>{v.currentTime=+m[1];},{once:true});
+</script>
+</body></html>
