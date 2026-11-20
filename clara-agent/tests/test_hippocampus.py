@@ -56,6 +56,9 @@ def test_encode_keeps_filters_and_strengthens(tmp_path):
         {"text": "Always test on public data only", "kind": "rule", "importance": 5}]})
     got = hc.encode(Scripted(reply), CONVO)
     assert got == {"kept": 3, "rejected": 1, "strengthened": 0}
+    # 09.11.2026: the rejected candidate is kept whole for the long archive, not only as a log line
+    rej = [json.loads(l) for l in (tmp_path / "hippocampus-rejected.jsonl").read_text().splitlines()]
+    assert len(rej) == 1 and "melden-sammlung" in rej[0]["text"] and rej[0]["why"]
     entries = hc.load()
     assert {e["kind"] for e in entries} == {"decision", "feeling", "rule"}
     assert [e for e in entries if e["kind"] == "rule"][0]["pinned"]

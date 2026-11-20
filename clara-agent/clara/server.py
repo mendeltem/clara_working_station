@@ -97,6 +97,8 @@ class WebUI(UI):
         self.emit("permission", id=rid, tool=req.tool, summary=req.summary, warnings=req.warnings(),
                   target=req.target[:500], preview=preview)
         answer = waiter.wait(PERMISSION_TIMEOUT)
+        if answer is None and not self.owner.forget(rid):
+            answer = waiter.answer               # answered in the very moment the wait ran out
         self.emit("permission_done", id=rid, answer=answer or "deny")
         return answer or "deny"
 
@@ -105,6 +107,8 @@ class WebUI(UI):
         waiter = self.owner.pending(rid, "question")
         self.emit("question", id=rid, question=question)
         answer = waiter.wait(PERMISSION_TIMEOUT)
+        if answer is None and not self.owner.forget(rid):
+            answer = waiter.answer               # answered in the very moment the wait ran out
         self.emit("question_done", id=rid, answer=answer)
         return answer
 
@@ -130,7 +134,11 @@ class ServerSession:
         self.session = session
         self.project_root = project_root
         self.events: list[dict] = []
-        self.seq = 0
+        # 10.11.2026 (stability check): event numbers start at the clock (milliseconds), not at 0, so they keep
+        # growing across a server restart -- a client that asks "since 862" after a restart gets the new events
+        # instead of waiting for ever (Telegram silent 09.11. 15:31 to 19:50). The snapshot also names the process.
+        self.seq = int(time.time() * 1000)
+        self.expired: list[str] = []            # ids of questions and approvals that ran out (answer -> HTTP 410)
         self.lock = threading.Lock()
         self.cv = threading.Condition(self.lock)
         self.busy = False
@@ -158,6 +166,14 @@ class ServerSession:
         with self.lock:
             self.waiters[rid] = w
         return w
+
+    def forget(self, rid: str) -> bool:
+        """The wait for this question or approval ran out: it is no longer pending. False if it was answered meanwhile."""
+        with self.lock:
+            gone = self.waiters.pop(rid, None) is not None
+            if gone:
+                self.expired = (self.expired + [rid])[-200:]
+        return gone
 
     def resolve(self, rid: str, answer: str) -> bool:
         with self.lock:
@@ -224,7 +240,7 @@ class ServerSession:
             busy = self.busy
         return {"id": self.session.id, "project": str(self.project_root), "messages": msgs, "busy": busy,
                 "mode": self.permissions.mode, "pending": pending, "todo": list(self.agent.ctx.todo_state),
-                "seq": self.seq, "title": self.session.title}
+                "seq": self.seq, "boot": self.app.boot, "title": self.session.title}
 
 
 # -------------------------------------------------------------------- app
@@ -249,6 +265,7 @@ class App:
         self.sandbox_report = sandbox_report
         self.default_mode = default_mode
         self.started = time.time()
+        self.boot = uuid.uuid4().hex[:8]        # names this server process; a client sees a restart when it changes
         self.tickets: dict[str, tuple[str, float]] = {}   # ticket -> (session id, expiry)
 
     def new_ticket(self, sid: str) -> str:
@@ -476,6 +493,9 @@ class Handler(BaseHTTPRequestHandler):
             for ss in sessions:
                 if ss.resolve(rid, answer):
                     return self._json(200, {"ok": True})
+            if any(rid in ss.expired for ss in sessions):
+                # the wait ran out before this answer came: the client should send the text as a normal message
+                return self._json(410, {"error": "this request has expired", "expired": True})
             return self._json(404, {"error": "no such pending request"})
         return self._json(404, {"error": "not found"})
 

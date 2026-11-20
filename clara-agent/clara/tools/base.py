@@ -28,6 +28,7 @@ class ToolContext:
     todo_state: list = field(default_factory=list)
     backups_done: set = field(default_factory=set)
     shell_timeout: int = 120
+    last_user: str = ""          # 07.11.2026: the researcher's own last message (for confirmation gates)
 
     def resolve(self, path: str) -> Path:
         p = Path(os.path.expanduser(path))
@@ -108,8 +109,9 @@ def default_registry(include: list[str] | None = None, exclude: list[str] | None
     from .search import Search
     from .shell import Bash
     from .misc import AskUser, Remember, Todo, Delegate
+    from .lage_tools import Lage, Erinnern      # 09.11.2026: overview board and long memory, in every session
     tools: list[Tool] = [ReadFile(), WriteFile(), EditFile(), ListFiles(), Search(), Bash(),
-                         AskUser(), Remember(), Todo(), Delegate()]
+                         AskUser(), Remember(), Todo(), Delegate(), Lage(), Erinnern()]
     if include:
         tools = [t for t in tools if t.name in set(include)]
     if exclude:
@@ -120,13 +122,18 @@ def default_registry(include: list[str] | None = None, exclude: list[str] | None
 def session_registry(settings) -> ToolRegistry:
     """Tools of an interactive or served session: the default set, plus the work-session tools only where the config
     says so ([work] tools = true: the chat Clara). Work sessions themselves never get them (no jobs spawning jobs)."""
-    reg = default_registry()
     import os
-    if (getattr(settings, "raw", {}) or {}).get("work", {}).get("tools") or os.environ.get("CLARA_WORK_TOOLS") == "1":
-        from .work import StartWork, WorkStatus, StopWork
+    chat = bool((getattr(settings, "raw", {}) or {}).get("work", {}).get("tools") or os.environ.get("CLARA_WORK_TOOLS") == "1")
+    # 07.11.2026 (user: "I want a fast Clara"): the chat Clara has no shell, no write tools and no sub-agent -- every
+    # command needed an approval and she wandered off exploring; heavy work goes to work sessions instead
+    reg = default_registry(exclude=["bash", "write_file", "edit_file", "delegate", "search"]) if chat else default_registry()   # 07.11.2026: no search in the chat (deep test: she searched instead of using work_status/start_work)
+    if chat:
+        from .work import StartWork, WorkStatus, StopWork, StatusLogs, SystemStatus
         reg.add(StartWork())
         reg.add(WorkStatus())
         reg.add(StopWork())
+        reg.add(StatusLogs())
+        reg.add(SystemStatus())
     return reg
 
 

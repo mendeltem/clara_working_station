@@ -137,3 +137,26 @@ def test_audit_log_only_shows_the_model_server(clara_home, fake_llama, project):
     agent.run("hello")
     entries = [json.loads(l) for l in (clara_home / "netaudit.log").read_text().splitlines()]
     assert entries and {(e["host"], e["port"], e["decision"]) for e in entries} == {("127.0.0.1", fake_llama.port, "allow")}
+
+
+def test_empty_replies_far_apart_are_not_empty_twice(project, clara_home, fake_llama):
+    """09.11.2026 (night check): empty, tool call, empty, text -> two retries, no '[no answer]'."""
+    fake_llama.script = [
+        {"content": ""},
+        {"content": "", "tool_calls": [{"name": "read_file", "arguments": {"path": "hello.txt"}}]},
+        {"content": ""},
+        {"content": "The word is PELICAN."},
+    ]
+    agent, prov, ui, session = make(project, clara_home, fake_llama)
+    out = agent.run("secret word?")
+    assert out == "The word is PELICAN."
+    warn = ui.of("warning")
+    assert sum("asking once more" in w for w in warn) == 2 and not any("[no answer" in w for w in warn)
+    assert any("finish_reason" in w for w in warn)          # evidence logged with the warning
+
+
+def test_two_empty_replies_in_a_row_still_end_the_turn(project, clara_home, fake_llama):
+    fake_llama.script = [{"content": ""}, {"content": ""}]
+    agent, prov, ui, session = make(project, clara_home, fake_llama)
+    out = agent.run("go")
+    assert out.startswith("[no answer: the model returned an empty reply twice")

@@ -187,6 +187,7 @@ class Hippocampus:
         self.home = Path(home)
         self.store = self.home / "hippocampus.jsonl"
         self.faded = self.home / "hippocampus-faded.jsonl"
+        self.rejected = self.home / "hippocampus-rejected.jsonl"     # 09.11.2026: read by the long archive
         self.log = self.home / "hippocampus.log"
         self.memory_md = self.home / "memory.md"
         self.cap = cap
@@ -244,12 +245,13 @@ class Hippocampus:
             group = [e for e in keep if e.get("kind") == kind]
             if group:
                 lines.append(f"## {TITLES[kind]}")
-                lines += [f"- {e['text']}" for e in group]
+                # 07.11.2026: the day it was noted, so "yesterday" can be told apart
+                lines += [f"- ({time.strftime('%d.%m.', time.localtime(e.get('created') or 0))}) {e['text']}" for e in group]
                 lines.append("")
         self.memory_md.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
     # ------------------------------------------------------------------ encoding
-    def encode(self, provider, messages: list[dict]) -> dict:
+    def encode(self, provider, messages: list[dict], when: float | None = None) -> dict:
         """Decide what of this conversation stays. Returns counts for the UI."""
         convo = transcript(messages)
         if len(convo) < 80:
@@ -279,6 +281,15 @@ class Hippocampus:
             if not ok:
                 rejected += 1
                 self._note(f"rejected ({why}): {text[:160]}")
+                # 09.11.2026 (user: the memory keeps filling and is compressed again and again): a rejected candidate is
+                # not lost any more -- it goes whole to hippocampus-rejected.jsonl, which the long archive (system/lage) reads
+                try:
+                    with open(self.rejected, "a", encoding="utf-8") as fh:
+                        fh.write(json.dumps({"id": uuid.uuid4().hex[:8], "t": when or now, "text": text, "why": why,
+                                             "kind": c.get("kind"), "importance": c.get("importance"),
+                                             "emotion": c.get("emotion")}, ensure_ascii=False) + "\n")
+                except OSError:
+                    pass
                 continue
             twin = max(entries, key=lambda e: similar(e["text"], text), default=None)
             if twin is not None and similar(twin["text"], text) >= 0.6:
@@ -291,7 +302,7 @@ class Hippocampus:
             kind = c.get("kind") if c.get("kind") in KINDS else "fact"
             e = {"id": uuid.uuid4().hex[:8], "text": text, "kind": kind,
                  "importance": max(1, min(5, int(c.get("importance") or 1))), "emotion": max(0, min(3, int(c.get("emotion") or 0))),
-                 "pinned": kind == "rule", "created": now, "last_used": now, "uses": 0, "source": "encode"}
+                 "pinned": kind == "rule", "created": when or now, "last_used": now, "uses": 0, "source": "encode"}
             entries.append(e)
             by_id[e["id"]] = e
             kept += 1

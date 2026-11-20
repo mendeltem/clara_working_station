@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import fnmatch
 import os
+import time
 from pathlib import Path
 
 from .base import Tool, ToolContext, ToolResult, clip
@@ -36,6 +37,8 @@ class ReadFile(Tool):
         if p.is_dir():
             names = sorted(os.listdir(p))[:200]
             return ToolResult(f"{p} is a directory with {len(names)} entries:\n" + "\n".join(names))
+        if not p.is_file():
+            return ToolResult(f"{p} is not a regular file (a pipe, socket or device); not read", is_error=True)   # 07.11.2026
         size = p.stat().st_size
         with open(p, "rb") as fh:
             sample = fh.read(8192)
@@ -137,8 +140,13 @@ class ListFiles(Tool):
         limit = int(args.get("max_results") or 200)
         out: list[str] = []
         total = 0
+        deadline = time.time() + float(os.environ.get("CLARA_SEARCH_SECONDS", "15"))   # 07.11.2026: a listing of ~/cle-arbeit hung 120 s
         for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
+            if time.time() > deadline:
+                out.append(f"(listing stopped after {os.environ.get('CLARA_SEARCH_SECONDS', '15')} s: list a narrower folder)")
+                break
+            dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".clara-home")
+                                 and d not in ("media", "audio_beats", "partial_movie_files", "sessions", "backups"))
             rel_dir = os.path.relpath(dirpath, root)
             for fn in sorted(filenames):
                 rel = fn if rel_dir == "." else os.path.join(rel_dir, fn)

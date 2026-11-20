@@ -25,6 +25,12 @@ if str(ROOT) not in sys.path:
 from clara import netguard  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def no_status_brief(monkeypatch):
+    """09.11.2026: the status brief reads the live board; tests that want it switch it on themselves."""
+    monkeypatch.setenv("CLARA_LAGE_BRIEF", "0")
+
+
 @pytest.fixture
 def clara_home(tmp_path, monkeypatch):
     home = tmp_path / "clara-home"

@@ -72,7 +72,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("sessions", help="list recorded sessions")
     sub.add_parser("connect", help="attach this terminal to the main Clara in clara serve (same conversation as Telegram)")
     mp = sub.add_parser("memory", help="long-term memory (hippocampus): show, sleep, search, log")
-    mp.add_argument("action", nargs="?", default="show", choices=["show", "sleep", "search", "log"])
+    mp.add_argument("action", nargs="?", default="show", choices=["show", "sleep", "search", "log", "encode"])
+    mp.add_argument("--stunden", type=float, default=26, help="encode: conversations changed in the last N hours")
     mp.add_argument("query", nargs="*", help="for search: words to look for among faded memories")
     s = sub.add_parser("serve", help="start the local API and the phone app")
     s.add_argument("--lan", action="store_true", help="listen on all interfaces (phone over WLAN)")
@@ -566,6 +567,15 @@ def one_shot(args) -> int:
     ui = HeadlessUI(show_reasoning=False, verbose=True)
     rt = bootstrap(args, interactive=False, ui=ui)
     text = rt.agent.run(args.prompt)
+    # 10.11.2026: the supervisor of a job (antreiber) names a file for the last words of the round; the next round
+    # gets them in its package, so it starts with what this one said was done and open
+    out = os.environ.get("CLARA_HANDOVER_FILE", "")
+    if out and text:
+        try:
+            with open(out, "w", encoding="utf-8", errors="replace") as fh:
+                fh.write(text.rstrip() + "\n")
+        except OSError as exc:
+            sys.stderr.write(f"clara: hand-over file not written: {exc}\n")
     if text.startswith("[no answer:"):
         sys.stderr.write("clara: " + text + "\n")   # no result is a failure, also for a supervisor that only sees the exit code
         return 1
@@ -683,6 +693,38 @@ def memory_cmd(args) -> int:
     if args.action == "sleep":
         prov = LocalOpenAIProvider(settings.base_url, settings.model, timeout=settings.timeout)
         print(hc.sleep(prov))
+        return 0
+    if args.action == "encode":
+        # 07.11.2026 (user: a conversation should run on her own memory, not on reading old logs): the NEW part of every
+        # recently changed conversation goes through the hippocampus; done parts are remembered in hippocampus-sessions.json
+        from .sessions import Session
+        prov = LocalOpenAIProvider(settings.base_url, settings.model, timeout=settings.timeout)
+        stand_p = settings.home / "hippocampus-sessions.json"
+        try:
+            stand = json.loads(stand_p.read_text())
+        except (OSError, ValueError):
+            stand = {}
+        grenze = time.time() - args.stunden * 3600
+        summe = {"kept": 0, "strengthened": 0, "rejected": 0, "sessions": 0}
+        for f in sorted(settings.sessions_dir.glob("*.jsonl"), key=lambda p: p.stat().st_mtime):
+            if f.stat().st_mtime < grenze:
+                continue
+            try:
+                msgs = Session.load(f, full=True).messages   # 09.11.2026: positions count in the full file
+            except Exception:  # noqa: BLE001
+                continue
+            alt = int(stand.get(f.stem, 0))
+            neu = [m for m in msgs[alt:] if m.get("role") in ("user", "assistant", "tool")]
+            if sum(1 for m in neu if m.get("role") == "user") < 1 or len(neu) < 2:
+                stand[f.stem] = len(msgs)
+                continue
+            got = hc.encode(prov, [{"role": "system", "content": "conversation"}] + neu, when=f.stat().st_mtime)
+            for k in ("kept", "strengthened", "rejected"):
+                summe[k] += got.get(k, 0)
+            summe["sessions"] += 1
+            stand[f.stem] = len(msgs)
+            stand_p.write_text(json.dumps(stand, indent=1))
+        print(summe)
         return 0
     if args.action == "search":
         for e in hc.search_faded(" ".join(args.query)):

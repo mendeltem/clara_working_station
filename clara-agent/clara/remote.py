@@ -91,6 +91,8 @@ class Remote:
             text = ev.get("text", "")
             if text in self.mine:
                 self.mine.discard(text)
+            elif text.startswith("[terminal] "):
+                print(c(DIM, "\n⌨ you (other terminal): ") + text[11:])
             else:
                 print(c(DIM, "\n📱 you (phone): ") + text)
             self.busy = True
@@ -132,6 +134,9 @@ class Remote:
                 self.send(text)
 
     def send(self, text: str) -> None:
+        # 07.11.2026 (user: same Clara in terminal and Telegram, less info on Telegram): mark where the message comes
+        # from, so she may answer in more detail here and short on the phone
+        text = "[terminal] " + text
         self.mine.add(text)
         try:
             self.api("POST", f"/api/sessions/{self.sid}/messages", {"text": text})

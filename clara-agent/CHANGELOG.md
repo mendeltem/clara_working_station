@@ -1,5 +1,41 @@
 # Changelog
 
+## After 0.1.2 (7 to 10 November 2026, version number unchanged)
+
+Changes from two weeks of daily use and three checks of the logs. Each one answers a failure that was seen.
+
+- Chat Clara is fast and narrow: with the work tools on she has no shell, no write tools, no sub-agent and no search,
+  and at most `CLARA_CHAT_MAX_TOOLS` (4) tool steps per answer. Heavy work goes to work sessions.
+- `system_status` (no approval): local model and its approval, System One, services, CPU load and temperature, RAM,
+  disks (`/` plus `CLARA_STATUS_DISKS="name=/path;name=/path"`) and the GPU live from `nvidia-smi`.
+- `status_logs` (no approval): the filtered status logs under `CLARA_STATUS_DIR`.
+- `start_work`: a local session starts only when the researcher's own last message agrees or orders it. The tool
+  enforces this; the prompt alone did not.
+- `work_status`: results counted per series, the stage and the last steps of a failed session, activity read from the
+  time of the log. Text written by another session is handed over as data, never as an order.
+- Search and listing: a time budget (`CLARA_SEARCH_SECONDS`, 15 s), pipes, sockets and devices are not read, the
+  agents' own home folders are skipped.
+- Model replies: one more request after a policy refusal of the hub, with the instruction to answer without medical
+  advice; empty replies are asked again and the reason (finish reason, token counts) is written down. Requests are
+  measured and estimated before sending, and the summary request itself is cut to fit.
+- Status brief: the first turn of every conversation context, and every summary, starts with a short brief of what
+  runs, waits, finished or failed (`CLARA_LAGE_BRIEF=0` switches it off). Two tools read more: `lage` (the overview
+  board) and `erinnern` (project memory). Sessions that can reach the hub get states, times and file names only;
+  results appear only in a local session. The code behind them is a separate part (`CLARA_LAGE_CODE`); without it
+  the tools say so and the tests are skipped.
+- Memory: `clara memory encode` takes the new part of recent conversations into the long-term memory; memories carry
+  the day they were noted; a rejected candidate is kept whole in `hippocampus-rejected.jsonl`.
+- A resumed session starts from its last summary instead of loading every raw message.
+- Stability of long jobs (10 November): provider errors that pass by themselves are tried again after 3, 15 and 45 s,
+  a deliberate refusal or a wrong key is not; the first message of a job is kept word for word through every summary
+  (`CLARA_PIN_TASK=0` switches it off); a round that was summarised `CLARA_MAX_COMPACTS` (25) times stops; a round
+  that ends without an answer writes a hand-over note for the next one (`CLARA_HANDOVER_FILE`).
+- `clara serve`: event numbers start at the clock, so a client that reconnects after a restart does not wait for
+  ever; an answer to a question that timed out gets 410; a turn that was killed between a tool call and its result
+  is repaired on load; text with lone surrogates is stored with U+FFFD instead of failing.
+- `clara connect`: messages typed in a terminal are marked, so the same Clara can answer in detail there and short
+  on the phone.
+
 ## 0.1.2 (2026-11-06)
 
 - Terminal: dark theme with a welcome box, `⏺` for answers and tool calls, `⎿` for results, a live line

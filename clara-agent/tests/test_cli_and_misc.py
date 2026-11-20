@@ -72,8 +72,9 @@ def test_system_prompt_stays_small(project, clara_home):
     assert words < 200, f"core prompt grew to {words} words"
     full = build_system_prompt(project, clara_home, [], default_registry().schemas(), prompt_mode_tools=True)
     # Estimate (3.6 chars per token). The exact count is measured on a real server by `clara doctor --probe`.
-    assert len(full) / 3.6 < 1500, f"prompt-mode system prompt estimated at {len(full) / 3.6:.0f} tokens"
-    assert len(json.dumps(default_registry().schemas())) / 3.6 < 1200
+    # 09.11.2026: +2 tools (lage, erinnern; ~45 tokens each after shortening) -> limits 1500/1200 raised to 1600/1300
+    assert len(full) / 3.6 < 1600, f"prompt-mode system prompt estimated at {len(full) / 3.6:.0f} tokens"
+    assert len(json.dumps(default_registry().schemas())) / 3.6 < 1300
 
 
 def test_project_instructions_memory_and_skills_enter_the_prompt(project, clara_home):

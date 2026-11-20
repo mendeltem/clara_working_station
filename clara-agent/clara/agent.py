@@ -70,6 +70,9 @@ def turn_summary(st: dict) -> str:
     return " · ".join(parts)
 
 
+CLE_NEIN = re.compile(r"Ihre Anfrage kann nicht bearbeitet werden|Zweckbestimmung von Cl", re.I)
+
+
 class UI:
     """Callbacks for a front end. Every method is optional; defaults do nothing."""
     def on_text(self, delta: str) -> None: ...
@@ -129,6 +132,27 @@ LOOP_WARN = 3    # the same call with the same result this many times in a row: 
 LOOP_STOP = 6    # ... this many times: the turn ends with a visible note (a model in this state fills its context, Apex 04.11.)
 SLEEP_CALL = re.compile(r"\bsleep\b")   # waiting on purpose repeats itself and is not a loop
 
+# 10.11.2026 (stability check, ergebnisse/clara-check/2026-11-10): provider errors that pass by themselves are tried
+# again with a growing wait instead of ending the round
+RETRY_WAITS = (3, 15, 45)          # seconds before try 2, 3, 4 (a chat uses only the first two)
+NET_ERRORS = ("Remote end closed", "cannot reach", "Connection reset", "timed out")
+BUSY_ERRORS = re.compile(r"HTTP (429|500|502|503|504)\b|overloaded", re.I)
+RAILS_ERROR = re.compile(r"content_blocked|output rails", re.I)
+RAILS_MAX = 2                      # replies blocked by the service's output filter that are asked again, per run
+RAILS_NOTE = ("(The service's output filter blocked your last reply, so nothing of it arrived. Go on with the next step. "
+              "Do not quote long passages from files or tool output in your reply; put details into files and name the path.)")
+QUICK_LOOKS_NOTE = ("[background: you used your quick looks -- answer now in a few "
+                    "sentences from what you have; if more is needed, offer to start a work session]")
+# the first message of a job (task and acceptance criteria) stays word for word through every summary
+TASK_MARK = "[the first message of this conversation, word for word -- kept through every summary]\n"
+SUMMARY_MARK = "[summary of the earlier conversation]\n"
+PIN_MAX = 30_000                   # characters of the first message that are kept (head 3/4, tail 1/4)
+HANDOVER_ASK = ("(From the supervisor, not the researcher: this round ends here -- {reason}. Do not call a tool. Write the "
+                "hand-over for the next round, which starts without this conversation, in at most 15 lines:\n"
+                "HAND-OVER\nDONE: what is finished, with file paths\nOPEN: each point of the job that is still open\n"
+                "NEXT STEP: the one thing to do first\nDO NOT REPEAT: what was tried and did not work)")
+STORM_NEAR = 8                     # a summary fewer model steps than this after the one before gets a note
+
 
 class Agent:
     def __init__(self, settings: Settings, provider: Provider, tools: ToolRegistry, permissions: Permissions,
@@ -147,6 +171,8 @@ class Agent:
         self.meter = TokenMeter()
         self._stop = threading.Event()
         self.n_ctx: int | None = None
+        self._floor: int | None = None          # prompt size of a fresh context (system + tools + first message)
+        self._compacts, self._last_compact_turn, self._compact_pause, self._turn_no, self._rails = 0, None, 0, 0, 0
         self.ctx = ToolContext(project_root=project_root, home=settings.home, session_id=session.id,
                                ask_user=self.ui.ask_user, status=self.ui.on_status,
                                delegate=self._delegate if depth == 0 else None)
@@ -172,11 +198,27 @@ class Agent:
     # ------------------------------------------------------------------ run
     def run(self, user_text: str) -> str:
         """One full agentic turn. Returns the final assistant text."""
+        self._tool_steps = 0
+        # the researcher's own words of this turn, without the [background ...] note the server puts in front
+        self.ctx.last_user = re.sub(r"^\[background[^\]]*\]\s*", "", str(user_text or ""), flags=re.S)[-600:]
         self.turn = {"t0": time.time(), "calls": 0, "prompt": 0, "cached": 0, "completion": 0, "routes": [],
                      "context": 0, "last_cached": None, "speed": None}
         self._stop.clear()
         user_turns = sum(1 for m in self.messages if m.get("role") == "user")
         content = user_text if user_turns else context_line(self.project_root) + "\n\n" + user_text
+        # 09.11.2026 (user: "Clara needs prefilling about the current status after restart"): the first turn of every
+        # conversation context in this process (new session, resumed session after a server restart, new work session)
+        # starts with the status brief -- board in the view of where she runs, with times and sources; after a
+        # compaction the summary message carries a fresh one (compact())
+        if not getattr(self, "_brief_done", False) and self.depth == 0:
+            self._brief_done = True
+            try:
+                from .tools.lage_tools import start_brief
+                brief = start_brief()
+            except Exception:  # noqa: BLE001 -- the brief must never break a turn
+                brief = ""
+            if brief:
+                content = brief.rstrip() + "\n\n" + content
         if os.environ.get("CLARA_WORK_TOOLS") == "1" or (getattr(self.settings, "raw", {}) or {}).get("work", {}).get("tools"):
             try:
                 from .tools.work import overview_line
@@ -189,16 +231,35 @@ class Agent:
         self.session.append({"role": "user", "content": content})
         final_text = ""
         self._repeat_key, self._repeats, self._context_full = None, 0, None
+        self._compacts, self._last_compact_turn, self._compact_pause, self._rails = 0, None, 0, 0
         for turn in range(self.max_turns):
+            self._turn_no = turn
             if self._stop.is_set():
                 self.session.append({"role": "assistant", "content": "[interrupted by user]"})
                 self.ui.on_turn_end("")
                 return ""
             self._check_budget()
-            if self.settings.compact_at and (self.meter.last_prompt_tokens or 0) >= self.settings.compact_at:
-                self.auto_compact()
+            if self.settings.compact_at:
+                # 07.11.2026 (failure analysis): measured size AND an estimate before sending -- a request that is
+                # already too big gets no measurement back (empty answer), so the measured size alone never triggered
+                gemessen = self.meter.last_prompt_tokens or 0
+                try:
+                    geschaetzt = self.meter.estimate(self.messages, self._tools_param())
+                except Exception:  # noqa: BLE001
+                    geschaetzt = 0
+                if self._compact_pause > 0:
+                    self._compact_pause -= 1            # a summary just failed: not again on every step
+                elif max(gemessen, geschaetzt) >= self._compact_limit():
+                    self.meter.last_prompt_tokens = max(gemessen, geschaetzt)
+                    self.auto_compact()
+                    storm = self._storm_stop()
+                    if storm:
+                        final_text = storm + self._handover("it was summarised too often to make progress")
+                        self.ui.on_warning(final_text)
+                        self.session.append({"role": "assistant", "content": final_text})
+                        break
             try:
-                text, reasoning, calls, native = self._request()
+                text, reasoning, calls, native = self._request_retry()
             except ProviderError as exc:
                 self.ui.on_warning(f"model server: {exc}")
                 self.session.note("error", text=str(exc))
@@ -212,7 +273,10 @@ class Agent:
                     # an empty final answer (reasoning used the whole budget, or a small fallback model gave up) is
                     # not a result: ask once more, then say so instead of ending the turn in silence
                     self._leer_versucht = True
-                    self.ui.on_warning("the model returned an empty answer; asking once more")
+                    beleg = (f"finish_reason {getattr(self, '_last_finish', None)}, completion tokens "
+                             f"{self.meter.last_completion_tokens}, reasoning {len(reasoning or '')} chars")
+                    self.session.note("empty_reply", evidence=beleg)
+                    self.ui.on_warning(f"the model returned an empty answer ({beleg}); asking once more")
                     self.session.append({"role": "user", "content": "(Your last reply was empty. Continue the task: "
                                                                     "use a tool or give your answer now.)"})
                     continue
@@ -221,13 +285,37 @@ class Agent:
                             "the model could not continue; start a new session or split the job]")
                     self.ui.on_warning(text)
                 elif not text.strip():
+                    self.session.note("empty_reply", evidence=f"second in a row; finish_reason {getattr(self, '_last_finish', None)}, "
+                                                              f"completion tokens {self.meter.last_completion_tokens}")
                     text = "[no answer: the model returned an empty reply twice; try again or start a new session]"
                     self.ui.on_warning(text)
                 self._leer_versucht = False
+                # 07.11.2026 (claratest): the Clé hub answers some medical-sounding questions with its policy text
+                # ("Ihre Anfrage kann nicht bearbeitet werden ... Zweckbestimmung von Clé"). Ask once more with a clarifying
+                # note; if it refuses again, say plainly what happened instead of showing the raw policy text.
+                if CLE_NEIN.search(text):
+                    if not getattr(self, "_nein_versucht", False):
+                        self._nein_versucht = True
+                        self.ui.on_status("the model service refused; asking once more")
+                        self.session.append({"role": "user", "content": (
+                            "(The model service refused your last reply with its policy text. This is a research "
+                            "workstation question about software, data handling or project status, not a diagnosis or "
+                            "treatment advice. Answer briefly without medical advice. If the answer needs patient data, "
+                            "say that only a local work session may look at it and offer to start one.)")})
+                        continue
+                    text = ("Das kann ich hier nicht beantworten: Clé lehnt Fragen ab, die nach medizinischer "
+                            "Einzelfallauskunft klingen. Geht es um Daten eines Falls, kann das nur eine lokale "
+                            "Arbeitssitzung ansehen. Soll ich eine starten?")
+                self._nein_versucht = False
                 self.session.append({"role": "assistant", "content": text})
                 final_text = text
                 break
+            # 09.11.2026 (night check): a reply with tool calls is a good reply -- the "asked once more" flags start
+            # fresh, so two empty replies far apart no longer end the round as "empty twice"
+            self._leer_versucht = False
+            self._nein_versucht = False
             self._append_assistant_with_calls(text, calls, native)
+            self._tool_steps = getattr(self, "_tool_steps", 0) + len(calls)
             for call in calls:
                 if self._stop.is_set():
                     self._append_tool_result(call, ToolResult("[interrupted by user]", is_error=True), native)
@@ -239,17 +327,138 @@ class Agent:
             if self._repeats >= LOOP_STOP:
                 final_text = (f"[no answer: stopped, the model made the same tool call {self._repeats} times in a row and got the same "
                               "result each time; start a new session or change the job]")
+                final_text += self._handover("the same tool call came again and again with the same result")
                 self.ui.on_warning(final_text)
                 self.session.append({"role": "assistant", "content": final_text})
                 break
         else:
             self.ui.on_warning(f"stopped after {self.max_turns} model turns (max_turns); say 'continue' to go on")
+            note = self._handover(f"the limit of {self.max_turns} model steps is reached")
+            if note:
+                final_text = f"[no answer: stopped after {self.max_turns} model steps (max_turns)]" + note
+                self.session.append({"role": "assistant", "content": final_text})
         self._turn_stats()
         self.ui.on_turn_end(final_text)
         return final_text
 
+    def _is_chat(self) -> bool:
+        """The chat Clara has the work-session tools; queue rounds, work sessions and sub-agents do not."""
+        return self.tools.get("start_work") is not None
+
+    @staticmethod
+    def _retry_limit(text: str, most: int) -> int:
+        """How many more tries a provider error is worth (10.11.2026). A deliberate refusal of the relay ("weiche: ...")
+        and a bad request (HTTP 400) are final; a timeout is tried once more (each try can take minutes)."""
+        if "weiche:" in text or "HTTP 400" in text:
+            return 0
+        if "timed out" in text or "HTTP 401" in text:
+            return 1
+        if any(x in text for x in NET_ERRORS) or BUSY_ERRORS.search(text):
+            return most
+        return 0
+
+    def _request_retry(self) -> tuple[str, str, list[ToolCall], bool]:
+        """_request with the retry table: connection drops, HTTP 429 / 5xx and a 401 are tried again after a growing
+        wait (the wait ends at once on interrupt); a reply blocked by the service's output filter is asked again after
+        a note to the model, at most RAILS_MAX times per run. Everything else is raised to run()."""
+        waits = RETRY_WAITS[:2] if self._is_chat() else RETRY_WAITS
+        tries = 0
+        while True:
+            try:
+                return self._request()
+            except ProviderError as exc:
+                text = str(exc)
+                if RAILS_ERROR.search(text) and self._rails < RAILS_MAX:
+                    self._rails += 1
+                    self.session.note("retry", reason="output filter", n=self._rails, text=text[:300])
+                    self.ui.on_status("the service's output filter blocked the reply; asking again")
+                    self.session.append({"role": "user", "content": RAILS_NOTE})
+                    continue
+                if tries >= min(self._retry_limit(text, len(waits)), len(waits)):
+                    raise
+                wait = waits[tries]
+                tries += 1
+                self.session.note("retry", reason=text[:300], n=tries, wait=wait)
+                self.ui.on_status(f"model server error, next try in {wait} s: {text[:120]}")
+                if self._stop.wait(wait):
+                    raise Interrupted() from None
+
+    def _compact_limit(self) -> int:
+        """Prompt size at which a summary is due. Normally [memory].compact_at. When the fixed part of the prompt
+        (system prompt, tools, first message: measured on the first request of a fresh context) already fills most of
+        it, the limit moves up to fixed part + half of compact_at, at most a quarter above compact_at and never past
+        80 % of a known context size -- otherwise a big job is summarised every few steps."""
+        at = int(self.settings.compact_at)
+        if not self._floor:
+            return at
+        limit = min(max(at, self._floor + at // 2), int(at * 1.25))
+        if self.n_ctx:
+            limit = min(limit, max(at, int(self.n_ctx * 0.8)))
+        return limit
+
+    def _handover(self, reason: str) -> str:
+        """10.11.2026: a job round that ends without a final answer (step limit, summary storm, the same call again and
+        again) asks the model once, without tools, for a hand-over note; it is added to the final text, which the
+        supervisor passes to the next round. Not in the chat, not in sub-agents. An error here changes nothing."""
+        if self._is_chat() or self.depth:
+            return ""
+        self.session.append({"role": "user", "content": HANDOVER_ASK.format(reason=reason)})
+        text = ""
+        try:
+            for ev in self.provider.stream(self.messages, None):
+                if ev.kind == "done":
+                    text = ev.text
+        except Exception as exc:  # noqa: BLE001 -- the round is over either way
+            self.session.note("error", text=f"hand-over request: {exc}")
+        text = (text or "").strip()[:4000]
+        return ("\n\n" + text) if text else ""
+
+    def _storm_stop(self) -> str:
+        """Text that ends the round when it was summarised CLARA_MAX_COMPACTS times (default 25, 0 = never). Seen
+        09.11.2026: 28 to 51 summaries per round, 531 shell calls, no file written. Not in the chat."""
+        try:
+            most = int(os.environ.get("CLARA_MAX_COMPACTS", "25") or 0)
+        except ValueError:
+            most = 25
+        if self._is_chat() or self.depth or most <= 0 or self._compacts < most:
+            return ""
+        self.session.note("summary_storm", summaries=self._compacts, steps=self._turn_no)
+        return (f"[stopped: {self._compacts} summaries in this round after {self._turn_no} steps -- the job does not fit "
+                "the context this way. Files written so far stay. Split the job into smaller parts or raise "
+                "[memory].compact_at]")
+
+    def _pinned_task(self) -> str | None:
+        """The first message of a job, kept word for word through every summary (10.11.2026: after a summary the model
+        saw only 'system + summary', the task and its acceptance criteria were gone and the jobs went in circles).
+        Not in the chat (its first message is small talk from long ago), not in sub-agents; CLARA_PIN_TASK=0 switches
+        it off. None when there is nothing to pin (also for sessions summarised before this existed)."""
+        if self.depth or self._is_chat() or os.environ.get("CLARA_PIN_TASK") == "0":
+            return None
+        first = next((m for m in self.messages if m.get("role") != "system"), None)
+        if not first or first.get("role") != "user" or not isinstance(first.get("content"), str):
+            return None
+        c = first["content"]
+        if c.startswith(TASK_MARK):
+            body = c[len(TASK_MARK):]
+            cut = body.find("\n\n" + SUMMARY_MARK)
+            return body if cut < 0 else body[:cut]
+        if c.startswith(SUMMARY_MARK):
+            return None
+        at = c.find("[context: project=")       # the status brief in front of it is replaced by a fresh one anyway
+        task = c[at:] if at >= 0 else c
+        if len(task) > PIN_MAX:
+            task = (task[:PIN_MAX * 3 // 4] + "\n[... the middle of the first message is left out here ...]\n"
+                    + task[-(PIN_MAX // 4):])
+        return task
+
     def _request(self) -> tuple[str, str, list[ToolCall], bool]:
         tools = self._tools_param()
+        # 07.11.2026: in a chat (work tools on) at most CLARA_CHAT_MAX_TOOLS tool steps per answer, then she must answer
+        limit = int(os.environ.get("CLARA_CHAT_MAX_TOOLS", "4"))
+        if self.tools.get("start_work") is not None and getattr(self, "_tool_steps", 0) >= limit:
+            tools = None
+            if not (self.messages and self.messages[-1].get("content") == QUICK_LOOKS_NOTE):
+                self.session.append({"role": "user", "content": QUICK_LOOKS_NOTE})
         opts = {}
         if self.settings.temperature is not None:
             opts["temperature"] = self.settings.temperature
@@ -273,6 +482,7 @@ class Agent:
                 text = ev.text
                 reasoning = ev.data.get("reasoning", "")
                 native = bool(ev.data.get("native_tool_calls"))
+                self._last_finish = ev.data.get("finish_reason")      # 09.11.2026: evidence for empty replies
                 if ev.data.get("finish_reason") == "length":
                     # this agent sends no max_tokens: on the local server only the context can cut a reply this short
                     # (the relay gives the hub route a limit of 24000)
@@ -289,6 +499,8 @@ class Agent:
         timings = ev.data.get("timings") or {}
         pt = usage.get("prompt_tokens")
         if isinstance(pt, int) and pt > 0:
+            if len(self.messages) <= 3:          # fresh context: system + first message (+ the open request)
+                self._floor = pt
             est = self.meter.estimate(self.messages, tools)
             self.meter.calibrate(self.messages, tools, pt)
             # Ollama keeps ~num_ctx/2 tokens from the end and says nothing. The
@@ -449,9 +661,21 @@ class Agent:
         got = self.remember()
         # the researcher's newest message stays the open request, it must not vanish into the summary
         last = self.messages[-1] if self.messages and self.messages[-1].get("role") == "user" else None
-        summary = self.compact(keep_last=last is not None)
-        if last is not None and not summary.startswith(("nothing", "the model returned no summary")):
+        extra = ""
+        if self._last_compact_turn is not None and self._turn_no - self._last_compact_turn < STORM_NEAR and not self._is_chat():
+            extra = (f"[note: this is summary {self._compacts + 1} of this round and the one before was only "
+                     f"{self._turn_no - self._last_compact_turn} steps ago -- the context is small against this job. Read "
+                     "with grep, head or tail instead of whole files, keep tool output short, and write results to "
+                     "files as you go.]")
+        summary = self.compact(keep_last=last is not None, extra=extra)
+        failed = summary.startswith(("nothing", "the model returned no summary"))
+        if last is not None and not failed:
             self.session.append(last)
+        if failed:
+            self._compact_pause = 5              # not again on each of the next steps
+        else:
+            self._compacts += 1
+            self._last_compact_turn = self._turn_no
         self.meter.last_prompt_tokens = 0
         note = f"context reached {size // 1000}k tokens: summarised and started fresh"
         if got:
@@ -460,25 +684,67 @@ class Agent:
             note = f"context reached {size // 1000}k tokens, but the summary failed: {summary}"
         self.ui.on_status(note)
 
-    def compact(self, keep_last: bool = False) -> str:
+    def compact(self, keep_last: bool = False, extra: str = "") -> str:
         """Explicit summary of the conversation so far. Flushes the server's prefix cache.
-        keep_last: leave the newest message out of the summary (the caller appends it again)."""
+        keep_last: leave the newest message out of the summary (the caller appends it again).
+        extra: a note that goes into the summary message (auto_compact: summaries that follow each other closely).
+        10.11.2026: the first message of a job stays word for word (_pinned_task); an error of the summary request
+        is a warning and the conversation stays as it is."""
+        task = self._pinned_task()
         convo = [m for m in self.messages if m.get("role") != "system"]
         if keep_last and convo:
             convo = convo[:-1]
+        head = []
+        if task is not None and convo:
+            # the first message goes to the summary request as it is and is not part of what gets summarised
+            first = convo[0]
+            head = [first if first["content"].startswith(TASK_MARK) else {"role": "user", "content": TASK_MARK + task}]
+            convo = convo[1:]
+            if not convo:
+                return "nothing to compact"
+        # 07.11.2026 (failure analysis): the summary request itself must fit -- long tool outputs are shortened and a very
+        # long conversation is cut to its newest part (about 240k characters, roughly 60k tokens)
+        kurz = []
+        for m in convo:
+            if m.get("role") == "tool" and isinstance(m.get("content"), str) and len(m["content"]) > 1500:
+                m = dict(m, content=m["content"][:700] + "\n[... shortened for the summary ...]\n" + m["content"][-500:])
+            kurz.append(m)
+        total, start = 0, len(kurz)
+        while start > 0 and total + len(json.dumps(kurz[start - 1], ensure_ascii=False)) < 240_000:
+            start -= 1
+            total += len(json.dumps(kurz[start], ensure_ascii=False))
+        while start < len(kurz) and kurz[start].get("role") == "tool":   # never begin with an orphaned tool result
+            start += 1
+        convo = kurz[start:] or kurz[-1:]
         if not convo:
             return "nothing to compact"
         ask = {"role": "user", "content": "Summarise this conversation for yourself so that you can continue without it, "
                                           "in at most 400 words: the researcher's task in their own words, what was done, "
                                           "the current state, decisions, open points and the next step, and the file paths "
                                           "you still need. Plain text."}
+        if head:
+            ask["content"] += (" The first message of this conversation is kept word for word, so do not repeat it: "
+                               "say which of its points are done and which are still open.")
         summary = ""
-        for ev in self.provider.stream([self.messages[0]] + convo + [ask], None):
-            if ev.kind == "done":
-                summary = ev.text
+        try:
+            for ev in self.provider.stream([self.messages[0]] + head + convo + [ask], None):
+                if ev.kind == "done":
+                    summary = ev.text
+        except ProviderError as exc:
+            self.session.note("error", text=f"summary request: {exc}")
+            self.ui.on_warning(f"the summary request failed, the conversation stays as it is: {exc}")
+            return f"the model returned no summary; nothing changed ({str(exc)[:200]})"
         if not summary:
             return "the model returned no summary; nothing changed"
-        new_msgs = [self.messages[0], {"role": "user", "content": "[summary of the earlier conversation]\n" + summary}]
+        try:                                    # 09.11.2026: a fresh status brief after every compaction
+            from .tools.lage_tools import start_brief
+            brief = start_brief() if self.depth == 0 else ""
+        except Exception:  # noqa: BLE001
+            brief = ""
+        body = SUMMARY_MARK + summary + (("\n\n" + extra) if extra else "") + (("\n\n" + brief.rstrip()) if brief else "")
+        if task is not None:
+            body = TASK_MARK + task + "\n\n" + body
+        new_msgs = [self.messages[0], {"role": "user", "content": body}]
         self.session.replace_messages(new_msgs, "compact")
         return summary
 

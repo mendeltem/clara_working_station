@@ -95,7 +95,7 @@ def test_max_turns_stops_a_loop(project, clara_home):
     script = [{"tool_calls": [{"name": "list_files", "arguments": {}}]}] * 10
     agent, prov, ui, session = make_agent(project, clara_home, script, max_turns=3)
     agent.run("loop")
-    assert len(prov.calls) == 3
+    assert len([c for c in prov.calls if c["tools"]]) == 3      # since 10.11.2026 one more request, without tools: the hand-over
     assert any("max_turns" in t for t in ui.of("warning"))
 
 
@@ -210,3 +210,21 @@ def test_empty_after_a_cut_off_reply_says_context_full(project, clara_home):
     agent._request = cut
     out = agent.run("go")
     assert out.startswith("[no answer: the context is full (65321 tokens")
+
+
+def test_load_starts_from_the_last_compact_note(project, clara_home):
+    """09.11.2026 (night check): resume must start from the last summary, not reload every raw message."""
+    settings = load_settings()
+    s = Session.new(settings.sessions_dir, project)
+    for i in range(5):
+        s.append({"role": "user", "content": f"old question {i}"})
+        s.append({"role": "assistant", "content": f"old answer {i}"})
+    s.replace_messages([{"role": "system", "content": "sys"}, {"role": "user", "content": "SUMMARY of the old part"}], "test")
+    s.append({"role": "user", "content": "later question"})
+    s.append({"role": "assistant", "content": "later answer"})
+    loaded = Session.load(s.path)
+    assert [m["content"] for m in loaded.messages] == ["sys", "SUMMARY of the old part", "later question", "later answer"]
+    full = Session.load(s.path, full=True)                  # the hippocampus catch-up counts in the full list
+    assert len(full.messages) == 12 and full.messages[0]["content"] == "old question 0"
+    s.note("compact", reason="no messages")                 # a note without messages: old behaviour
+    assert len(Session.load(s.path).messages) == 4
