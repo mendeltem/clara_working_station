@@ -27,6 +27,22 @@ STARK = "frontier"
 OEFFENTLICH_LESEN = tuple(os.path.expanduser(p) for p in (
     "~/blackbeard_wikki/", "~/local_agentic_system/system/skills-clara/", "~/.clara/skills/", "~/.clara-lauf-cle/skills/"))
 _lock = threading.Lock()
+_hub = {"zeit": 0, "ids": set()}   # model ids the hub offers now (13.11.2026: hub dropped fast/vision/light overnight -> 400)
+
+
+def hub_modell(modell):
+    """Model the hub really offers: an alias it dropped falls back to standard_modell (list cached 10 min)."""
+    if time.time() - _hub["zeit"] > 600:
+        try:
+            req = urllib.request.Request(K["cle_url"].rstrip("/") + "/models",
+                                         headers={"Authorization": f"Bearer {weiche.cle_key()}"})
+            _hub["ids"] = {m["id"] for m in json.load(OPENER.open(req, timeout=10))["data"]}
+        except Exception:  # noqa: BLE001 -- list not reachable: keep the old one, send the name as asked
+            pass
+        _hub["zeit"] = time.time()
+    if _hub["ids"] and modell not in _hub["ids"]:
+        return K["standard_modell"]
+    return modell
 
 
 def text_of(messages):
@@ -89,6 +105,83 @@ def kuerzen(messages, zeichen):
     return sysm + ([erste] if erste else []) + [hinweis] + behalten
 
 
+# 06.11.2026 (user): cohort names the researcher types are replaced by neutral short names before the Weiche decides,
+# so a chat that only NAMES a project stays on Clé; the real name never leaves the workstation. Only role=user text, never tool
+# output, never inside paths or file names (the lookarounds skip anything next to / . - or a letter).
+try:
+    KURZ = {k: v for k, v in json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                                         "kurznamen.json"))).items() if not k.startswith("_")}
+except (OSError, ValueError):
+    KURZ = {}
+KURZ_RX = re.compile(r"(?<![\w/.-])(" + "|".join(sorted(map(re.escape, KURZ), key=len, reverse=True)) + r")(?![\w/.-])") if KURZ else None
+
+
+def kurznamen(body):
+    """Replace cohort names in the user's own messages (in place). Returns how many were replaced."""
+    if KURZ_RX is None:
+        return 0
+    n = 0
+    for m in body.get("messages") or []:
+        if m.get("role") != "user" or not isinstance(m.get("content"), str):
+            continue
+        neu, k = KURZ_RX.subn(lambda x: KURZ[x.group(1)], m["content"])
+        if k:
+            m["content"], n = neu, n + k
+    return n
+
+
+# 06.11.2026 (user: chat on the local model waited minutes behind background jobs): one local request at a time
+# (llama-server has one slot), and a waiting chat request goes before waiting background requests.
+_lokal_frei = threading.Condition()
+_lokal_belegt = [False]
+_chat_wartet = [0]
+
+
+def ist_chat(quelle):
+    return quelle.startswith(("chat", "telegram"))
+
+
+class LokalPlatz:
+    def __init__(self, quelle):
+        self.chat = ist_chat(quelle)
+
+    def __enter__(self):
+        with _lokal_frei:
+            if self.chat:
+                _chat_wartet[0] += 1
+            try:
+                while _lokal_belegt[0] or (not self.chat and _chat_wartet[0] > 0):
+                    _lokal_frei.wait(timeout=5)
+            finally:
+                if self.chat:
+                    _chat_wartet[0] -= 1
+            _lokal_belegt[0] = True
+        return self
+
+    def __exit__(self, *exc):
+        with _lokal_frei:
+            _lokal_belegt[0] = False
+            _lokal_frei.notify_all()
+
+
+DATEN_ORTE = [os.path.expanduser(p).rstrip("/") + "/" for p in weiche.KONFIG["datenpfade"] if p.startswith(("~", "/"))]
+DATEI_RX = re.compile(r"(?:[\w./~-]*/)?[\w.-]+\.(?:nii(?:\.gz)?|dcm|mgz|mgh|xlsx?)\b", re.I)
+
+
+def daten_dateien(zugriff):
+    """06.11.2026: reasons to stay local = image or Excel files that a tool call touches INSIDE a data folder (and not
+    in a released public folder). A bare file name counts when the session's project folder is a data folder."""
+    projekt = re.search(r"\[context: project=([^,\]]+)", zugriff)
+    projekt = os.path.expanduser(projekt.group(1).strip()) if projekt else ""
+    gruende = []
+    for f in DATEI_RX.findall(zugriff):
+        p = os.path.expanduser(f) if "/" in f else os.path.join(projekt, f)
+        p = os.path.normpath(p) + ("/" if os.path.isdir(p) else "")
+        if any(p.startswith(o) for o in DATEN_ORTE) and not weiche._pfad_oeffentlich(p):
+            gruende.append(f"data file {os.path.basename(p)[:40]}")
+    return list(dict.fromkeys(gruende))[:4]
+
+
 def herkunft(body):
     """Who sent the request when the caller did not say: clara-agent sends tools; its project line tells Telegram
     (clara serve in ~/cle-arbeit) from the job queue (clara-lauf in a project folder)."""
@@ -110,9 +203,38 @@ def letzte_frage(messages):
     return text_of([next((m for m in reversed(messages) if m.get("role") == "user"), {})])
 
 
-def route(body):
+# 09.11.2026 (user: "Clara should know what happens everywhere"; results questions go to the local model):
+#  * the LOCAL full view of the overview board or of Clara's memory carries this marker (system/lage); a conversation
+#    that contains it anywhere stays on the local model, like one that once read an image
+#  * a results question about a project ("what did step 30 find?", "was hat Schritt 30 ergeben?") in the researcher's own
+#    words goes local from the start, in interactive chats -- except from clara serve (Telegram): patient-derived results never go to
+#    Telegram, so there Clara answers from the Clé view and says that results need a local session
+LAGE_VOLL = "LAGE-VOLL (local only"
+ERGEBNIS_FRAGE = re.compile(
+    r"\b(what|which)\s+(did|does|do|has|have)\b(?=.{0,80}\b(step|schritt|analys\w*|cmb|pvs|gm|project|projekt)\b)"
+    r".{0,80}\b(find|found|show|shows|showed|say|says|give|gave|come out|result\w*)\b"
+    r"|\b(results?|findings?|ergebnis\w*|befund\w*|outcome)\b.{0,50}\b(step|schritt|analys\w*|cmb|pvs|gm|project|projekt)\b"
+    r"|\b(step|schritt)\s*\d{1,3}[a-z]?\b.{0,50}\b(find|found|result\w*|ergeb\w*|ergab|herausgekommen|show\w*|zeigt\w*)\b"
+    r"|\bwas\s+(hat|haben|ergab|kam|zeigt\w*)\b.{0,60}\b(ergeben|gefunden|herausgekommen|gezeigt|raus)\b", re.I | re.S)
+
+
+def eigene_worte(text):
+    """The researcher's own words of a user turn: without the context line and the [background ...] notes the agent
+    puts in front (the status brief names steps and files; it must not count as a question)."""
+    m = re.search(r"\[context: project=[^\]]*\]", text)
+    if m:
+        text = text[m.end():]
+    while True:
+        neu = re.sub(r"^\s*\[background[^\]]*\]", "", text, count=1, flags=re.S)
+        if neu == text:
+            return text.strip()
+        text = neu
+
+
+def route(body, quelle=""):
     """-> (ort, modell, gruende, turn) ; turn = {conv, frage, art} for the verdict at the end of the turn."""
     msgs = body.get("messages") or []
+    roh = msgs
     wunsch = str(body.get("model") or "auto")
     # What counts where (29.10.2026, after a Telegram session flipped to local because a log line in a tool result named
     # a data path): subject/session ids and cohort names count in every text. Data paths and image files count where
@@ -143,13 +265,26 @@ def route(body):
     # rest of the system prompt (skill descriptions mention file types, the memory explains the rules)
     projekt = " ".join(re.findall(r"\[context: project=[^\]]*\]", voll))
     zugriff = "\n".join([projekt] + [json.dumps(f, ensure_ascii=False) for f in aufrufe.values()])
-    schutz = [g for g in weiche.schutzgruende(voll, pfade=False) if g.startswith("pattern") and ".nii" not in g]
-    schutz += [g for g in weiche.schutzgruende(zugriff, pfade=True)
-               if g.startswith("data path") or (g.startswith("pattern") and ".nii" in g)]
+    # 06.11.2026 (user: "the rules must be much simpler"): only REAL patient data counts --
+    #   case ids anywhere in the conversation (the researcher's text or tool output; public ids excepted), and
+    #   image files a tool call reads from a non-public folder. A data path or a cohort name alone is no reason any more.
+    # The conversation carries every earlier tool result, so a session that once got real data stays local.
+    # 06.11.2026, later (user: "pseudonymised data like sub-01 is also allowed"): pseudonymous case ids are no reason
+    # either; only image files read from a non-public folder (and the explicit markers below) keep a request local.
+    # The exit guard to the internet stays strict (ids included).
+    schutz = daten_dateien(zugriff)
     # plain-word markers are the user's (or the job's) own flag: only in user messages, outside the topic brief;
     # our code and docs quote "Patientendaten" as rule text, so tool output does not count here
     schutz += [g for g in weiche.schutzgruende(ohne_brief(text_of([m for m in msgs if m.get("role") == "user"])),
                                                pfade=False) if g.startswith("marker")]
+    if any(LAGE_VOLL in (m.get("content") if isinstance(m.get("content"), str) else json.dumps(m.get("content") or ""))
+           for m in roh):
+        schutz.append("local overview or memory in the conversation")
+    # only interactive chats outside Telegram (clara-lauf sets x_quelle chat/terminal); jobs and work sessions keep
+    # their own place ("what does the frame show?" in a film job is no results question)
+    kanal = quelle or herkunft(body)
+    if kanal.startswith("chat") and ERGEBNIS_FRAGE.search(eigene_worte(letzte_frage(roh))):
+        schutz.append("results question about a project")
     if schutz or wunsch == "lokal":
         return "lokal", None, schutz or ["model lokal requested"], None
     conv, frage = gespraech(msgs), letzte_frage(msgs)
@@ -247,13 +382,84 @@ class _Antwort:
     read1 = read
 
 
-def lokal_bereit():
+class StartRueckstau:
+    """When the local model cannot start: wait longer before each new try, slow down callers, tell the user once.
+    Night 3 to 4 Nov: every request failed at once, a job restarted every 6 s, 1390 sessions, 2.5 h, no alarm."""
+    WARTE_MAX = 1800       # s between start tries, at most
+    HALTEN = 60            # s a caller waits for its refusal, so a retry loop runs at most once a minute
+    ALARM_NACH = 3         # failed tries before the alarm
+    ALARM_WIEDER = 6 * 3600
+
+    def __init__(self, melden, uhr=time.time, schlafen=time.sleep):
+        self.melden, self.uhr, self.schlafen = melden, uhr, schlafen
+        self.lock = threading.Lock()
+        self.fehler, self.frei_ab, self.gemeldet = 0, 0.0, 0.0
+
+    def pruefen(self):
+        """Raises during the wait, after holding the caller."""
+        rest = self.frei_ab - self.uhr()
+        if rest > 0:
+            self.schlafen(min(self.HALTEN, rest))
+            raise RuntimeError(f"local model could not be started ({self.fehler} tries); next try in {int(rest)} s")
+
+    def misslungen(self, rc):
+        with self.lock:
+            self.fehler += 1
+            self.frei_ab = self.uhr() + min(self.WARTE_MAX, 60 * 2 ** (self.fehler - 1))
+            if self.fehler >= self.ALARM_NACH and self.uhr() - self.gemeldet > self.ALARM_WIEDER:
+                self.gemeldet = self.uhr()
+                self.melden(f"Local model cannot start: {self.fehler} tries failed (modellstart rc {rc}). Local requests are refused. "
+                            "Check: systemctl --user status llama-server")
+
+    def gelungen(self):
+        with self.lock:
+            if self.gemeldet:
+                self.melden(f"Local model is back after {self.fehler} failed tries.")
+            self.fehler, self.frei_ab, self.gemeldet = 0, 0.0, 0.0
+
+
+def _melden(text):
+    try:
+        subprocess.run([MELDEN, text], capture_output=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as e:
+        protokoll({"zeit": time.strftime("%FT%T"), "fehler": f"alarm not sent: {e}"[:200]})
+
+
+MELDEN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "werkzeuge", "melden")
+RUECKSTAU = StartRueckstau(_melden)
+
+
+F_FREIGABE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lokal-freigabe.bis")
+
+
+def lokal_bereit(auto=False):
+    """auto=True only when the Weiche itself saw a data file (NIfTI/DICOM/Excel from a data folder): then the local
+    model may start by itself with the timer. A request that merely ASKS for the local model (model "lokal", old queue
+    jobs) still needs the researcher's approval (06.11.2026, user: "it must not just start like that")."""
     _lokal_zuletzt[0] = time.time()
+    RUECKSTAU.pruefen()
     subprocess.run([weiche.LOKAL_BEDARF, "an", str(os.getpid()), "weiche-relay"], check=False)
-    r = subprocess.run([weiche.MODELLSTART, "--warten", "600", "--leise"], capture_output=True) \
+    os.environ["LOKAL_WER"] = "a Clara work session"
+    env = dict(os.environ, LOKAL_AUTO="1") if auto else {k: v for k, v in os.environ.items() if k != "LOKAL_AUTO"}
+    r = subprocess.run([weiche.MODELLSTART, "--warten", "600", "--leise"], capture_output=True, env=env) \
         if os.path.exists(weiche.MODELLSTART) else subprocess.CompletedProcess([], 0)
+    if r.returncode == 5:
+        # 07.11.2026 (night report, user OK): no approval is not a failed start -- no backoff, no false alarm. The
+        # request waits up to 10 min for the approval (the gate asked on Telegram), then it ends with a clear message.
+        frist = time.time() + 600
+        while time.time() < frist:
+            time.sleep(30)
+            if os.path.exists(F_FREIGABE) and int(open(F_FREIGABE).read().strip() or 0) > time.time():
+                r = subprocess.run([weiche.MODELLSTART, "--warten", "600", "--leise"], capture_output=True, env=env)
+                break
+    if r.returncode == 5:
+        raise RuntimeError("the local model is off and needs the researcher's approval (patient data): "
+                           "a question went to Telegram -- allow with /lokal_an there or `lokal-freigabe an` on the workstation, "
+                           "then ask again")
     if r.returncode != 0:
-        raise RuntimeError("local model could not be started (modellstart)")
+        RUECKSTAU.misslungen(r.returncode)
+        raise RuntimeError(f"local model could not be started (modellstart rc {r.returncode})")
+    RUECKSTAU.gelungen()
     return json.load(OPENER.open(K["lokal_url"] + "/models", timeout=10))["data"][0]["id"]
 
 
@@ -288,6 +494,14 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(404, {"error": "not found"})
 
     def do_POST(self):
+        self._platz = None
+        try:
+            return self._do_post()
+        finally:
+            if self._platz is not None:          # the local slot is free again, also after errors and early returns
+                self._platz.__exit__(None, None, None)
+
+    def _do_post(self):
         if self.path.rstrip("/") not in ("/v1/chat/completions", "/chat/completions"):
             return self._json(404, {"error": "not found"})
         n = int(self.headers.get("Content-Length") or 0)
@@ -299,13 +513,18 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(400, {"error": "invalid json"})
         t0 = time.time()
         quelle = str(body.pop("x_quelle", "") or self.headers.get("X-Clara-Quelle", "") or herkunft(body))[:40]
+        ersetzt = kurznamen(body)
         try:
-            ort, modell, gruende, turn = route(body)
+            ort, modell, gruende, turn = route(body, quelle)
+            if ersetzt:
+                gruende = list(gruende) + [f"{ersetzt} cohort name(s) shortened"]
             if ort == "lokal":
-                body["model"] = lokal_bereit()
+                body["model"] = lokal_bereit(auto=any(str(g).startswith("data file") for g in gruende))
                 url, hdr = K["lokal_url"].rstrip("/") + "/chat/completions", {}
             else:
-                body["model"] = modell
+                body["model"] = hub_modell(modell)
+                if body["model"] != modell:
+                    gruende = list(gruende) + [f"{modell} not on the hub, sent as {body['model']}"]
                 body["max_tokens"] = max(int(body.get("max_tokens") or 0), 24000)   # reasoning counts against it (test run 9)
                 if body.get("stream"):
                     body["stream_options"] = {"include_usage": True}   # the hub reports tokens in the last chunk
@@ -316,6 +535,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(503, {"error": f"weiche: {e}"})
         req = urllib.request.Request(url, json.dumps(body).encode(),
                                      {"Content-Type": "application/json", **hdr}, method="POST")
+        if ort == "lokal":
+            self._platz = LokalPlatz(quelle).__enter__()     # chat goes before waiting background requests
         status = 200
         try:
             up = OPENER.open(req, timeout=900)

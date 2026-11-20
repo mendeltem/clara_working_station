@@ -578,6 +578,9 @@ calls (file read in 106 to 130 s, file written in 153 s). What is open: the
 phone browser, and the comparison against Hermes and OpenCode on the 13-task
 set. The phone page is replaced in practice by the Telegram bridge; the 13-task
 comparison against Hermes and OpenCode is still open.
+State 20 November 2026: version 0.1.2 plus the changes of 7 to 10 November (changelog section "After 0.1.2"):
+a fast chat Clara without shell and write tools, a status brief at the start of every conversation, live system
+status, retries for provider errors, and a job text that survives every summary. The test suite has 137 tests.
 Install and test commands: [clara-agent/INSTALL.md](clara-agent/INSTALL.md);
 threat model: [clara-agent/docs/PRIVACY.md](clara-agent/docs/PRIVACY.md).
 

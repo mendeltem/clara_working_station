@@ -44,10 +44,31 @@ approver_url = "http://127.0.0.1:8765/v1/chat/completions"
 [agent]
 max_turns = 400
 show_reasoning = false
+$( [ "$ORT" = lokal ] || printf '%s\n' '[memory]' '# 06.11.2026: hippocampus (filtered long-term memory) + summary at 32k tokens (arXiv 2611.05306); Clé home only' 'hippocampus = false' '# 10.11.2026: 64k instead of 32k -- a job start is already 25-29k, so 32k meant a summary every 4-17 steps (wk11: 28-51 per round); the hub takes far larger prompts' 'compact_at = 64000' 'cap = 150' )
+$( [ "$ORT" = lokal ] && printf '%s\n' '[memory]' '# 07.11.2026: the local model has 80k context; without a summary the LOFO fix died at 81.5k ("context is full")' 'hippocampus = false' 'compact_at = 56000' )
 EOF
 
 if [ "$ORT" = lokal ]; then export CLARA_MODEL=lokal; else export CLARA_MODEL="${MODELL:-auto}"; fi
 TEXT="$AUFTRAG"
+# 08.11.2026: jobs that only said "exit guard" tried curl (blocked by the sandbox) and gave up; name the command
+if [ -n "$AUFTRAG" ]; then
+    TEXT="$TEXT
+
+INTERNET (sandbox: direct curl/pip/git/DNS are blocked, this is normal): the only way out is the exit guard command
+  $B/guard/frag-draussen --suche \"<query>\"     (web search, free)
+  $B/guard/frag-draussen --seite \"https://...\"  (text of one page, free)
+  $B/guard/frag-draussen --cloud \"<question>\"  (cloud model; ONLY if the job allows it)
+Run it with bash and timeout 300. Never put patient data, case IDs or data paths into a query."
+fi
+# 13.11.2026 (user): local sessions leave id-free statistics summaries that Clé may read; read them before asking for
+# the local model, so small follow-up questions need no new local run
+if [ -n "$AUFTRAG" ] && [ "$ORT" != lokal ]; then
+    TEXT="$TEXT
+
+RESULTS OF LOCAL SESSIONS: $HOME/cle-arbeit/statistik/INDEX.md lists id-free statistics summaries of earlier
+local-model runs (one .md per run in that folder). Read the matching entry first; ask for a new local run only when the
+answer really needs data that is not there."
+fi
 if [ -n "$AUFTRAG" ] && [ -n "$THEMA" ] && [ -f "$B/themen/$THEMA.md" ]; then
     TEXT="TOPIC BRIEF ($THEMA, preloaded):
 $(cat "$B/themen/$THEMA.md")
@@ -59,6 +80,21 @@ fi
 echo "clara-lauf: $ORT, model $CLARA_MODEL${THEMA:+, topic $THEMA}, $(pwd)" >&2
 if [ -z "$AUFTRAG" ]; then
     # interactive: asks before writes and commands (System One first), write lock on as in the continuous run
-    exec "$HOME/.clara-venv/bin/clara" -C "$PWD"
+    # 06.11.2026: options for the interactive agent come from the launcher (clara --mode yolo, clara --resume last)
+    read -r -a EXTRA <<< "${CLARA_ARGS:-}"
+    # 06.11.2026: interactive Clé sessions are the chat Clara: they may hand jobs to work sessions (start_work);
+    # jobs (with AUFTRAG, e.g. from clara-arbeit) never get these tools
+    [ "$ORT" = lokal ] || export CLARA_WORK_TOOLS=1
+    # the chat Clara has her persona in every folder (not only in ~/cle-arbeit)
+    [ "$ORT" = lokal ] || export CLARA_PERSONA="$B/persona/clara_main.md"
+    export CLARA_QUELLE="${CLARA_QUELLE:-chat/terminal}"     # the relay puts chat before background work
+    # the chat Clara talks with the fast model; the thinking happens in work sessions (clea/frontier)
+    [ "$ORT" = lokal ] || [ "$MODELL" != auto ] || export CLARA_MODEL=fast
+    exec "$HOME/.clara-venv/bin/clara" -C "$PWD" "${EXTRA[@]}"
 fi
-exec "$HOME/.clara-venv/bin/clara" -C "$PWD" -p "$TEXT" --yolo --quiet
+# 06.11.2026: jobs and work sessions have no long-term memory (its summary request carried rule words such as
+# "patient data" and was routed to the local GPU, which made sessions fail); only the chat Clara remembers
+export CLARA_NO_HIPPOCAMPUS=1
+# 06.11.2026: a job may continue its own session (clara-arbeit: --resume last in the work session's own home)
+read -r -a EXTRA <<< "${CLARA_ARGS:-}"
+exec "$HOME/.clara-venv/bin/clara" -C "$PWD" -p "$TEXT" --yolo --quiet "${EXTRA[@]}"

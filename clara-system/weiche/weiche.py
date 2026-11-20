@@ -151,7 +151,7 @@ def entscheiden(text, ort_vorgabe=None, quelle="", protokoll=True, mit_thema=Tru
     t0 = time.time()
     d = {"ort": "cle", "modell": KONFIG["standard_modell"], "thema": None, "art": None, "p_art": 0.0, "p_thema": 0.0,
          "gruende": [], "quelle": quelle}
-    schutz = schutzgruende(text)
+    schutz = schutzgruende(text, pfade=False)   # 07.11.2026 user: a folder under ~/data alone no longer forces local; real data files (relay), ids, markers still do
     kopf = {k.upper(): v for k, v in KOPF.findall(text)}
     if schutz or ort_vorgabe == "lokal" or kopf.get("ORT", "").lower() == "lokal":
         d.update(ort="lokal", modell="lokal")
@@ -246,7 +246,7 @@ def frag(messages, ort="auto", modell=None, max_tokens=4000, timeout=600, **extr
         body = {"x_quelle": os.path.basename(sys.argv[0] or "skript") or "skript",
                 "model": (modell or KONFIG["standard_modell"]) if ort == "cle" else "lokal", "messages": messages,
                 "max_tokens": max(max_tokens, 8000) if ort == "cle" else max_tokens, **extra}
-        versuche = (0, 30, 90) if ort == "cle" else (0,)   # 02.11.2026: the hub gave short 502/503 bursts at 04:00 -> 6 of 8
+        versuche = (0, 30, 90) if ort == "cle" else (0,)   # 02.11.2026: Clé gave short 502/503 bursts at 04:00 -> 6 of 8
         for i, warte in enumerate(versuche):                 # morning-research tasks failed; retry transient gateway errors
             time.sleep(warte)
             try:

@@ -54,11 +54,33 @@ bot token, the allowed user ids and the home chat into `~/.config/clara/telegram
 | `SD_CPP`, `BILD_MODELLE` | `~/local_agentic_system/system/sd.cpp`, `.../modelle/bild` | `bild` |
 | `CLARA_TG_ENV`, `CLARA_SERVE`, `https_proxy` | `~/.config/clara/telegram.env`, `http://127.0.0.1:8766`, none | Telegram bridge |
 
+## State 20 November 2026: what changed since the first version
+
+- **Relay.** It asks the hub for its model list (cached 10 min); a model alias the hub dropped is sent as the standard
+  model instead of failing with 400. When the local model cannot start, the relay waits longer before each new try
+  (up to 30 min), holds callers for a minute and sends one alarm after three failed tries; before, a job restarted
+  every 6 s for hours. Only real patient data keeps a request local: image or table files that a tool call reads from
+  a data folder, and explicit markers. A data path or a cohort name alone is no reason any more. Cohort names the
+  researcher types can be replaced by neutral short names before the decision (`kurznamen.json` next to the `weiche/`
+  folder, `{"real name": "short name"}`; the file is local and not shipped). A question about results in an interactive
+  terminal chat goes to the local model; from the phone Clara answers without results and says so.
+- **Local model only with approval.** A request that merely asks for the local model waits for the researcher's
+  approval (`/lokal_an`, `/lokal_aus`, `/lokal_status` in Telegram). Only a data file seen by the relay itself may
+  start it, with a timer.
+- **Telegram bridge.** One working line (time, steps, tokens, where it runs) that is removed when the answer arrives;
+  approvals in plain words with the raw command behind a spoiler; after a server restart the conversation is kept
+  (a new session only when the server answers 404); an answer to a question that ran out is sent as a normal message.
+- **`clara-lauf`.** Interactive hub sessions are the chat Clara (work tools, persona file, fast model); jobs run
+  without long-term memory, may continue their own session (`CLARA_ARGS`) and are told the exit-guard command for
+  web questions.
+
 ## What this does not cover
 
 - The local model server, its starter `modellstart` (checks free VRAM before loading) and the watcher are
   workstation-specific and are not included. Without a starter, the relay assumes that the local server is
   already up.
+- `lokal-freigabe` (approval and timer of the local model), `melden` (alarm to the phone) and the exit guard
+  `frag-draussen` are called by these files but are not included.
 - The approval gate (`/v1/chat/completions` on `127.0.0.1:8765`, Hermes smart-approval format) and the System One
   service are described in the main README; they are not part of this folder.
 - Tool names and flags are German (`clara-sitzungen --seit`, `bild --gross`) because the rest of the workstation calls
