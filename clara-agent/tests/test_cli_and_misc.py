@@ -91,6 +91,32 @@ def test_project_instructions_memory_and_skills_enter_the_prompt(project, clara_
     assert prompt.startswith(CORE)
 
 
+def test_skill_descriptions_arrive_whole(clara_home):
+    """24.11.2026: a description written as a block showed up as ">", every description was cut at 200 characters
+    (the "use when" part stands at the end), and nested keys counted as top-level keys."""
+    from clara.skills import MAX_DESCRIPTION, parse_frontmatter
+    root = clara_home / "skills"
+    def write(name, front, body="# Title\nfirst body line\n"):
+        (root / name).mkdir(parents=True)
+        (root / name / "SKILL.md").write_text(f"---\n{front}\n---\n{body}")
+    long = "Builds a page. " + "word " * 80 + "Use when the user asks for a page."
+    write("folded", "name: folded\ndescription: >\n  Makes a report: one\n  per case.\n\n  Use when asked.\nmetadata:\n  description: not this one\n  name: nor this")
+    write("long", f"name: long\ndescription: {long}")
+    write("quoted", 'name: quoted\ndescription: "Says \\"hello\\": twice"\nlicense: MIT')
+    write("plain", "name: plain\ndescription: first part\n  second part\nmetadata:\n  version: \"1.0\"")
+    write("too-long", "name: too-long\ndescription: " + "x" * 3000)
+    write("none", "name: none\nlicense: MIT")
+    got = {s["name"]: s["description"] for s in discover_skills([root])}
+    assert got["folded"] == "Makes a report: one per case. Use when asked."
+    assert got["long"] == long.strip() and len(long) > 400
+    assert got["quoted"] == 'Says "hello": twice'
+    assert got["plain"] == "first part second part"
+    assert len(got["too-long"]) == MAX_DESCRIPTION and got["too-long"].endswith("…")
+    assert got["none"] == "first body line"                       # body, not a frontmatter line
+    meta = parse_frontmatter((root / "folded" / "SKILL.md").read_text())
+    assert meta["name"] == "folded" and meta["metadata"] == ""
+
+
 def test_scheduler(clara_home):
     assert parse_interval("30m") == 1800 and parse_interval("2h") == 7200 and parse_interval("1d") == 86400
     settings = load_settings()

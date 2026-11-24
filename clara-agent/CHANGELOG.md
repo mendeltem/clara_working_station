@@ -1,5 +1,12 @@
 # Changelog
 
+## 24 November 2026 (version number unchanged)
+
+- Fix, skill list in the system prompt: a description is no longer cut at 200 characters, and a folded or literal
+  block (`description: >` or `|`) is read whole instead of being shown as ">". Skills that say when to load them in
+  the second half of the description were invisible to Clara for exactly that part. The Agent Skills format allows
+  1,024 characters; longer descriptions are cut there, with a mark. One new test.
+
 ## After 0.1.2 (7 to 10 November 2026, version number unchanged)
 
 Changes from two weeks of daily use and three checks of the logs. Each one answers a failure that was seen.
