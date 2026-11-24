@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Clara Working Station: skills</title>
+<meta name="description" content="Every skill Clara and the setup sessions can load, as clickable charts: who loads which, and how large each one is.">
+<link rel="stylesheet" href="site.css">
+<style>
+ :root{--mark:#1f9a8e;--pick:#c67c12;--off:#34474f;--track:#14343a;--grid:#1a2a32}
+ .tiles4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 6px}
+ .st{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:12px 14px}
+ .st .v{font-size:24px;font-weight:800;color:var(--ink);line-height:1.2}
+ .st .l{color:var(--muted);font-size:11.5px}
+ .fbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:22px 0 10px;font-size:12.5px;color:var(--muted);min-height:30px}
+ .fbar b{color:var(--ink)}
+ button.b{font:inherit;font-size:12px;color:var(--accent2);background:none;border:1px solid var(--line);border-radius:7px;padding:3px 10px;cursor:pointer}
+ button.b:hover{border-color:var(--accent2)}
+ .two{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+ .card{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:14px 14px 8px;margin-bottom:11px}
+ .card h3{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px}
+ .card .h{color:var(--muted);font-size:11.5px;margin-bottom:8px}
+ .card svg{display:block;width:100%;height:auto}
+ .card svg text{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+ .bar{cursor:pointer}.bar:hover .m,.bar:focus-visible .m{filter:brightness(1.25)}
+ .bar:focus-visible{outline:none}.bar:focus-visible .hit{stroke:var(--accent);stroke-width:1.5}
+ .plot{cursor:pointer}
+ #tip{position:fixed;z-index:9;pointer-events:none;background:#06090b;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;
+      color:var(--muted);max-width:280px;display:none}
+ #tip b{display:block;color:var(--ink);font-size:13px}
+ #detail h3{font-size:16px;color:var(--accent2);font-weight:800;margin-bottom:4px}
+ #detail p{color:var(--muted);font-size:12.5px;margin-bottom:10px}
+ #detail dl{display:grid;grid-template-columns:120px 1fr;gap:7px 12px;font-size:12.5px;margin-bottom:8px}
+ #detail dt{color:var(--muted)}#detail dd{color:var(--ink)}
+ .meter{display:inline-block;vertical-align:middle;width:150px;height:8px;border-radius:4px;background:var(--track);margin-right:9px;overflow:hidden}
+ .meter i{display:block;height:100%;background:var(--mark);border-radius:4px}
+ table.sk td:first-child{white-space:nowrap}
+ table.sk td.num{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+ table.sk th.num{text-align:right}
+ table.sk button{font:inherit;font-weight:700;color:var(--accent2);background:none;border:0;padding:0;cursor:pointer;text-align:left}
+ table.sk button:hover{text-decoration:underline}
+ table.sk tr.sel td{background:#132129}
+ table.sk tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--pick)}
+ table.sk tr.sel button{padding-left:8px}
+ @media (max-width:640px){.tiles4{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}#detail dl{grid-template-columns:1fr}}
+</style>
+</head><body>
+<nav class="nav" aria-label="Pages">
+ <a class="home" href="index.html">← Clara Working Station</a>
+ <a href="film/">Films</a>
+ <a href="workflow.html">How it works</a>
+ <a href="wmh.html">WMH results</a>
+ <a href="clara-alone.html">Clara on her own</a>
+ <a href="microbleeds.html">Microbleeds</a>
+ <a href="system.html">The system</a>
+ <a class="here" aria-current="page" href="skills.html">Skills</a>
+ <a href="setup.html">Rebuild it</a>
+ <a href="limits.html">Limits and data rules</a>
+</nav>
+<h1>Skills</h1>
+<div class="sub">Clara Working Station</div>
+<p class="s">A skill is a folder with one instruction file. The agent always has the <b>name and description</b> of every
+skill in its prompt and reads the <b>body</b> only when a task calls for it, so a skill costs little until it is used.
+The <a class="gh" href="https://agentskills.io/specification" target="_blank" rel="noopener">Agent Skills format</a>
+allows a description of at most 1,024 characters and recommends a body under 500 lines.</p>
+<p class="s">Click a bar to filter, click a point or a name to see one skill. Counted on 24 November 2026 on the workstation.</p>
+
+<div class="tiles4" id="tiles"></div>
+
+<div class="fbar" id="fbar" aria-live="polite"></div>
+<div class="two">
+ <div class="card"><h3>Who loads it</h3><div class="h">Number of skills. Click a bar to filter.</div><div id="who"></div></div>
+ <div class="card"><h3>What it brings along</h3><div class="h">Skills with files beside the instructions.</div><div id="brings"></div></div>
+</div>
+<div class="card"><h3>Size against the limits of the format</h3>
+ <div class="h">One point per skill: length of the description (always in the prompt) against length of the body (read on demand). Click a point.</div>
+ <div class="tw"><div id="size" style="min-width:600px"></div></div></div>
+
+<div class="card" id="detail" aria-live="polite"></div>
+
+<h2>All skills</h2>
+<div class="tw"><table class="sk" id="tab"></table></div>
+
+<h2>Sources</h2>
+<ul class="s">
+<li><a class="gh" href="https://agentskills.io/specification" target="_blank" rel="noopener">Agent Skills specification</a> (agentskills.io):
+the folder layout, the two fields name and description, the limit of 1,024 characters and the recommendation of 500 lines.</li>
+<li>The counts come from the skill folders on the workstation, read by
+<a class="gh" href="https://github.com/mendeltem/clara_working_station/blob/main/skills_page.py" target="_blank" rel="noopener">skills_page.py</a>.
+Only the name, the counts and a hand-checked purpose line are published; the skill texts stay on the machine.</li>
+</ul>
+<div class="pn"><a href="system.html">← The system</a><a href="setup.html">Rebuild it →</a></div>
+<div id="tip" role="tooltip"></div>
+<script>
+const D = [{"n": "alita-storage", "p": "Stores finished results and QC pages on the group drive and verifies them by checksums.", "home": "setup", "clara": false, "setup": true, "lines": 47, "chars": 382, "files": 0, "has": []}, {"n": "arbeit-stoppen", "p": "Stops autonomous work safely when the researcher says stop.", "home": "clara", "clara": true, "setup": false, "lines": 98, "chars": 52, "files": 0, "has": []}, {"n": "auftrag-abarbeiten", "p": "Works through a queued job in rounds: log first, trial run on two cases, result file, self-check against the acceptance list.", "home": "clara", "clara": true, "setup": false, "lines": 141, "chars": 261, "files": 0, "has": []}, {"n": "aussenkontakt", "p": "Asks a question outside the machine through the exit guard, which blocks anything that refers to internal data.", "home": "clara", "clara": false, "setup": false, "lines": 91, "chars": 264, "files": 0, "has": []}, {"n": "bianca-wmh", "p": "Segments white matter hyperintensities on FLAIR with FSL BIANCA and a pretrained classifier, then thresholds, masks and reports volumes.", "home": "clara", "clara": true, "setup": false, "lines": 106, "chars": 421, "files": 0, "has": []}, {"n": "bianca-wmh-segmentation", "p": "Builds and runs a complete BIANCA pipeline, from DICOM to BIDS through preprocessing, training, inference and masking.", "home": "clara", "clara": false, "setup": false, "lines": 392, "chars": 822, "files": 0, "has": []}, {"n": "bias-korrektur", "p": "Corrects intensity inhomogeneity with FSL FAST or ANTs N4 and says which output image is the corrected one.", "home": "clara", "clara": true, "setup": false, "lines": 37, "chars": 233, "files": 0, "has": []}, {"n": "bids-konvertierung", "p": "Brings any data collection into a BIDS structure: DICOM folders, numbered directories, spreadsheet lists.", "home": "clara", "clara": false, "setup": false, "lines": 164, "chars": 249, "files": 0, "has": []}, {"n": "dataset-handover", "p": "Prepares an MRI data set for a collaborator: one folder per case, clear file names, file list, README, QC page.", "home": "setup", "clara": false, "setup": true, "lines": 45, "chars": 528, "files": 0, "has": []}, {"n": "datenschutz", "p": "Rules for handling patient and institutional data on the machine; loaded whenever data sets or results are involved.", "home": "clara", "clara": false, "setup": false, "lines": 87, "chars": 236, "files": 0, "has": []}, {"n": "dicom-nach-nifti", "p": "Converts DICOM series to NIfTI with a JSON sidecar, checks the geometry and keeps patient identifiers out of the sidecar.", "home": "clara", "clara": true, "setup": false, "lines": 60, "chars": 366, "files": 0, "has": []}, {"n": "dicom-to-bids", "p": "Converts unstructured clinical DICOM exports into a valid BIDS data set, including the choice of series and duplicate detection.", "home": "clara", "clara": false, "setup": false, "lines": 184, "chars": 728, "files": 0, "has": []}, {"n": "eigener-stack", "p": "How the agent itself is run: llama.cpp with the local model on the workstation GPU as user services; for questions on speed, memory and restarts.", "home": "clara", "clara": true, "setup": false, "lines": 130, "chars": 299, "files": 0, "has": []}, {"n": "explainer-video", "p": "Builds an animated, narrated explanation video from the real data of a task.", "home": "setup", "clara": false, "setup": true, "lines": 32, "chars": 444, "files": 0, "has": []}, {"n": "film-making", "p": "Makes a narrated animated film in Python: script, voice, chapters, checks, render, deliver folder.", "home": "shared", "clara": true, "setup": true, "lines": 69, "chars": 470, "files": 4, "has": ["scripts", "references", "evals"]}, {"n": "flywire-connectome", "p": "Turns FlyWire connectome data into a sparse PyTorch matrix.", "home": "clara", "clara": true, "setup": false, "lines": 109, "chars": 49, "files": 1, "has": ["templates"]}, {"n": "fnirs-eeg-to-bids", "p": "Turns fNIRS, diffuse optical tomography and EEG recordings into valid BIDS data sets.", "home": "clara", "clara": false, "setup": false, "lines": 155, "chars": 740, "files": 0, "has": []}, {"n": "gewebe-segmentierung", "p": "Segments grey matter, white matter, CSF and ventricles with FreeSurfer SynthSeg and derives masks and volumes.", "home": "clara", "clara": false, "setup": false, "lines": 102, "chars": 332, "files": 0, "has": []}, {"n": "hirn-extraktion", "p": "Removes the skull with HD-BET on the CPU, with FSL BET or SynthStrip as fallback, and checks the brain mask.", "home": "clara", "clara": false, "setup": false, "lines": 42, "chars": 264, "files": 0, "has": []}, {"n": "install-from-zero-check", "p": "Tests a repository the way a new user meets it: fresh clone, new environment, installer, every README command.", "home": "shared", "clara": false, "setup": true, "lines": 44, "chars": 449, "files": 1, "has": ["scripts"]}, {"n": "laufstatus", "p": "Answers what is running: the state of jobs and projects.", "home": "clara", "clara": true, "setup": false, "lines": 79, "chars": 56, "files": 1, "has": ["references"]}, {"n": "lektionen", "p": "The 20 lessons of this machine in full: measure Dice per volume, never set a threshold on test data, build runs that can resume.", "home": "clara", "clara": true, "setup": false, "lines": 192, "chars": 356, "files": 0, "has": []}, {"n": "llama-log", "p": "Reads the model server log: time stamps, tokens per second, hours.", "home": "clara", "clara": true, "setup": false, "lines": 129, "chars": 52, "files": 0, "has": []}, {"n": "mb-arena", "p": "Runs the MicrobleedNet comparison on susceptibility-weighted images.", "home": "clara", "clara": false, "setup": false, "lines": 155, "chars": 32, "files": 3, "has": ["references"]}, {"n": "mri-overlay-pages", "p": "Fixed colours and picture quality for MRI slices with masks: ground truth, second rater, true positive, false positive, false negative.", "home": "shared", "clara": true, "setup": true, "lines": 60, "chars": 609, "files": 3, "has": ["scripts", "assets", "evals"]}, {"n": "neuro-qc-report", "p": "Builds one self-contained HTML quality-control report for a set of brain MRI images: quality metrics, duplicates, slice montages with mask outlines.", "home": "clara", "clara": true, "setup": false, "lines": 179, "chars": 805, "files": 0, "has": []}, {"n": "neuro-qc-viewer", "p": "Builds an interactive browser viewer for brain MRI and segmentations with NiiVue: slices, underlays, overlays, thresholds.", "home": "clara", "clara": false, "setup": false, "lines": 176, "chars": 833, "files": 0, "has": []}, {"n": "neuroflow", "p": "A reusable Python library and conventions for neuroimaging pipelines with FSL and FreeSurfer.", "home": "clara", "clara": true, "setup": false, "lines": 103, "chars": 916, "files": 14, "has": ["scripts"]}, {"n": "nifti-pruefen", "p": "Checks and repairs NIfTI files: readable, same grid as the mask, orientation, voxel size, header.", "home": "clara", "clara": true, "setup": false, "lines": 91, "chars": 485, "files": 0, "has": []}, {"n": "papers", "p": "Downloads scientific papers on a topic as PDF from Europe PMC or arXiv.", "home": "clara", "clara": true, "setup": false, "lines": 120, "chars": 288, "files": 2, "has": ["scripts"]}, {"n": "pytorch", "p": "Builds, trains and tests PyTorch models on the workstation: U-Nets and other segmentation networks, classifiers, transformers.", "home": "clara", "clara": true, "setup": false, "lines": 239, "chars": 317, "files": 0, "has": []}, {"n": "qc-page-building", "p": "Builds quality-control pages for MRI data with the house rules: overlay switch, methods box with software versions, hover explanations.", "home": "setup", "clara": false, "setup": true, "lines": 40, "chars": 504, "files": 0, "has": []}, {"n": "selbstverbesserung", "p": "Self-improvement: read the own session, draw one lesson, make one change, measure it, version it.", "home": "clara", "clara": true, "setup": false, "lines": 74, "chars": 308, "files": 0, "has": []}, {"n": "usage-feedback", "p": "Gives the researcher feedback on how they work with the setup assistant, from counts over their own sessions.", "home": "setup", "clara": false, "setup": true, "lines": 66, "chars": 369, "files": 1, "has": []}, {"n": "voi-nach-nifti", "p": "Converts MRIcron .voi lesion masks to NIfTI and checks grid and label values.", "home": "clara", "clara": true, "setup": false, "lines": 34, "chars": 316, "files": 0, "has": []}, {"n": "wetter", "p": "Weather and forecast for any place through the Open-Meteo API.", "home": "clara", "clara": true, "setup": false, "lines": 102, "chars": 195, "files": 0, "has": []}, {"n": "wiki-update", "p": "Adds what a finished task taught to the shared agent wiki, with sources, index line and log line.", "home": "shared", "clara": false, "setup": true, "lines": 49, "chars": 429, "files": 1, "has": []}, {"n": "wmh-vorverarbeitung", "p": "Runs and checks the complete preprocessing for WMH segmentation: brain extraction, bias correction, SynthSeg, registration, QC mosaic.", "home": "clara", "clara": false, "setup": false, "lines": 58, "chars": 424, "files": 0, "has": []}, {"n": "ziele-planen", "p": "Turns a one-sentence goal that needs hours of work into a chain of checked, queued jobs instead of working it off in the chat.", "home": "clara", "clara": true, "setup": false, "lines": 69, "chars": 348, "files": 0, "has": []}];
+const LIM = {lines: 500, chars: 1024};
+const NS = "http://www.w3.org/2000/svg";
+const C = {mark: "#1f9a8e", pick: "#c67c12", off: "#34474f", ink: "#e8f1f3", muted: "#7d99a2", grid: "#1a2a32", axis: "#22363f", surface: "#0f1a20"};
+const WHO = [
+  {key: "clara", label: "Clara", name: "loaded by Clara", test: s => s.clara},
+  {key: "setup", label: "Setup sessions", name: "loaded by the setup sessions", test: s => s.setup},
+  {key: "both", label: "Both", name: "loaded by both", test: s => s.clara && s.setup},
+  {key: "nobody", label: "Nobody yet", name: "in Clara's folder, not linked yet", test: s => !s.clara && !s.setup}];
+const BRINGS = [
+  {key: "none", label: "Instructions only", name: "with instructions only", test: s => s.files === 0},
+  {key: "scripts", label: "Scripts", name: "with scripts", test: s => s.has.includes("scripts")},
+  {key: "references", label: "References", name: "with reference texts", test: s => s.has.includes("references")},
+  {key: "assets", label: "Assets or templates", name: "with assets or templates", test: s => s.has.includes("assets") || s.has.includes("templates")},
+  {key: "evals", label: "Test cases", name: "with test cases", test: s => s.has.includes("evals")}];
+const HOME = {clara: "Clara's skill folder", shared: "shared folder for all agents", setup: "the setup sessions' own folder"};
+let filter = null, picked = null;
+
+const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs || {}) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const fmt = n => n.toLocaleString("en-US");
+const who = s => s.clara && s.setup ? "Clara and the setup sessions" : s.clara ? "Clara" : s.setup ? "the setup sessions" : "nobody yet";
+const shown = s => !filter || filter.test(s);
+const tip = document.getElementById("tip");
+function showTip(x, y, strong, rest) {
+  tip.textContent = ""; tip.appendChild(h("b", "", strong)); tip.appendChild(document.createTextNode(rest));
+  tip.style.display = "block";
+  const w = tip.offsetWidth, hh = tip.offsetHeight;
+  tip.style.left = Math.max(6, Math.min(x + 14, innerWidth - w - 6)) + "px";
+  tip.style.top = (y + 16 + hh > innerHeight ? y - hh - 10 : y + 16) + "px";
+}
+const hideTip = () => { tip.style.display = "none"; };
+
+function setFilter(f) { filter = filter && f && filter.key === f.key ? null : f; draw(); }
+function pick(name, scroll) {
+  picked = picked === name ? null : name; draw();
+  try { history.replaceState(null, "", picked ? "#skill=" + encodeURIComponent(picked) : location.pathname); } catch (e) {}
+  if (picked && scroll) document.getElementById("detail").scrollIntoView({block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+}
+
+function tiles() {
+  const t = document.getElementById("tiles"); t.textContent = "";
+  const over = D.filter(s => s.lines > LIM.lines || s.chars > LIM.chars).length;
+  [[D.length, "skills in all"], [D.filter(s => s.clara).length, "loaded by Clara"], [D.filter(s => s.setup).length, "loaded by the setup sessions"], [over, "above a limit of the format"]]
+    .forEach(([v, l]) => { const d = h("div", "st"); d.appendChild(h("div", "v", fmt(v))); d.appendChild(h("div", "l", l)); t.appendChild(d); });
+}
+
+function bars(id, rows) {
+  const W = 340, RH = 30, LW = 150, MAXW = W - LW - 34, top = 4, max = Math.max(...rows.map(r => D.filter(r.test).length));
+  const svg = el("svg", {viewBox: `0 0 ${W} ${top + rows.length * RH + 4}`, role: "group"});
+  rows.forEach((r, i) => {
+    const n = D.filter(r.test).length, y = top + i * RH, w = Math.max(n ? 6 : 0, MAXW * n / max), on = filter && filter.key === r.key;
+    const g = el("g", {class: "bar", tabindex: "0", role: "button", "aria-pressed": on ? "true" : "false", "aria-label": `${r.label}: ${n} skills. Filter the list.`});
+    g.appendChild(el("rect", {class: "hit", x: 1, y: y + 1, width: W - 2, height: RH - 2, rx: 6, fill: "transparent"}));
+    g.appendChild(el("text", {x: LW - 10, y: y + RH / 2 + 4, "text-anchor": "end", "font-size": 12, fill: on ? C.ink : C.muted, "font-weight": on ? 700 : 400}, r.label));
+    if (n) g.appendChild(el("path", {class: "m", fill: on ? C.pick : C.mark,
+      d: `M${LW},${y + 7}h${w - 4}a4,4 0 0 1 4,4v8a4,4 0 0 1 -4,4h${-(w - 4)}z`}));
+    g.appendChild(el("text", {x: LW + w + 7, y: y + RH / 2 + 4, "font-size": 12, fill: C.ink, "font-weight": 700}, fmt(n)));
+    const go = () => setFilter(r);
+    g.addEventListener("click", go);
+    g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); const again = document.querySelectorAll("#" + id + " .bar")[i]; if (again) again.focus(); } });
+    g.addEventListener("pointermove", e => showTip(e.clientX, e.clientY, `${fmt(n)} of ${D.length} skills`, r.name + (on ? " (click to show all)" : " (click to filter)")));
+    g.addEventListener("pointerleave", hideTip);
+    g.addEventListener("focus", () => { const b = g.getBoundingClientRect(); showTip(b.left + LW, b.top, `${fmt(n)} of ${D.length} skills`, r.name); });
+    g.addEventListener("blur", hideTip);
+    svg.appendChild(g);
+  });
+  const box = document.getElementById(id); box.textContent = ""; box.appendChild(svg);
+}
+
+function size() {
+  const W = 700, H = 380, L = 50, R = 18, T = 16, B = 44, XM = 1100, YM = 540;
+  const X = v => L + (W - L - R) * v / XM, Y = v => H - B - (H - T - B) * v / YM;
+  const svg = el("svg", {viewBox: `0 0 ${W} ${H}`, role: "img", class: "plot",
+    "aria-label": "Scatter plot of the skills: description length against body length. The same numbers are in the table below."});
+  [0, 250, 500, 750, 1000].forEach(v => {
+    svg.appendChild(el("line", {x1: X(v), x2: X(v), y1: T, y2: H - B, stroke: C.grid, "stroke-width": 1}));
+    svg.appendChild(el("text", {x: X(v), y: H - B + 16, "text-anchor": "middle", "font-size": 11, fill: C.muted}, fmt(v)));
+  });
+  [0, 100, 200, 300, 400, 500].forEach(v => {
+    svg.appendChild(el("line", {x1: L, x2: W - R, y1: Y(v), y2: Y(v), stroke: v ? C.grid : C.axis, "stroke-width": 1}));
+    svg.appendChild(el("text", {x: L - 8, y: Y(v) + 4, "text-anchor": "end", "font-size": 11, fill: C.muted}, fmt(v)));
+  });
+  svg.appendChild(el("text", {x: (L + W - R) / 2, y: H - 8, "text-anchor": "middle", "font-size": 11.5, fill: C.muted}, "description, characters"));
+  svg.appendChild(el("text", {x: 12, y: (T + H - B) / 2, "text-anchor": "middle", "font-size": 11.5, fill: C.muted, transform: `rotate(-90 12 ${(T + H - B) / 2})`}, "body, lines"));
+  svg.appendChild(el("line", {x1: L, x2: W - R, y1: Y(LIM.lines), y2: Y(LIM.lines), stroke: C.muted, "stroke-width": 1}));
+  svg.appendChild(el("text", {x: L + 8, y: Y(LIM.lines) - 6, "font-size": 11, fill: C.muted}, "recommended limit: " + fmt(LIM.lines) + " lines"));
+  svg.appendChild(el("line", {x1: X(LIM.chars), x2: X(LIM.chars), y1: T, y2: H - B, stroke: C.muted, "stroke-width": 1}));
+  svg.appendChild(el("text", {x: X(LIM.chars) - 6, y: Y(440), "text-anchor": "end", "font-size": 11, fill: C.muted}, "limit: " + fmt(LIM.chars) + " characters"));
+  const order = D.slice().sort((a, b) => (shown(a) - shown(b)) || ((a.n === picked) - (b.n === picked)));
+  order.forEach(s => {
+    const p = s.n === picked;
+    svg.appendChild(el("circle", {cx: X(s.chars), cy: Y(s.lines), r: p ? 7 : 5, fill: p ? C.pick : shown(s) ? C.mark : C.off, stroke: C.surface, "stroke-width": 2}));
+  });
+  const label = (s, strong) => {
+    const right = X(s.chars) < W - 220;
+    svg.appendChild(el("text", {x: X(s.chars) + (right ? 11 : -11), y: Y(s.lines) + 4, "text-anchor": right ? "start" : "end", "font-size": 11.5,
+      fill: strong ? C.ink : C.muted, "font-weight": strong ? 700 : 400, stroke: C.surface, "stroke-width": 3, "paint-order": "stroke"}, s.n));
+  };
+  const pool = D.filter(shown), far = [];
+  if (pool.length) { far.push(pool.reduce((a, b) => b.lines > a.lines ? b : a)); const c = pool.reduce((a, b) => b.chars > a.chars ? b : a); if (c !== far[0]) far.push(c); }
+  far.filter(s => s.n !== picked).forEach(s => label(s, false));
+  const ps = D.find(s => s.n === picked); if (ps) label(ps, true);
+  const near = e => {
+    const b = svg.getBoundingClientRect(), k = W / b.width, mx = (e.clientX - b.left) * k, my = (e.clientY - b.top) * k;
+    let best = null, bd = 24 * 24;
+    D.forEach(s => { const d = (X(s.chars) - mx) ** 2 + (Y(s.lines) - my) ** 2 - (shown(s) ? 60 : 0); if (d < bd) { bd = d; best = s; } });
+    return best;
+  };
+  svg.addEventListener("pointermove", e => { const s = near(e); if (s) showTip(e.clientX, e.clientY, `${fmt(s.lines)} lines · ${fmt(s.chars)} characters`, s.n + ", loaded by " + who(s)); else hideTip(); svg.style.cursor = s ? "pointer" : "default"; });
+  svg.addEventListener("pointerleave", hideTip);
+  svg.addEventListener("click", e => { const s = near(e); if (s) pick(s.n, false); });
+  const box = document.getElementById("size"); box.textContent = ""; box.appendChild(svg);
+}
+
+function detail() {
+  const d = document.getElementById("detail"); d.textContent = "";
+  const s = D.find(x => x.n === picked);
+  if (!s) { d.appendChild(h("p", "", "Click a point in the chart or a name in the table to see one skill here.")).style.marginBottom = "6px"; return; }
+  d.appendChild(h("h3", "", s.n));
+  d.appendChild(h("p", "", s.p || "No purpose line written yet."));
+  const dl = h("dl");
+  const row = (k, v) => { dl.appendChild(h("dt", "", k)); const dd = h("dd"); if (typeof v === "string") dd.textContent = v; else dd.appendChild(v); dl.appendChild(dd); };
+  const meter = (v, lim, unit) => { const f = document.createDocumentFragment(), m = h("span", "meter"), i = h("i"); i.style.width = Math.min(100, 100 * v / lim) + "%"; m.appendChild(i); f.appendChild(m);
+    f.appendChild(document.createTextNode(`${fmt(v)} of ${fmt(lim)} ${unit} (${Math.round(100 * v / lim)} %)`)); return f; };
+  row("Loaded by", who(s));
+  row("Lives in", HOME[s.home]);
+  row("Description", meter(s.chars, LIM.chars, "characters"));
+  row("Body", meter(s.lines, LIM.lines, "lines"));
+  row("Brings along", s.files ? `${fmt(s.files)} file${s.files > 1 ? "s" : ""}` + (s.has.length ? " in " + s.has.join(", ") : "") : "instructions only");
+  d.appendChild(dl);
+  const b = h("button", "b", "Close"); b.addEventListener("click", () => pick(s.n, false)); d.appendChild(b);
+}
+
+function table() {
+  const t = document.getElementById("tab"); t.textContent = "";
+  const head = h("tr"); [["Skill"], ["What it is for"], ["Loaded by"], ["Lines", 1], ["Characters", 1]].forEach(([x, num]) => head.appendChild(h("th", num ? "num" : "", x))); t.appendChild(head);
+  D.filter(shown).forEach(s => {
+    const tr = h("tr", s.n === picked ? "sel" : ""), td = h("td"), b = h("button", "", s.n);
+    b.setAttribute("aria-pressed", s.n === picked ? "true" : "false"); b.addEventListener("click", () => pick(s.n, true)); td.appendChild(b); tr.appendChild(td);
+    tr.appendChild(h("td", "", s.p)); tr.appendChild(h("td", "", who(s))); tr.appendChild(h("td", "num", fmt(s.lines))); tr.appendChild(h("td", "num", fmt(s.chars)));
+    t.appendChild(tr);
+  });
+}
+
+function fbar() {
+  const f = document.getElementById("fbar"); f.textContent = "";
+  const n = D.filter(shown).length, sp = h("span");
+  sp.appendChild(document.createTextNode("Showing ")); sp.appendChild(h("b", "", `${n} of ${D.length}`)); sp.appendChild(document.createTextNode(" skills" + (filter ? ": " + filter.name : "")));
+  f.appendChild(sp);
+  if (filter) { const b = h("button", "b", "Show all"); b.addEventListener("click", () => setFilter(null)); f.appendChild(b); }
+}
+
+function draw() { hideTip(); fbar(); bars("who", WHO); bars("brings", BRINGS); size(); detail(); table(); }
+addEventListener("scroll", hideTip, {passive: true});
+tiles();
+const m = /^#skill=(.+)$/.exec(location.hash);
+if (m && D.some(s => s.n === decodeURIComponent(m[1]))) picked = decodeURIComponent(m[1]);
+draw();
+</script>
+</body></html>

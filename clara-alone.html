@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Clara Working Station: clara on her own</title>
+<meta name="description" content="A U-Net written and cross-validated from one task file, and three silent failures that had to be fixed first.">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<nav class="nav" aria-label="Pages">
+ <a class="home" href="index.html">← Clara Working Station</a>
+ <a href="film/">Films</a>
+ <a href="workflow.html">How it works</a>
+ <a href="wmh.html">WMH results</a>
+ <a class="here" aria-current="page" href="clara-alone.html">Clara on her own</a>
+ <a href="microbleeds.html">Microbleeds</a>
+ <a href="system.html">The system</a>
+ <a href="skills.html">Skills</a>
+ <a href="setup.html">Rebuild it</a>
+ <a href="limits.html">Limits and data rules</a>
+</nav>
+<h1>Clara on her own</h1>
+<div class="sub">Clara Working Station</div>
+<h2>What Clara did on her own</h2>
+<p class="s">Given one task file with 15 machine-checkable acceptance criteria, Clara wrote a 2D U-Net in plain PyTorch (762 lines), cross-validated it over the five given folds and evaluated all 170 public WMH Challenge cases, every case predicted by the model of the fold that had not seen it.</p>
+<div class="tw"><table class="p">
+<tr><th>Fold</th><th>Dice (validation)</th><th>Epochs</th><th>Time</th></tr>
+<tr><td>1</td><td>0.4427</td><td>647</td><td>1,355 s</td></tr>
+<tr><td>2</td><td>0.7722</td><td>338</td><td>1,502 s</td></tr>
+<tr><td>3</td><td>0.7885</td><td>365</td><td>1,505 s</td></tr>
+<tr><td>4</td><td>0.7932</td><td>371</td><td>1,502 s</td></tr>
+<tr><td>5</td><td>0.7916</td><td>369</td><td>1,501 s</td></tr>
+</table></div>
+<p class="s">Over all 170 out-of-fold cases: Dice 0.667, median 0.715, sensitivity 0.696, precision 0.680, volume difference −1.12 ml. Unasked, she ran a smoke test first, wrapped every run in the resource watcher, checked free VRAM before touching the GPU, and reported progress to the shared blackboard. Fold 1 lags far behind the others. These numbers mix challenge training and test cases in the folds, so they are not comparable to the leaderboard or to the 20-case chart above (<a class="gh" href="https://github.com/mendeltem/local_models/tree/main/alita">source</a>).</p>
+<h2>Three failures that looked like success</h2>
+<p class="s">These had to be fixed before the agent could work unsupervised. Each one was silent, and each looked like something else.</p>
+<ol class="s">
+<li><b>A three-character file blocked the agent for two days.</b> <code>current-quant</code> said <code>q5</code>. The Q5 model has a 32,768-token context; the agent framework needs 64,000 and refused to start. Symptom: rounds of 22, 30 and 9 minutes that produced 63, 0 and 57 bytes of log. Model, data and task were all fine.</li>
+<li><b>The run watchdog could never bark.</b> Its GBNF grammar put the alternation bar at the start of a continuation line, which this llama.cpp build rejects with HTTP 400 on every call. Its fallback on any error was "ok, continue", so it would have approved everything forever. Fixed, and "undecided" is now an outcome separate from "ok".</li>
+<li><b>FreeSurfer was invisible to the agent while the self-test said green.</b> The agent starts through <code>sg</code>, which is setgid, and the dynamic linker drops all <code>LD_*</code> variables for setgid programs. <code>recon-all</code>, <code>mri_convert</code>, <code>samseg</code> and <code>mri_synthseg</code> died on a missing library although they were on <code>PATH</code>; the self-test ran without <code>sg</code> and passed. Fixed by setting the variable again after the setgid boundary.</li>
+</ol>
+<p class="s">The pattern: <b>a component fails in a way that looks like success.</b> A check that cannot judge must say so, never fall back to the harmless answer.</p>
+<div class="pn"><a href="wmh.html">← WMH results</a><a href="microbleeds.html">Microbleeds →</a></div>
+</body></html>

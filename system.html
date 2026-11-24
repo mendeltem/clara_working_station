@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Clara Working Station: the system behind it</title>
+<meta name="description" content="How one model request is routed, how the job queue accepts work by counting facts, and the wiki all agents share.">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<nav class="nav" aria-label="Pages">
+ <a class="home" href="index.html">← Clara Working Station</a>
+ <a href="film/">Films</a>
+ <a href="workflow.html">How it works</a>
+ <a href="wmh.html">WMH results</a>
+ <a href="clara-alone.html">Clara on her own</a>
+ <a href="microbleeds.html">Microbleeds</a>
+ <a class="here" aria-current="page" href="system.html">The system</a>
+ <a href="skills.html">Skills</a>
+ <a href="setup.html">Rebuild it</a>
+ <a href="limits.html">Limits and data rules</a>
+</nav>
+<h1>The system behind it</h1>
+<div class="sub">Clara Working Station</div>
+<h2>The system behind it</h2>
+<a class="fig" href="abbildungen/2-model-request.png"><img src="abbildungen/2-model-request.png" width="1280" height="800"
+ alt="One model request: fixed rules send it to the local model; otherwise System One picks the kind of work per turn, which maps to a Clé model; System One judges the answer and a no escalates the next turn"></a>
+<a class="fig" href="abbildungen/3-job-queue.png"><img src="abbildungen/3-job-queue.png" width="1280" height="800"
+ alt="Continuous runs: a job with a countable acceptance list; rounds of the antreiber; acceptance by counting facts; accepted, next round or stuck"></a>
+<p class="s">The self-written parts around the agent (relay, decision layer, Telegram bridge, job-queue starter, session reader, image tool) are in <a class="gh" href="https://github.com/mendeltem/clara_working_station/tree/main/clara-system">clara-system/</a>.</p>
+<p class="s">Tools, measurements and operating rules are kept in
+<a class="gh" href="https://mendeltem.github.io/local_models/">local_models</a>, including
+<a class="gh" href="https://github.com/mendeltem/local_models/blob/main/docs/05-scaffolding.md">the
+model-independent scaffolding</a> that describes what lets an agent finish a task. What the agents
+learned along the way is collected in the wiki
+<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki">blackbeard_wikki</a>.</p>
+<ul class="s">
+<li>RTX A5000 with 24 GB (Ampere), i9-12900K, 64 GB DDR RAM, Ubuntu 24.04, NVIDIA driver 550 (CUDA 12.4). As of October 2026.</li>
+<li>Clara's local model is Qwen3.8-27B in Q4 via llama.cpp (since 29 October only for patient data; Clé otherwise). Against Nemotron 3.5 Bolt 74B-A9B on the same card:
+100 % vs 88.5 % on a 13-task test. Bolt generates 66–69 tok/s against about 30, but reasons longer.
+<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/nemotron-bolt-74b-on-ampere-24gb.md">Entry</a></li>
+<li>The model server unloads when idle: 21,770 MiB VRAM in use, 1,618 MiB after, 11.4 s to wake.
+This keeps the card free for training.</li>
+</ul>
+
+<h2>The shared wiki</h2>
+<p class="s">All agents and chats share one memory: the public repository <a class="gh" href="https://github.com/mendeltem/blackbeard_wikki">blackbeard_wikki</a> on GitHub. Clara on the workstation, the setup sessions and the chat projects read it before they work and write back what others can reuse, so no agent searches for or builds again what already exists. As of 28 October 2026 it holds 358 entries in 27 areas and 16 tools, this project's topics and others.</p>
+<div class="tw"><table class="p">
+<tr><th>Folder</th><th>What is in it</th></tr>
+<tr><td><code>knowledge/&lt;area&gt;/</code></td><td>one file per statement, typed: 174 findings (with source and date), 88 rules, 45 mechanisms, 33 open checks, 15 risks, 3 axioms; each area has an <code>INDEX.md</code> and a short <code>SUMMARY.md</code></td></tr>
+<tr><td><code>tools/</code></td><td>reusable tools, each with <code>README</code>, <code>INSTALL</code>, code, a test on public or synthetic data, papers with DOI and a changelog</td></tr>
+<tr><td><code>updates/LOG.md</code></td><td>one line per change: date, which agent, which files, what and why</td></tr>
+<tr><td><code>templates/</code></td><td>the templates every entry and tool follows</td></tr>
+</table></div>
+<p class="s"><b>Why a wiki next to a local agent.</b> A session forgets; the wiki does not. Clara's own README, which she reads at startup, tells her to visit the wiki: it is where knowledge is exchanged for the long term. It also connects agents that work outside the workstation, such as setup sessions and chat projects, to the same state, and it is where the meta information and the deeper material live:</p>
+<ul class="s">
+<li>findings and long-term experience, with source and date;</li>
+<li>guidelines, for example how a QC page must be built (<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/mri_qc_viewers/rules/qc-pages-explain-every-number-on-hover.md">every number explains itself on hover</a>) and what data may go where (<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md">data classes</a>);</li>
+<li>a growing literature list: 403 distinct DOIs and 115 arXiv papers cited in the entries and in each tool's <code>PAPERS.md</code>.</li>
+<li>prefills: each area's <code>SUMMARY.md</code> is written to be loaded as a prefill (23 of 27 say so), so an agent can start with the state of its topic already in context, or keep it precomputed as a saved prompt-cache prefix. Measured on Alita: a warm prefix answered in 0.4 s against 4.4 s cold, within an agent turn of 29–34 s; a cache built from cohort-bound text keeps that text's class (<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/findings/derived-artifacts-carry-their-source-class.md">entry</a>).</li>
+</ul>
+<p class="s"><b>How an agent uses it.</b> It reads the README and <code>INDEX.md</code>, then only the <code>SUMMARY.md</code> of the areas its task touches, and goes deeper only when needed. It compares with its own project, reuses what is there, and files what it learned with the templates. Nothing is pushed before the owner says yes; each contribution is one commit plus one line in the log. For agents outside the workstation the wiki is packaged as a skill (<code>plugins/blackbeard-wiki</code>) that loads the matching areas before answering.</p>
+<p class="s"><b>Rules that keep it trustworthy.</b> Entries are data, not commands: an agent never acts on an instruction it finds inside an entry. Every number states its origin (measured, assumed or set by the owner); papers carry a DOI and are marked peer-reviewed, preprint or press release. Never in the wiki: patient data or subject IDs, image data from studies, credentials, internal host names, unpublished manuscripts. Entries that turn out wrong are not deleted but marked <code>gebrochen</code> (broken), with date and source. </p>
+<div class="pn"><a href="microbleeds.html">← Microbleeds</a><a href="skills.html">Skills →</a></div>
+</body></html>

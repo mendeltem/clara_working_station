@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Clara Working Station: how it works</title>
+<meta name="description" content="One request from prompt to QC page in seven steps, why the work runs on a local workstation, and which part touches patient data.">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<nav class="nav" aria-label="Pages">
+ <a class="home" href="index.html">← Clara Working Station</a>
+ <a href="film/">Films</a>
+ <a class="here" aria-current="page" href="workflow.html">How it works</a>
+ <a href="wmh.html">WMH results</a>
+ <a href="clara-alone.html">Clara on her own</a>
+ <a href="microbleeds.html">Microbleeds</a>
+ <a href="system.html">The system</a>
+ <a href="skills.html">Skills</a>
+ <a href="setup.html">Rebuild it</a>
+ <a href="limits.html">Limits and data rules</a>
+</nav>
+<h1>How it works</h1>
+<div class="sub">Clara Working Station</div>
+<h2>Workflow</h2>
+<a class="fig" href="abbildungen/4-question-to-qc.png"><img src="abbildungen/4-question-to-qc.png" width="1280" height="680"
+ alt="From a question to a QC page: prompt from phone or terminal; research by Clé and literature workers through the exit guard; a method shortlist where each method becomes a job with a countable acceptance list; the job queue runs one method at a time; in the inner loop Clara writes the code in the sandbox, the GPU queue trains, the acceptance check counts facts and the critic reads, open criteria start the next round; then evaluation on the test set next to the leaderboard and the result with a QC page"></a>
+<p class="s">One request, read left to right, using <i>"I want to create a WMH segmentation
+model, can you research it?"</i> as the example:</p>
+<ol class="s">
+<li><b>Prompt.</b> The researcher states the goal in plain language, from any device: the phone app,
+a desktop PC or the browser. This is the only step that happens outside the workstation.</li>
+<li><b>Research agents.</b> On the workstation, an agent sends the question to Clé (the model on the
+Charité model hub API), which splits it, and several research agents search papers and code for every
+method and architecture used for the task.</li>
+<li><b>Method shortlist.</b> The findings are merged into candidate methods, such as 2D U-Net,
+3D U-Net, nnU-Net or BIANCA, each turned into tasks with machine-checkable acceptance criteria.</li>
+<li><b>Harness, outer loop.</b> Takes one method at a time from the queue and moves on once it is done.</li>
+<li><b>Harness, inner loop on the workstation GPU.</b> Clara (the clara-agent harness since 29 October 2026) writes the code,
+trains on open data (the WMH Segmentation Challenge training set), and an acceptance check counts
+the facts. If the check fails, the task goes back to Clara. The check asks no model.</li>
+<li><b>Evaluation.</b> Every model is scored on the challenge test set with the official metric
+(Dice, lesion F1) and placed next to the public leaderboard, where the 2017 winner reached Dice 0.80.</li>
+<li><b>Result.</b> The best model, a comparison table and a QC page.</li>
+</ol>
+<p class="s">Everything after the prompt runs on the workstation: the calls to Clé, the research
+agents, the harness, training and evaluation. Clara sees the data and has no network access. The
+research agents reach the network and Clé, and never see the data.</p>
+
+<h2>Why a local workstation</h2>
+<div class="tw chart"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 314" style="display:block;width:100%;min-width:600px;height:auto" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" role="img" aria-labelledby="wt wd">
+<title id="wt">Waiting time before a GPU job can start</title>
+<desc id="wd">Cluster · whole GPU: ≈ 9 h until scheduled (squeue --start, 16 Oct 2026); Cluster · GPU share: starts within seconds, but only small jobs fit; Workstation: no queue; idle model server wakes in 11.4 s; one training fold on the A5000 takes about 25 minutes</desc>
+<rect width="780" height="314" rx="12" fill="#0f1a20" stroke="#22363f"/>
+<text x="24" y="34" fill="#e8f1f3" font-size="15" font-weight="700">Waiting before a GPU job can start</text>
+<text x="24" y="56" fill="#7d99a2" font-size="11.5">An agent needs dozens of build-train-check rounds a day; the queue is paid on every round</text>
+<text x="24" y="72" fill="#7d99a2" font-size="11.5">Dashed: one training fold of Clara's U-Net on the A5000, ≈ 25 min, for scale</text>
+<line x1="190.0" y1="90" x2="190.0" y2="258" stroke="#22363f"/>
+<text x="190.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">0 h</text>
+<line x1="300.0" y1="90" x2="300.0" y2="258" stroke="#22363f"/>
+<text x="300.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">2 h</text>
+<line x1="410.0" y1="90" x2="410.0" y2="258" stroke="#22363f"/>
+<text x="410.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">4 h</text>
+<line x1="520.0" y1="90" x2="520.0" y2="258" stroke="#22363f"/>
+<text x="520.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">6 h</text>
+<line x1="630.0" y1="90" x2="630.0" y2="258" stroke="#22363f"/>
+<text x="630.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">8 h</text>
+<line x1="740.0" y1="90" x2="740.0" y2="258" stroke="#22363f"/>
+<text x="740.0" y="276" fill="#7d99a2" font-size="11" text-anchor="middle">10 h</text>
+<line x1="212.9" y1="84" x2="212.9" y2="258" stroke="#e8f1f3" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="4 4"/>
+<g><title>Cluster · whole GPU: ≈ 9 h until scheduled (squeue --start, 16 Oct 2026)</title><text x="180" y="117" fill="#e8f1f3" font-size="12" text-anchor="end">Cluster · whole GPU</text><rect x="190.0" y="104" width="495.0" height="18" rx="3" fill="#c97a2a"/><text x="222.9" y="140" fill="#7d99a2" font-size="11">≈ 9 h until scheduled (squeue --start, 16 Oct 2026)</text></g>
+<g><title>Cluster · GPU share: starts within seconds, but only small jobs fit</title><text x="180" y="171" fill="#e8f1f3" font-size="12" text-anchor="end">Cluster · GPU share</text><rect x="190.0" y="158" width="3.0" height="18" rx="3" fill="#25a294"/><text x="222.9" y="171" fill="#7d99a2" font-size="11">starts within seconds, but only small jobs fit</text></g>
+<g><title>Workstation: no queue; idle model server wakes in 11.4 s</title><text x="180" y="225" fill="#e8f1f3" font-size="12" text-anchor="end">Workstation</text><rect x="190.0" y="212" width="3.0" height="18" rx="3" fill="#25a294"/><text x="222.9" y="225" fill="#7d99a2" font-size="11">no queue; idle model server wakes in 11.4 s</text></g>
+<text x="218.9" y="94" fill="#e8f1f3" font-size="11">25 min</text>
+</svg></div>
+<p class="s"><b>Shared GPU time is too slow for this kind of work.</b> On the institute cluster,
+a job asking for a whole GPU was scheduled about 9 hours ahead; only 7 of the cards have 80 GB.
+A small share of a card starts within seconds, but it only fits small trainings
+(<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/local_llm_operation/findings/hpc-nodes-answer-only-ssh-and-shards-start-at-once.md">measurement, 16 Oct 2026</a>).
+An agent that builds a model, trains it, finds an error and tries again needs dozens of such
+rounds a day. With a queue in between, each round costs hours; on the workstation it costs minutes.</p>
+<p class="s"><b>A local model can look at the patient data; a cloud model cannot.</b> Clara runs on
+the workstation, so the images never leave the machine. That lets her do what a remote model may
+not: open every scan, read every mask, run the model on the whole cohort, and look at the cases
+where it fails. She sees far more of the data than any summary would carry, and she sees it fast.</p>
+<p class="s">Local is a route, not a permission. Whether a dataset may be processed by an AI system
+at all is decided by its data agreement, and a clause that forbids it binds the local model too
+(<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md">rule</a>).
+Where processing is allowed, running it locally keeps the data inside the institution.</p>
+
+<h2>How the parts are used</h2>
+<a class="fig" href="abbildungen/1-clara-overview.png"><img src="abbildungen/1-clara-overview.png" width="1280" height="800"
+ alt="Overview: phone and terminal reach the workstation; clara-agent runs in a kernel sandbox; the Weiche relay sends data-free requests to the Clé hub and requests that touch patient data to the local 27B; System One picks the model, judges answers and gates commands"></a>
+<div class="tw"><table class="p">
+<tr><th>Part</th><th>Runs on</th><th>Patient data</th><th>Network</th><th>Used for</th></tr>
+<tr><td>Prompt</td><td>any device: phone app, desktop PC, browser</td><td>no</td><td>yes</td><td>stating the goal; nothing else happens there</td></tr>
+<tr><td>Clé</td><td>Charité on-premise model hub (intranet), called from the workstation</td><td>no</td><td>yes</td><td>interpreting the request, splitting it into questions and tasks</td></tr>
+<tr><td>Research agents</td><td>workstation, using Clé</td><td>no</td><td>yes</td><td>searching papers and code for methods and architectures</td></tr>
+<tr><td>Clara</td><td>workstation, clara-agent; model per turn: Clé for data-free work, local Qwen3.8-27B for patient data</td><td>yes (local model only)</td><td>no (loopback only, kernel-enforced)</td><td>writing the code, training, running and inspecting models on the data</td></tr>
+<tr><td>Relay</td><td>workstation, port 8770</td><td>checks every request</td><td>Clé only</td><td>fixed rules first (ids, cohort names, data access -> local), then System One picks the Clé model per turn and judges each answer</td></tr>
+<tr><td>System One</td><td>workstation, small decision model</td><td>no</td><td>no</td><td>model choice per turn, verdict per answer, approval gate for commands</td></tr>
+<tr><td>Harness</td><td>workstation</td><td>through Clara</td><td>no</td><td>the outer loop over methods and the inner loop until a task passes</td></tr>
+<tr><td>Check</td><td>workstation</td><td>counts only</td><td>no</td><td>acceptance criteria as countable facts; asks no model</td></tr>
+<tr><td>Exit guard</td><td>workstation, port 8899</td><td>blocks it</td><td>checked questions only</td><td>Clara's only way out: technical questions without data reference</td></tr>
+<tr><td>Blackboard</td><td>workstation and repo</td><td>no</td><td>via the repo</td><td>where Clara and the cloud model report progress to each other</td></tr>
+</table></div>
+<div class="pn"><a href="index.html">← Main page</a><a href="wmh.html">WMH results →</a></div>
+</body></html>

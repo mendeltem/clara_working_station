@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Clara Working Station: limits and data rules</title>
+<meta name="description" content="What the numbers do not show, and which data may leave the machine.">
+<link rel="stylesheet" href="site.css">
+</head><body>
+<nav class="nav" aria-label="Pages">
+ <a class="home" href="index.html">← Clara Working Station</a>
+ <a href="film/">Films</a>
+ <a href="workflow.html">How it works</a>
+ <a href="wmh.html">WMH results</a>
+ <a href="clara-alone.html">Clara on her own</a>
+ <a href="microbleeds.html">Microbleeds</a>
+ <a href="system.html">The system</a>
+ <a href="skills.html">Skills</a>
+ <a href="setup.html">Rebuild it</a>
+ <a class="here" aria-current="page" href="limits.html">Limits and data rules</a>
+</nav>
+<h1>Limits and data rules</h1>
+<div class="sub">Clara Working Station</div>
+<h2>Limits</h2>
+<ul class="s">
+<li>The method comparison uses 20 of the 110 public test cases, a QC sample, not the full test set. The 2017 winner line is on all 110 cases.</li>
+<li>Clara's own U-Net numbers come from folds that mix challenge training and test cases; they are not a leaderboard result.</li>
+<li>The System 1 gate was measured on 154 commands labelled by one rater (the agent, with a rubric written before any model ran); it has been live since 29 Oct 2026 and still escalates many harmless commands to the human.</li>
+<li>The 13-task model test is small; it ranks models for this use, it does not benchmark them.</li>
+<li>The <code>cmake</code> flags in the setup are reconstructed, not copied from the build log.</li>
+<li>The diagrams are generated illustrations; where they and the tables differ, the tables are right.</li>
+</ul>
+<h2>Where data may go</h2>
+<a class="fig" href="abbildungen/6-control.png"><img src="abbildungen/6-control.png" width="1280" height="720"
+ alt="Control: three nested data classes (open data, data under a use agreement up to the institution's hub, own patient cohorts on the workstation only) and five checks in order: Weiche relay rules, kernel sandbox, approval gate, exit guard, publish check before every push"></a>
+<p class="f"><b>What is not here.</b> Patient data and results on in-house cohorts stay on the
+machine. Only work on public datasets is published: the QC above runs on the
+<i>WMH Segmentation Challenge</i> (Utrecht, Singapore, Amsterdam), the microbleed numbers on the public
+<i>VALDO 2021</i> training set. Checked before every push:
+every dataset needs an explicit release. Anything derived from in-house data inherits its class
+(<a class="gh" href="https://github.com/mendeltem/blackbeard_wikki/blob/main/knowledge/agent_coordination/rules/three-data-classes-decide-what-may-leave-the-institution.md">rule</a>),
+so the comparisons on the mixed pool of challenge and in-house cohorts are not shown here; for microbleeds
+only the VALDO part of each result is given.<br><br>
+<a class="gh" href="https://github.com/mendeltem/clara_working_station">Source</a>
+</p>
+<div class="pn"><a href="setup.html">← Rebuild it</a><a href="index.html">Main page →</a></div>
+</body></html>
