@@ -60,3 +60,45 @@
  .pn a{color:var(--accent2);text-decoration:none}.pn a:hover{text-decoration:underline}
  a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
  @media (max-width:560px){.tiles{grid-template-columns:1fr}}
+ /* main page on a wide screen: films and page tiles side by side, all on one screen without scrolling down */
+ @media (min-width:1100px){
+  body.home{max-width:1560px;min-height:100vh;padding:20px 30px 14px;display:grid;
+            grid-template-columns:minmax(330px,29%) 1fr;grid-template-rows:auto 1fr auto;gap:14px 30px}
+  body.home .hd{grid-column:1/-1;display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 22px}
+  body.home .hd .sub{margin:0}
+  body.home .hd .intro{margin:0 0 0 auto;max-width:600px;text-align:right}
+  body.home .fv{grid-template-columns:1fr;margin:0 0 10px}
+  body.home .fa{margin:9px 0 0}
+  body.home .hf{align-self:start}
+  body.home .hp{display:flex;flex-direction:column;min-height:0}
+  body.home .hp h2{margin:0 0 10px}
+  body.home .tiles{grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;flex:1;max-height:620px;margin:0}
+  body.home .k{padding:13px 15px}
+  body.home p.f{grid-column:1/-1;align-self:start;margin-top:0;padding-top:10px}
+  body.home p.f br{display:none}
+  body.home p.f a.gh:last-child{margin-left:14px}
+ }
+ @media (min-width:1100px) and (max-height:760px){
+  body.home{padding:12px 26px 8px;gap:9px 26px;grid-template-columns:minmax(300px,25%) 1fr}
+  body.home .fb{padding:10px 13px;gap:4px}
+  body.home .fd{font-size:11.5px}
+  body.home .k{padding:10px 13px}
+  body.home .k .d{font-size:12px;line-height:1.45}
+  body.home p.f{padding-top:7px}
+ }
+ @media (min-width:1100px) and (min-height:860px){
+  body.home{padding-top:30px;padding-bottom:22px;gap:20px 34px}
+  body.home .k{padding:20px 20px}
+  body.home .k .t{font-size:18px;margin-bottom:8px}
+  body.home .k .d{font-size:13.5px}
+  body.home .ft{font-size:18px}
+  body.home .fd{font-size:13px}
+  body.home .fn{font-size:12.5px}
+ }
+ @media (min-width:1100px) and (max-width:1279px) and (max-height:680px){
+  body.home .hd .intro{display:none}
+  body.home .k{padding:8px 11px}
+  body.home .k .d{font-size:11.5px;line-height:1.4}
+  body.home .tiles{gap:8px}
+  body.home .fd{display:none}
+ }
