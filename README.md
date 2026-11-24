@@ -9,6 +9,8 @@ microbleeds, the system, skills, rebuild it, limits and data rules). The agents 
 [shared wiki](https://github.com/mendeltem/blackbeard_wikki) instead. The skills page is generated:
 `python3 skills_page.py --clara DIR --pool DIR --shared DIR --setup DIR` reads the skill folders and writes `skills.html`
 (only names, counts and the hand-checked purpose lines in `skills_purpose.json` are published).
+`python3 skills_overview_page.py` with the same four folders writes `skills-overview.html`: all skills one after another, each with what it
+does and what a review of its text found (the hand-checked lines are in `skills_review.json`; the skill texts are not published).
 
 *Work computed on Alita by the local agent. This is a workbench, not a
 portfolio: only what was produced here is listed.*

@@ -1,0 +1,1590 @@
+{
+ "date": "2026-11-24",
+ "colors": {
+  "good": "#2fa37c",
+  "usable": "#4f86d6",
+  "needs work": "#c67c12",
+  "outdated": "#c4577a"
+ },
+ "topics": [
+  {
+   "key": "run",
+   "name": "Running the station",
+   "skills": [
+    "auftrag-abarbeiten",
+    "ziele-planen",
+    "laufstatus",
+    "arbeit-stoppen",
+    "eigener-stack",
+    "llama-log",
+    "lektionen",
+    "selbstverbesserung"
+   ]
+  },
+  {
+   "key": "rules",
+   "name": "Data rules and outside contact",
+   "skills": [
+    "datenschutz",
+    "aussenkontakt"
+   ]
+  },
+  {
+   "key": "convert",
+   "name": "MRI conversion and checks",
+   "skills": [
+    "dicom-nach-nifti",
+    "nifti-pruefen",
+    "voi-nach-nifti",
+    "bids-konvertierung",
+    "dicom-to-bids",
+    "fnirs-eeg-to-bids"
+   ]
+  },
+  {
+   "key": "segment",
+   "name": "MRI preprocessing and segmentation",
+   "skills": [
+    "bias-korrektur",
+    "hirn-extraktion",
+    "gewebe-segmentierung",
+    "wmh-vorverarbeitung",
+    "bianca-wmh",
+    "bianca-wmh-segmentation",
+    "neuroflow"
+   ]
+  },
+  {
+   "key": "pages",
+   "name": "Result pages and films",
+   "skills": [
+    "neuro-qc-report",
+    "neuro-qc-viewer",
+    "qc-page-building",
+    "mri-overlay-pages",
+    "film-making",
+    "explainer-video"
+   ]
+  },
+  {
+   "key": "models",
+   "name": "Models, research and lookups",
+   "skills": [
+    "mb-arena",
+    "pytorch",
+    "flywire-connectome",
+    "papers",
+    "wetter"
+   ]
+  },
+  {
+   "key": "keep",
+   "name": "Storage, handover and upkeep",
+   "skills": [
+    "alita-storage",
+    "dataset-handover",
+    "install-from-zero-check",
+    "wiki-update",
+    "usage-feedback"
+   ]
+  }
+ ],
+ "films": {
+  "datenschutz": {
+   "href": "film/smuggling-test.html",
+   "title": "The smuggling test (5:04)"
+  },
+  "aussenkontakt": {
+   "href": "film/smuggling-test.html",
+   "title": "The smuggling test (5:04)"
+  },
+  "film-making": {
+   "href": "film/film-machine-v3.html",
+   "title": "The film machine, with a voice (3:45)"
+  },
+  "explainer-video": {
+   "href": "film/film-machine-v3.html",
+   "title": "The film machine, with a voice (3:45)"
+  },
+  "auftrag-abarbeiten": {
+   "href": "film/clara-november.html",
+   "title": "The updated working station (23:16)"
+  }
+ },
+ "skills": {
+  "auftrag-abarbeiten": {
+   "does": [
+    "Starts each round from the job text and its log; writes a file after at most three read calls.",
+    "Runs a trial on two cases with a timeout, measures time, extrapolates; long runs go to the queue tools.",
+    "Writes the round log before the end and runs the acceptance check as the last tool call.",
+    "Keeps a job manifest with inputs, outputs and deviations; an unapproved deviation is asked, not made."
+   ],
+   "when": "A queued job with acceptance criteria, a rework note or a reviewer finding stands in the first message.",
+   "strength": "Each rule carries the counted cost that caused it, for example the number of rejected background commands, so the reason is visible.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "It names tools of the earlier gateway (patch, skill_view, a terminal tool); the current agent program offers edit_file, read_file and bash instead."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "Limits such as the 420 s terminal cut-off were measured under the earlier gateway and may be outdated; the current shell tool has its own default timeout to check."
+    },
+    {
+     "point": 7,
+     "severity": "medium",
+     "text": "The round procedure shares the file with incident history and a manifest specification; those two parts fit a reference file."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "Failure handling exists (obstacle into the log, return codes 3 and 4) but is spread over five sections; no single place answers 'a step failed'."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The cost of one tool call is given as about a minute from a September measurement on the local model; with the current routing this may be outdated."
+    }
+   ],
+   "proposal": "Replace the old tool names and limits with those of the current agent program and move incident history and manifest fields into reference files.",
+   "verdict": "usable"
+  },
+  "ziele-planen": {
+   "does": [
+    "Sorts the request: a goal with work behind it is planned, a short question is answered, status is listed.",
+    "Asks at most one question on an unclear goal, then calls the planning tool with the researcher's wording.",
+    "Sets the project folder itself, avoids browsing the data tree and decides on the GPU flag.",
+    "Reports project, number of jobs with titles, result location and rough duration."
+   ],
+   "when": "The researcher gives a one-sentence goal that needs more than a few minutes: research, compare, evaluate, 'overnight', 'for N hours'.",
+   "strength": "It says why long work must not run in the chat and gives one exact command, with a failure rule: report the last output line, do not rebuild the plan.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Two rules on the GPU flag contradict: 'build, train, test' in the goal means set it, yet it is allowed only when the researcher explicitly permits the GPU."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Two rules on the project flag contradict: one says always set it and never leave the choice to the tool, the other says the tool chooses when no project is named."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "The status section and the last sentence of the description duplicate laufstatus with a shorter, different procedure."
+    },
+    {
+     "point": 3,
+     "severity": "low",
+     "text": "After planning there is no step that confirms the jobs are in the queue; the reply relies on the tool output alone."
+    }
+   ],
+   "proposal": "Merge each pair of contradicting rules (GPU flag, project flag) into one rule and leave status questions to laufstatus.",
+   "verdict": "usable"
+  },
+  "laufstatus": {
+   "does": [
+    "Reads time, GPU load and the top processes, then the operating mode.",
+    "Lists the job folders (running, waiting, stuck, stock) and the tails of the runner logs.",
+    "Verifies the active job with its driver log and the acceptance check; tests prerequisites of waiting jobs.",
+    "Answers in a fixed order: active, waiting, totals, one decision option; no case ids in the answer."
+   ],
+   "when": "The researcher asks what is running, asks for an update, or asks where a job or project stands.",
+   "strength": "A fixed order of commands and a fixed answer shape: active work first with clock time, then waiting jobs, then totals quoted from the logs.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The mode command is called in a folder where it does not exist; it lies one level higher and is on the search path."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "Step 6 lists a projects folder and a move plan that no longer exist, so it returns an error instead of a project state."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "Step 7 uses a session search tool of the earlier gateway; the current agent program has no tool of that name."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "Status is answered in three places: here, in the status section of ziele-planen, and by built-in status tools of the agent program; none refers to the others."
+    },
+    {
+     "point": 7,
+     "severity": "low",
+     "text": "A reference file on time gates and hang checks lies in the folder, but the main text never points to it; it also describes the earlier process tree."
+    }
+   ],
+   "proposal": "Repair the three dead steps (mode command path, projects folder, session search) and link the reference file from the main text.",
+   "verdict": "needs work"
+  },
+  "arbeit-stoppen": {
+   "does": [
+    "Finds what is running: the job-runner service, agent sessions in tmux, scheduled reminders.",
+    "Stops in a fixed order: the service first, then the agent session, then scheduled jobs.",
+    "Checks afterwards with a process listing and the service state that nothing is left.",
+    "Asks back when 'stop' is ambiguous; acts at once when it is clear."
+   ],
+   "when": "The researcher says stop or pause, for all autonomous work or for one job or reminder.",
+   "strength": "It gives the reason for the stop order: the service goes first, or it pulls the next job while the session is being killed.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "Reminders are removed with a scheduling tool of the earlier gateway; the current agent program has no tool of that name."
+    },
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "Process patterns and session name follow the earlier launcher; live sessions carry a number suffix and job rounds run under another name, so the check may miss them."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The library path it sets does not exist; with it set as written, the tmux binary fails to load two libraries, so the clean kill fails and only the PID fallback is left."
+    },
+    {
+     "point": 1,
+     "severity": "medium",
+     "text": "The description is one short line with one trigger word; 'stoppe', 'stop X' and 'stop reminder' stand only in the body."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "The agent program now has a built-in tool that stops a work session; the skill does not say when to use the tool and when these steps."
+    }
+   ],
+   "proposal": "Rewrite the three components for the current agent program: its process names, its numbered sessions and its own scheduler; drop the gateway tool.",
+   "verdict": "outdated"
+  },
+  "eigener-stack": {
+   "does": [
+    "Lists the agent's own setup: GPU, model file, llama.cpp server, endpoint, context length, speed.",
+    "Checks state with service status, GPU memory, a request to the endpoint and the server log.",
+    "Gives fixes for 'not answering' (GPU out of memory), 'slow' (reasoning depth) and a quantisation switch.",
+    "Lists known traps: pkill hits the own shell, no sudo, unstable network, a download setting."
+   ],
+   "when": "Questions on speed, crashes, GPU memory, context length, model change, restart or logs, or the researcher says it is slow or hangs.",
+   "strength": "The description lists the everyday complaints (slow, hangs, does not answer) that should load the skill.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "Checks, restart and the speed fix go through the earlier gateway (its service, its command line, its config file); that gateway is switched off."
+    },
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "It restarts the model server directly; the machine now starts it on demand through a start tool that picks a profile by free GPU memory, with a watchdog beside it."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "It assumes the agent always thinks on the local model; the current agent reaches its model through a router that can also choose a hosted model."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The context fix points to a branch in the start script that is no longer there; context sizes now stand in a model registry file."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "It names three memory files of the earlier gateway, one of which no longer exists; these are statements, not commands, so it matters little."
+    }
+   ],
+   "proposal": "Rewrite it around the current chain (agent program, router, on-demand model start, watchdog) and remove every gateway command.",
+   "verdict": "outdated"
+  },
+  "llama-log": {
+   "does": [
+    "Reads the log time stamps as server uptime (minutes, seconds, ms, µs), never as clock time.",
+    "Separates generation lines from prompt-processing lines when counting speed.",
+    "Gets clock time by anchoring each server start to the service journal and the birth time of the log file.",
+    "Uses the existing speed tools instead of a new script; freezes the log before comparing two evaluations."
+   ],
+   "when": "Questions about the model server log: tokens per second, counts per hour, requests, server starts and restarts.",
+   "strength": "One command proves the time stamp format in seconds, and one count check verifies an hourly evaluation against the frozen log.",
+   "findings": [
+    {
+     "point": 1,
+     "severity": "medium",
+     "text": "The description names the file and three keywords but no situation; the sentence that says when to use the skill stands only in the body."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Log and tool paths are relative to the system folder without saying so; from the agent's usual working directory the commands fail as written."
+    },
+    {
+     "point": 7,
+     "severity": "medium",
+     "text": "The trap list has grown to nine entries with session ids and second counts; entries 6 to 9 retell single incidents and belong in a reference file."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "Counts quoted as facts are a September snapshot; the log has been rotated since and holds far fewer start lines."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The session tool is described as covering the earlier gateway's sessions; it now reads the sessions of the current agent program."
+    }
+   ],
+   "proposal": "Extend the description with the questions that should load it (speed yesterday, requests per hour, restarts) and state the base folder of the paths.",
+   "verdict": "usable"
+  },
+  "lektionen": {
+   "does": [
+    "Measure Dice over the whole volume and write the metric and reference definition next to each number.",
+    "Never choose a threshold on test data; draw folds once into a file all methods read, then check them.",
+    "Read a tool's help first, check every output file, log everything, build runs that can resume.",
+    "When unsure: look up the tool, search local knowledge, ask outside without data, only then assume and say so."
+   ],
+   "when": "Before measuring, comparing methods, starting a run over many cases, or when unsure about a tool.",
+   "strength": "Each lesson states the incident behind it and shows the wrong and the right form side by side, for example threshold before or after upsampling.",
+   "findings": [
+    {
+     "point": 7,
+     "severity": "medium",
+     "text": "Twenty lessons from four areas (metrics, fair comparison, tools, run practice) sit in one file; the agent loads all of them to use one."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Step 2 of the escalation rule calls a search script by bare name; it was not found on the search path and lies in another folder, so the call may fail as written."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "The pkill lesson is repeated in three other skills, and lesson 19 is repeated almost word for word at the end of lesson 20."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "Lesson 16 assumes the local model always holds most of the GPU memory; the server now starts on demand, so the figures may be outdated."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "One process-count example searches for the name of the earlier gateway."
+    }
+   ],
+   "proposal": "Split it by moment of use (measuring and comparing; runs over many cases; doubt about a tool) so each description can match its request.",
+   "verdict": "usable"
+  },
+  "selbstverbesserung": {
+   "does": [
+    "Reads its own session trace with the session tool and picks the most expensive detour.",
+    "Writes one lesson as a sentence that contains the command, then makes exactly one change.",
+    "Chooses the form: a skill, a tool or a line in the lessons file; everything else only as a proposal.",
+    "Commits the change, posts a note on the board and measures the same task again in a new session."
+   ],
+   "when": "The researcher says read your own session, what was expensive, learn from it, make a skill of it, or a task took over 15 minutes.",
+   "strength": "A change counts only when the same task is faster in a new session and still passes acceptance; otherwise it is reverted and noted.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "The step marked 'first' uses an option that the session reader of the current agent program does not have; the same holds for the full-session option."
+    },
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "New skills go into the profile folder of the earlier gateway; the current agent program discovers skills in a different folder, so a new skill is never offered."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "It says the trace lies in the database of the earlier gateway; sessions of the current agent program are stored as files in another place."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "The commit step stages every change in the whole system repository, not only the file of the lesson, so unrelated work lands in a lesson commit."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "A daily tool of the same name now exists and only reports; the skill does not say how the two relate."
+    }
+   ],
+   "proposal": "Point reading, skill creation and commits at the session reader and skill folder of the current agent program, and commit only the changed file.",
+   "verdict": "outdated"
+  },
+  "datenschutz": {
+   "does": [
+    "Never queries the web directly while working with data; outside questions go through the gate command.",
+    "Separates the technical question from the concrete data; only the technical part may leave.",
+    "Keeps all data work local and stores files only in the fixed data tree.",
+    "Anonymises DICOM before import, defaces before release, keeps names and dates out of file names."
+   ],
+   "when": "Data sets, MRI images, patients, studies or results are involved, or the agent wants to look something up online.",
+   "strength": "It reduces the policy to one rule and one gate and shows wrong and right questions in pairs.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "Its premise is that all work is local; the agent can now be routed to a hosted model for requests without patient data, and the skill has no rule for that case."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The gate has a different command name than in aussenkontakt; that script sends the question itself and may be outdated: check it from inside the agent's sandbox."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "How to word an outside question is taught here and in aussenkontakt, with two different tables."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "Anonymising and defacing are stated as duties without a command or a pointer to the conversion skill that handles identifiers."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The data tree and the new-study script may be outdated; they were not checked because the data area was out of scope for this review."
+    }
+   ],
+   "proposal": "Name the same gate command as aussenkontakt, add the rule for sessions routed to a hosted model, and leave question wording to aussenkontakt.",
+   "verdict": "needs work"
+  },
+  "aussenkontakt": {
+   "does": [
+    "Tries local sources first: own skills, the local paper collection, manuals, a small test script.",
+    "Rewrites the question so it works word for word for a stranger: no paths, ids, own numbers or 'our'.",
+    "Sends it only through the guarded command and acts on its exit code: answer, blocked, check failed, no access.",
+    "Never bypasses the guard and treats outside answers as hints to verify on the local data."
+   ],
+   "when": "The agent does not know something and would have to look it up on the internet.",
+   "strength": "A table of exit codes says what to do for each, and rewrite examples stand side by side as 'instead of' and 'write'.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "A dated addendum changes what the command does (local literature search by default, cloud only on request) while the main text still describes the old flow."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "datenschutz teaches the same gate under a different command name with its own rewrite table; the two skills can send the agent to different commands."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The log path it names is wrong: the guard writes its log in its own folder under another file name. It is information, not a command."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "Step 1 names four skills from an early state of the collection, and the paper list named in step 2 was not found in the paper folder."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The command now also has a plain web search and a page-text mode that the skill does not mention."
+    }
+   ],
+   "proposal": "Merge the addendum into the main text so one current description of the command remains, and correct the log path.",
+   "verdict": "usable"
+  },
+  "dicom-nach-nifti": {
+   "does": [
+    "Finds DICOM folders, splits them into series and writes one NIfTI per series with SimpleITK.",
+    "Writes a JSON sidecar with acquisition fields and a CSV table with one row per series.",
+    "Checks slice count, voxel size and orientation against the DICOM header.",
+    "Keeps patient tags and full header dumps out of the sidecar."
+   ],
+   "when": "A request to convert scanner DICOM series to NIfTI, or a question on series, sidecars or patient identifiers in headers.",
+   "strength": "Names the patient tags that must stay out of the sidecar and warns that the example script writes the full header.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "high",
+     "text": "The sidecar field list includes the acquisition date, while the privacy section of the same skill lists the examination date among the identifying header fields."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "It says dcm2niix is not installed; a dcm2niix binary now exists in one conda environment of the machine, so the statement and the choice of main route may be outdated."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Repetition, echo and inversion time are copied as stored in DICOM (milliseconds), while BIDS wants seconds; the English DICOM-to-BIDS skill has that conversion."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "Overlaps the English DICOM-to-BIDS skill; this one adds privacy rules, the slice-count check and a CSV log, but lacks the human-checked series table and duplicate checks."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "No failure section: the table has an error column, but nothing says what to do with a series that cannot be read or has missing slices."
+    }
+   ],
+   "proposal": "Remove the acquisition date from the sidecar list, convert the three times to seconds, and re-check the statement that dcm2niix is missing.",
+   "verdict": "needs work"
+  },
+  "nifti-pruefen": {
+   "does": [
+    "Tests that each file loads and prints shape, voxel size and orientation.",
+    "Repairs an unreadable file by rewriting it with fslmaths next to the original.",
+    "Compares two grids by corner offset in mm and fixes header-only differences with fslcpgeom.",
+    "Gives rules for mask volume in ml, centre of mass and 26-neighbour components."
+   ],
+   "when": "Before any pipeline on image data, on gzip, shape or header mismatch errors, and for mask volume, centre of mass or lesion counts.",
+   "strength": "The grid check compares corner offsets against a quarter-voxel tolerance instead of testing affines for exact equality.",
+   "findings": [
+    {
+     "point": 3,
+     "severity": "medium",
+     "text": "Step 1 only calls nib.load, yet the skill's own trap list says that reads just the header; a truncated gzip file passes the first check."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "It sends the agent to a skill named qc-mosaik for the overlay check; no skill of that name exists among the 39."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "It tells the agent to call a helper command for volume and centre of mass; on disk only a script with a .py ending carries that name, so the call as written may fail."
+    },
+    {
+     "point": 7,
+     "severity": "medium",
+     "text": "Two jobs in one skill: file checks and repair, plus mask statistics (volume, centre of mass, components) that are buried in the list of traps at the end."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "The pipeline library skill has a validate function that reads the whole gzip stream; this skill adds repair, header copy and the grid tolerance, which that text lacks."
+    }
+   ],
+   "proposal": "Make step 1 read the data, not only the header, and move the mask statistics rules into their own section or reference file.",
+   "verdict": "usable"
+  },
+  "voi-nach-nifti": {
+   "does": [
+    "Unpacks an MRIcron .voi file, which is a gzip-packed NIfTI, into a NIfTI file.",
+    "Checks the label values and compares the grid with the image the mask was drawn on.",
+    "Converts every .voi of a case, not only the first, and names targets from the mapping table."
+   ],
+   "when": "A .voi file, a manually drawn lesion mask or region of interest from MRIcron, or a second rater's mask needs converting.",
+   "strength": "Says not to overwrite a mismatching header with fslcpgeom but to clarify first where the mask came from.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The mapping table for the target names is mentioned but not located, so the agent must guess where it is."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "No failure section, but the main cases are covered inline (old format, empty mask, grid mismatch); for the old format the only advice is that it is not supported."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The example scripts are named by a relative path without a base folder; the agent may not find them from its working folder."
+    }
+   ],
+   "proposal": "Say where the mapping table lives and add one line: report an old-format .voi to the researcher instead of trying to convert it.",
+   "verdict": "good"
+  },
+  "bids-konvertierung": {
+   "does": [
+    "Looks at the source folder first: structure, file types, counts and DICOM header fields.",
+    "Writes a mapping table from series description to BIDS suffix and has the researcher confirm it.",
+    "Converts with dcm2niix, builds the sub/ses layout with new sequential ids, then runs the validator.",
+    "Works as a script with a log, on three test cases before the whole set."
+   ],
+   "when": "Image data must be sorted, renamed, converted or brought into a BIDS structure.",
+   "strength": "Requires a confirmed mapping table and a three-case trial before the full conversion.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "high",
+     "text": "The example dcm2niix call puts the patient id from the header into the file name (%i), against the skill's own rule not to derive ids from the clinic id."
+    },
+    {
+     "point": 1,
+     "severity": "medium",
+     "text": "The description promises numbered folders, spreadsheet lists and grown collections; the steps cover DICOM sources only."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "Same job as the English DICOM-to-BIDS skill; this one adds write protection, new ids and defacing, but lacks grouping by series UID, unit conversion and duplicate checks."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The install of dcm2niix into a new environment and the validator through npx need the network, which the agent's sandbox blocks; a dcm2niix binary already exists."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "No failure section: the pitfalls list covers naming and orientation traps, but not a failed conversion or validator errors."
+    }
+   ],
+   "proposal": "Replace %i in the file name pattern with the new sequential id from the mapping table, then merge this skill with the English DICOM-to-BIDS skill.",
+   "verdict": "needs work"
+  },
+  "dicom-to-bids": {
+   "does": [
+    "Inventory every DICOM series by its series UID from headers only, including geometry.",
+    "Propose subject, session and suffix per series in a table and have a person correct it.",
+    "Convert with dcm2niix, SimpleITK as fallback, and place the files in the BIDS layout.",
+    "Find duplicate scans by correlation and hash, then run the BIDS validator."
+   ],
+   "when": "Requests about DICOM, dcm2niix, scanner or PACS exports, conversion to NIfTI, BIDS folder layout, or an inventory of a set of scans.",
+   "strength": "Splits the work into inventory, a mapping table a person corrects, and a deterministic run, so wrong series labels are caught before conversion.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "high",
+     "text": "No rule on patient identifiers: the inventory stores patient ID and study date; pseudonyms, sidecar content and defacing are not covered, unlike in the German skills."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "The step that renames converted files into the sub-/ses- layout and writes the dataset description and the participants table has no commands."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "dcm2niix is the default tool, but the German DICOM skill says it is not installed; on disk it sits only inside two environments that this skill does not name."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "The millisecond-to-second code is not limited to the SimpleITK route; applied to a dcm2niix sidecar, which is already in seconds, it divides a second time."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "Three skills cover this job. Only this one has UID grouping, duplicate detection and scan tables; only the German ones have slice-count, orientation and privacy rules."
+    }
+   ],
+   "proposal": "Add the privacy rules of the German DICOM skill and commands for the placement step, and say where dcm2niix is installed.",
+   "verdict": "needs work"
+  },
+  "fnirs-eeg-to-bids": {
+   "does": [
+    "Inventory each recording: channels, wavelengths, duration, probe positions, stimulus markers.",
+    "Build a mapping table from lab file names to subject, session, task and run for a person to correct.",
+    "Write fNIRS data into the BIDS nirs layout with optode and coordinate files; write EEG with mne-bids.",
+    "Give event onsets in seconds with readable labels, then run the BIDS validator."
+   ],
+   "when": "Requests about fNIRS, SNIRF, optical tomography, EEG file formats, mne-bids, or putting such recordings into a standard structure.",
+   "strength": "Names the metadata that decide usability: the coordinate system of the probe, event onsets in seconds, channel types set before writing.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "The reference repositories it says are cloned next to the skill are not there: the folder holds only the instruction file, and a search of the machine found no copy."
+    },
+    {
+     "point": 2,
+     "severity": "high",
+     "text": "The inventory code imports the snirf package and the fNIRS write step relies on cedalion; neither was found in a Python environment here, and no install step is given."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "The fNIRS write step lists function names without calls or arguments, while the EEG step has runnable code; the agent must guess the fNIRS half."
+    },
+    {
+     "point": 3,
+     "severity": "medium",
+     "text": "The only check is the validator fetched with npx, which needs the network on first use; there is no read-back of the written data and no offline note."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "There is no failure section: nothing on unreadable files, missing probe positions or a write that stops halfway."
+    }
+   ],
+   "proposal": "Install or bundle the named tools and repositories, or remove the claim, and add one runnable fNIRS write example with a read-back check.",
+   "verdict": "needs work"
+  },
+  "bias-korrektur": {
+   "does": [
+    "Runs FSL FAST with bias correction in a temp folder and keeps only the restored image.",
+    "Offers ANTs N4 through Python as the alternative when more control is needed.",
+    "Compares value range and mean before and after and requires the same grid as the input."
+   ],
+   "when": "A request for bias field or inhomogeneity correction, N4 or FAST, or for preparing BIANCA input features.",
+   "strength": "Says which of the seven FAST output files is the corrected image and why the two methods must not be mixed.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "It requires a brain-extracted input and names the brain extraction skill, which is in the pool but not linked into the agent's skill folder."
+    },
+    {
+     "point": 3,
+     "severity": "low",
+     "text": "The check says the means should be similar but gives no tolerance, so the agent must guess what counts as a failed correction."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "No failure section: one error message is explained inline, but nothing says what to do when the corrected image fails the check."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "The FAST step repeats the English BIANCA skill and the pipeline library; this skill adds the N4 route with parameters, the temp-folder habit and the two checks."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "It cites a project note by file name only, without a location, so the agent cannot open it to see why N4 is preferred for T1."
+    }
+   ],
+   "proposal": "Give the mean check a number (a maximum relative change) and add one line on what to do when it is exceeded.",
+   "verdict": "usable"
+  },
+  "hirn-extraktion": {
+   "does": [
+    "Runs HD-BET on the CPU with test-time augmentation off and saves the brain mask.",
+    "Falls back to FSL BET with robust centre and a low fraction, then to SynthStrip.",
+    "Checks the mask volume against an expected range and looks at a mosaic for outliers."
+   ],
+   "when": "A request for skull stripping or a brain mask, or a tool reporting that no brain mask exists.",
+   "strength": "Gives a fixed order of three tools and a volume range that makes a bad mask show up as an outlier.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The CPU-only rule assumes the language model holds most GPU memory all the time; this may be outdated if the local model now starts only on demand, which must be checked."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "The English BIANCA skill runs HD-BET on the GPU, this skill says GPU use crashes and can take the model server down; the two must agree."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "It points to a skill named qc-mosaik for the visual check; no skill of that name exists among the 39."
+    },
+    {
+     "point": 3,
+     "severity": "low",
+     "text": "The expected brain volume range differs between the comment, the rule below it and the preprocessing skill, which uses a lower upper limit."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "No failure heading; the fallback order is the failure plan, but the text does not say when to leave HD-BET for the next tool."
+    }
+   ],
+   "proposal": "State when to move from HD-BET to the fallbacks, and re-check the CPU-only rule against how the local model is started today.",
+   "verdict": "usable"
+  },
+  "gewebe-segmentierung": {
+   "does": [
+    "Runs SynthSeg in robust mode on the CPU on any contrast and writes a label map and volumes.",
+    "Builds WM, GM, CSF and ventricle masks from fixed label numbers and prints volumes in ml.",
+    "Computes a ventricle distance map in mm for the periventricular and deep split.",
+    "Sets the library path inside the script because the agent's start drops it."
+   ],
+   "when": "A request for grey matter, white matter, CSF or ventricle masks or volumes, or a question on SynthSeg, aseg labels or recon-all.",
+   "strength": "Explains why FreeSurfer tools fail under the agent's group switch and how to set the library path in the script itself.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "The 'does not run' list (recon-all, mri_convert, samseg) looks outdated: the shell and the library it names as missing are now present on the machine; re-test it."
+    },
+    {
+     "point": 7,
+     "severity": "medium",
+     "text": "An appended second block contradicts the first part: a recon-all command versus 'does not run', and a second SynthSeg call with other flags and memory figures."
+    },
+    {
+     "point": 1,
+     "severity": "medium",
+     "text": "The BIANCA skill the agent loads depends on this skill for the WM mask, but this one is in the pool only and not linked into the agent's skill folder."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "The English BIANCA skill builds the SynthSeg WM mask from labels 2 and 41 only; this skill adds label 77, GM and CSF lists, the distance map and expected volume ranges."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The output folder of the recon-all fallback does not exist; it matters only if recon-all is used, and then the folder must be created first."
+    }
+   ],
+   "proposal": "Re-test recon-all, mri_convert and samseg, then merge the appended block into the first part so that each tool is described once.",
+   "verdict": "needs work"
+  },
+  "wmh-vorverarbeitung": {
+   "does": [
+    "Runs one script per data set: check, brain extraction, bias correction, SynthSeg, registrations, QC mosaic.",
+    "Queries the state per subject and reads errors from a per-subject check file and log.",
+    "Compares brain, WM and GM volumes with expected ranges before reporting done.",
+    "Builds the QC page and commits it, for public challenge data only."
+   ],
+   "when": "A request to run or check the WMH preprocessing pipeline, see its state, read per-subject errors or build its QC page.",
+   "strength": "Has an explicit 'check before you say done' block with the commands and the expected volume ranges.",
+   "findings": [
+    {
+     "point": 1,
+     "severity": "medium",
+     "text": "This skill and two of the four step skills it names are in the pool only, not linked into the agent's skill folder, while the linked BIANCA skill needs its outputs."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "Same steps as stage 1 of the English BIANCA skill and the pipeline library; this one has the ready script with status, resume and QC, but covers one data set only."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "'All on CPU because the language model owns the GPU memory' may be outdated if the local model now starts only on demand; check before planning long runs."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "Errors are recorded per subject and the run goes on, but the skill does not say what to do with a failed subject after reading its log."
+    }
+   ],
+   "proposal": "Link this skill and the step skills it names into the agent's skill folder, or fold its commands into the BIANCA skill the agent already loads.",
+   "verdict": "usable"
+  },
+  "bianca-wmh": {
+   "does": [
+    "Runs BIANCA inference per case with a pretrained classifier and its exact feature flags.",
+    "Thresholds the probability map, then masks it with the SynthSeg white-matter mask including label 77.",
+    "Splits lesions into periventricular and deep by ventricle distance and reports volumes in ml.",
+    "Checks how much the mask removed and treats a zero result as a grid mismatch first."
+   ],
+   "when": "A request to segment white matter hyperintensities on FLAIR with BIANCA, or a question on false positives, the WM mask or lesion load.",
+   "strength": "States that the feature flags must match the trained classifier and gives the exact inference command.",
+   "findings": [
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "It contradicts the English BIANCA skill: this one requires label 77 in the WM mask and forbids cluster filtering, the English one omits 77 and offers a cluster filter."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "Same inference and masking as the English BIANCA skill; this one adds the local classifier flags and pitfalls, but lacks training, the FLAIR-only route and MNI warping."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Its inputs come from two skills (preprocessing, tissue segmentation) that are in the pool but not linked into the agent's skill folder."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "No failure section: a pitfalls list covers known errors, but no rule says what to do with a case whose inference fails."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The example script is named without a base folder, so the agent may not find it from its working folder."
+    }
+   ],
+   "proposal": "Settle the two contradictions with the English BIANCA skill (label 77, cluster filter) and link the skills this one depends on into the agent's skill folder.",
+   "verdict": "usable"
+  },
+  "bianca-wmh-segmentation": {
+   "does": [
+    "Preprocess each image: HD-BET brain extraction, FAST bias correction, FLIRT registration.",
+    "Build the BIANCA masterfile, train or load a classifier, write the lesion probability map.",
+    "Threshold, apply a white matter mask, report volumes; optional MNI warp and stroke-lesion removal.",
+    "Run one subject per SLURM array task with one result file each; check five-panel QC pictures."
+   ],
+   "when": "Requests about BIANCA, white matter hyperintensities, FLAIR lesion volumes, or FSL pipelines over many subjects.",
+   "strength": "Explains why a FLAIR+T1 classifier cannot run on FLAIR-only data and gives separate environments for FSL and FreeSurfer tools.",
+   "findings": [
+    {
+     "point": 6,
+     "severity": "high",
+     "text": "The SynthSeg white matter mask uses labels 2 and 41 only; the German BIANCA skill and the bundled library add label 77, without which large lesions are cut away."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "It loads on the same words as the German BIANCA skill but offers make_bianca_mask and a cluster filter, both of which that skill excludes by a recorded decision."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "HD-BET is called on the GPU; the brain-extraction skill forbids that on this machine because the local model holds the GPU memory. Check which statement holds today."
+    },
+    {
+     "point": 1,
+     "severity": "medium",
+     "text": "The description promises the path from DICOM to BIDS, but the body has one overview line for that stage and no instructions."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "Only this skill has training, a FLAIR-only route, MNI warp, stroke-lesion removal and SLURM; only the German one has the fixed classifier settings and numeric checks."
+    }
+   ],
+   "proposal": "Align the mask rules with the German BIANCA skill (label 77, no cluster filter) and state in both descriptions which skill to load for which case.",
+   "verdict": "needs work"
+  },
+  "neuroflow": {
+   "does": [
+    "Import the bundled library instead of writing subprocess wrappers, resume checks or QC plots.",
+    "Run each tool with its own FSL or FreeSurfer environment; run a preflight before an array job.",
+    "Validate NIfTI files after every transport by reading them to the end.",
+    "Write one result file per subject and merge outside the array; resample masks with nearest neighbour."
+   ],
+   "when": "Writing or reviewing a script that processes many brain images with FSL or FreeSurfer, per subject or as a SLURM array.",
+   "strength": "Each rule names the failure it prevents and the library function that prevents it; every function named in the text exists in the scripts.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "The import line holds a placeholder path and a folder name that differs from the real location of the skill; the agent must find the scripts folder itself."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The library's brain extraction takes the GPU when one is present; the brain-extraction skill forbids that because the local model holds the GPU. Check which holds today."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "For data without T1 it advises a synthetic T1 so that a FLAIR+T1 classifier runs; the BIANCA pipeline skill says such data need their own FLAIR-only classifier."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "The library's QC module embeds JPEG and draws masks in red, yellow and green, against the overlay skill's lossless PNG and fixed colours."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "Four of the five related skills it names are in the pool only and not among the skills the agent loads."
+    }
+   ],
+   "proposal": "Replace the placeholder import path with the real location and make brain extraction default to the CPU on this machine.",
+   "verdict": "usable"
+  },
+  "neuro-qc-report": {
+   "does": [
+    "Read each volume once and compute SNR, sharpness, blank slices and geometry as sort keys.",
+    "Detect duplicate scans by fingerprint correlation and an exact hash.",
+    "Draw slice montages with mask contours and embed them as base64 in one HTML file.",
+    "Sort flagged subjects worst-first with a stated reason; write the numbers as a table next to the HTML."
+   ],
+   "when": "Requests for a QC report or overview across many NIfTI images, a check for duplicates or bad scans, or one file to send to a colleague.",
+   "strength": "Sorts the worst cases to the top with the reason in words and writes the same numbers as a table beside the HTML.",
+   "findings": [
+    {
+     "point": 6,
+     "severity": "high",
+     "text": "It contradicts the overlay skill the agent also loads: JPEG and downscaling here, lossless PNG and cubic upsampling there; red and yellow here, five fixed colours there."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "It loads on the same words as the QC-page skill. It lacks that skill's overlay switch, hover texts, template rule and storage step; it adds metrics, duplicates, sorting."
+    },
+    {
+     "point": 3,
+     "severity": "medium",
+     "text": "No check before done: nothing says to open the finished HTML, look at a rendered picture or compare the file size with the stated limit."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "The montage function is called but not defined, and no numeric rule says when a subject counts as flagged, so the agent must invent both."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "It names the viewer skill as its companion, but that skill is in the pool only and not among the skills the agent loads."
+    }
+   ],
+   "proposal": "Take picture format and colours from the overlay skill, and state in the description when to load this skill and when the QC-page skill.",
+   "verdict": "needs work"
+  },
+  "neuro-qc-viewer": {
+   "does": [
+    "Resample all volumes of a subject onto one reference grid, labels with nearest neighbour.",
+    "Convert MGH files to real NIfTI and export one folder per subject plus an index file.",
+    "Encode tissue and lesion labels with an offset; compare exported volumes with pipeline volumes.",
+    "Build one HTML page with NiiVue: subject list, underlay switch, label toggle, threshold slider."
+   ],
+   "when": "Requests to browse or click through MRI volumes and segmentations in a browser, or about overlays that are misaligned between volumes.",
+   "strength": "Requires a numeric cross-check of exported against pipeline volumes with a 2 % warning limit, and provenance for every layer.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "high",
+     "text": "The viewer page is given as a feature list and six lines of JavaScript; subject list, switches, slider and memory handling have no code and no template to copy."
+    },
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "NiiVue is to be pinned or stored next to the page, but no version is named and no copy is in the skill folder; the agent's sandbox cannot fetch it from the network."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "The QC-page skill also loads on the word viewer. This skill adds in-browser volumes, the one-grid export and a slider; it lacks house colours, switch rule, storage."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The label overlay uses a colormap called custom, but no code defines the colour table for the offset label values."
+    },
+    {
+     "point": 3,
+     "severity": "low",
+     "text": "The data check is defined, but no step says to open the page and confirm that the overlays line up before reporting done."
+    }
+   ],
+   "proposal": "Bundle a working viewer page and a pinned local copy of NiiVue in the skill folder, so the agent copies a template instead of writing the page.",
+   "verdict": "needs work"
+  },
+  "qc-page-building": {
+   "does": [
+    "Starts every QC page from one of two existing generators, never from zero.",
+    "Applies house rules: English, overlay switch, Methods box with software versions, hover text on numbers.",
+    "Renders the page headless, looks at the screenshot, then stores the page on the group drive."
+   ],
+   "when": "The researcher asks for a QC page or slice viewer, or wants to check masks, segmentations, registrations or preprocessing by eye.",
+   "strength": "The check is one ready command plus two known traps of headless screenshots (temp folder access, lazy-loaded images).",
+   "findings": [
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "The overlay switch needs a second picture per slice without overlays here, but a transparent outline layer in mri-overlay-pages: two recipes for one rule."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "One of the two templates is an archived script that still breaks the current picture rules; the agent must tell pattern from file format itself."
+    },
+    {
+     "point": 3,
+     "severity": "low",
+     "text": "The check is one static screenshot; the overlay switch and the hover texts, both house rules, are never tested."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "Rule 6 allows filled voxels for small lesions, while mri-overlay-pages allows outlines only."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "The skills neuro-qc-report and neuro-qc-viewer also build QC pages and viewers; the text names neither and draws no line to them."
+    }
+   ],
+   "proposal": "Take the overlay-switch recipe and the small-lesion marking from mri-overlay-pages only, and replace the archived template with a current one.",
+   "verdict": "usable"
+  },
+  "mri-overlay-pages": {
+   "does": [
+    "Fixes five colours for ground truth, second rater, true positive, false positive and false negative.",
+    "Draws outlines as a separate transparent PNG so that an overlay switch can hide them.",
+    "Windows the scan first, then enlarges it with a cubic spline; masks are enlarged without smoothing.",
+    "Requires a legend with words and a statement of how a hit is counted on every page."
+   ],
+   "when": "Any page, figure, trainer or film frame that shows an MRI slice with lesion, detection or rater outlines; also blurry or blocky slice pictures.",
+   "strength": "The colours live in one script that also draws the rings and the legend; a demo on a synthetic phantom shows all five roles.",
+   "findings": [
+    {
+     "point": 3,
+     "severity": "medium",
+     "text": "The check sends the reader to qc-page-building for the screenshot command; Clara loads this skill but not that one, so she has no command for the check."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "The overlay switch is built here from a transparent outline picture, while qc-page-building asks for a second picture per slice without overlays: two recipes."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "The code example counts hits per slice; a lesion found one slice away is then drawn as missed, and counting on the volume is only a side note."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The sentence on patient scans and remote models is garbled and sits in the check paragraph, not among the numbered rules."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The quality rule allows 3 points per voxel, the failure list asks for a scale of 4 or more when two raters agree; the two numbers are not reconciled."
+    }
+   ],
+   "proposal": "Put the screenshot command into this skill and agree one overlay-switch recipe with qc-page-building.",
+   "verdict": "usable"
+  },
+  "film-making": {
+   "does": [
+    "Fixes the order of work: source file, beats, voice, chapters, quick render with gate, sheets, full render.",
+    "Requires every spoken or shown number to stand in a source file with its origin before the script.",
+    "Keeps films with patient scans off public pages, video platforms and the remote vision check.",
+    "Builds a deliver folder: film and page with chapter times and sources on top, the rest in a subfolder."
+   ],
+   "when": "A request to make, change or re-render a narrated film, animation, tutorial or lecture video, or a film page.",
+   "strength": "A step table gives one command and one pass condition per step, and the failure list maps exact log messages to fixes.",
+   "findings": [
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "It never names explainer-video, and both descriptions answer a request for a tutorial or explanation video, so either may load in the setup sessions."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Storing on the group drive is required, but the reference file only names a storage skill of the setup sessions; Clara loads this skill and gets no storage command."
+    },
+    {
+     "point": 3,
+     "severity": "low",
+     "text": "The check for the deliver step (open the page, click two chapter times) stands only in the reference file; the step table says only \"see below\"."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "A line count of a tool document is written into the skill and goes stale with the next edit of that document."
+    }
+   ],
+   "proposal": "Add one line that says when explainer-video applies instead, and a storage command that Clara can run herself.",
+   "verdict": "usable"
+  },
+  "explainer-video": {
+   "does": [
+    "Sends film building with the Manim tool to film-making and keeps an older matplotlib recipe for MRI frames.",
+    "Points to a wiki rule file as the full recipe and to a private working example to copy.",
+    "Asks for check frames before the full render, decoding of the final files and storage with checksums."
+   ],
+   "when": "The researcher asks for an explanation of the current task, method or results as a video or a presentation with voice.",
+   "strength": "A table maps each file of the working example to what must be changed in it.",
+   "findings": [
+    {
+     "point": 6,
+     "severity": "high",
+     "text": "The deliver folder differs from film-making (file names, audio copies, a second page); an agent that follows both skills cannot satisfy both."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Three start points compete (film-making, a wiki rule file to read first, a matplotlib example); which steps still hold for a normal explanation is unclear."
+    },
+    {
+     "point": 1,
+     "severity": "medium",
+     "text": "The description still says the skill builds the video and shares trigger words with film-making; it does not say that film-making does the build."
+    },
+    {
+     "point": 6,
+     "severity": "medium",
+     "text": "Red rings mark where to look on frames with real MRI data, but in mri-overlay-pages a red ring means a missed lesion; that skill is not named."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "There is no failure section, and the text does not say that the failure list of film-making applies."
+    }
+   ],
+   "proposal": "Cut it down to what a task explanation must contain plus the MRI-frame recipe, and take the deliver folder from film-making.",
+   "verdict": "needs work"
+  },
+  "mb-arena": {
+   "does": [
+    "Reads the project state file and the last queue log before any job text.",
+    "Explains the two-stage detection chain and the hard-coded candidate threshold behind zero predictions.",
+    "Treats healthy controls as the false-positive test, not as a model failure.",
+    "Runs acceptance scripts only after all folds are written and files the job with a reason note."
+   ],
+   "when": "A queued job on the microbleed detection comparison on susceptibility-weighted images: training, evaluation, acceptance or a stuck job.",
+   "strength": "Gives a fixed diagnosis order for zero predictions: measure the first-stage candidates before touching the model.",
+   "findings": [
+    {
+     "point": 1,
+     "severity": "high",
+     "text": "The description is one short label with no moment of use; a request in everyday words (microbleeds, detection, stuck job) will not hit it."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The '&' rule describes the terminal tool of the earlier agent program; the current agent runs commands through a different shell tool, so the rule may be outdated."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The start steps assume training on the workstation GPU fed by a local job queue; this may be outdated, so check whether queue service and local training are still used."
+    },
+    {
+     "point": 7,
+     "severity": "medium",
+     "text": "Cohort facts, measured values and a one-off folder repair recipe sit in the main text; they belong in the project state file or the reference files."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "Two of the three reference files are never named in the main text, and the front matter lists a related skill that is not among the 39."
+    }
+   ],
+   "proposal": "Rewrite the description to say what the skill does and when to load it, and move cohort numbers and one-off repair recipes into the reference files.",
+   "verdict": "needs work"
+  },
+  "pytorch": {
+   "does": [
+    "Checks free GPU memory first and never stops the local model server itself.",
+    "Writes the training script, dry-runs it small, then hands the start command to the researcher.",
+    "Gives a 2D U-Net, a Dice plus BCE loss, a mixed-precision loop and per-case metrics.",
+    "Starts with one case and one epoch, then overfits a few cases, before a full training run."
+   ],
+   "when": "Any question on PyTorch, training, model architecture, losses or metrics, or a request to build, train or evaluate a model.",
+   "strength": "Orders the work so that code errors show early: one case and one epoch, then overfit ten images, then train.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "The first section assumes the agent is the local model and always holds most GPU memory; the agent now answers through a relay, so the section may be outdated."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The stop and start commands for the model server may not work as written: the unit is currently disabled and a watchdog service exists that can bring the server back."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "The text says BF16 needs no loss scaling, yet the training loop wraps the BF16 step in a gradient scaler; two different autocast spellings are used as well."
+    },
+    {
+     "point": 7,
+     "severity": "medium",
+     "text": "The description claims classifiers and transformers, the body covers one 2D U-Net; the general tutorial parts (model, loss, loop) could move to a reference file."
+    },
+    {
+     "point": 3,
+     "severity": "low",
+     "text": "There is no check before 'done': nothing says which numbers a finished training must report or how the held-out cases are evaluated."
+    }
+   ],
+   "proposal": "Rewrite the GPU memory section for today's setup: who holds the GPU, how the agent asks for it, and which command frees it.",
+   "verdict": "needs work"
+  },
+  "flywire-connectome": {
+   "does": [
+    "Download the FlyWire connection table from Zenodo with resume and retries, then verify size and schema.",
+    "Print the real column schema before writing code; sum duplicate edges instead of dropping them.",
+    "Map 64-bit neuron IDs to indices with one shared vocabulary and build a sparse CSR matrix in PyTorch.",
+    "Compare neuron, edge and weight totals with the listed reference values."
+   ],
+   "when": "No moment of use is stated; by content it fits requests to load the FlyWire fly connectome as a graph or adjacency matrix in PyTorch.",
+   "strength": "Gives reference totals and an expected file size, so a wrong ID mapping or a broken download shows at once.",
+   "findings": [
+    {
+     "point": 1,
+     "severity": "high",
+     "text": "The description is one German sentence without trigger words or a moment of use; a request about a connectome, Drosophila or an adjacency matrix will not hit it."
+    },
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "It names local files that are no longer there: data folder, finished download, saved matrix and ID index. The download recipe changes into that folder first."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The background-run instruction uses tool options of the earlier gateway; the agent's shell tool has only a timeout, and its sandbox blocks the download host."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The free GPU memory figure and the September state are dated and may be outdated; check current GPU use before relying on them."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The front matter names the earlier gateway as author and a related skill, huggingface-hub, that is not among the 39 skills."
+    }
+   ],
+   "proposal": "Rewrite the description with trigger words and a moment of use, and replace the local-files section by a check whether the data exist.",
+   "verdict": "outdated"
+  },
+  "papers": {
+   "does": [
+    "Choose the source by topic: Europe PMC for biomedicine, arXiv for methods, both for medical deep learning.",
+    "Run the script with metadata only first, read the CSV, sharpen the query, then download.",
+    "Start long downloads in the background with a log; rerun the same command to resume.",
+    "Tell the user the limits: open access only, relevance sorting is imperfect."
+   ],
+   "when": "The user wants to collect, download or search papers, publications, studies or literature on a topic.",
+   "strength": "Makes a metadata-only run and a look at the CSV mandatory before any PDF is downloaded.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "Both scripts fetch from the internet directly, but the agent's sandbox, per its configuration, permits only local connections; the skill names no route for them."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The statements on speed and drop-outs of the machine's line may be outdated; check the current download rate before quoting one hour for 300 papers."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "Script paths are relative to the skill folder, which the text does not say; from another working directory the commands fail."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The example output folder does not exist on disk; this does not matter, because the script creates the folder."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The front matter lists three related skills (arxiv, ocr-and-documents, research-paper-writing) that are not among the 39 skills."
+    }
+   ],
+   "proposal": "State how the agent reaches the internet for these scripts under the current sandbox, or say that only the setup sessions run them.",
+   "verdict": "needs work"
+  },
+  "wetter": {
+   "does": [
+    "Turn a place name into coordinates with the Open-Meteo geocoding call; ask when the name is ambiguous.",
+    "Fetch current weather, a 7-day daily forecast or hourly values with the given curl calls.",
+    "Translate the numeric weather code into words with the table; never print the raw number.",
+    "Name place, time and time zone in the answer; invent no values."
+   ],
+   "when": "Any question about weather, temperature, rain, snow, wind, sunrise or forecast for a place.",
+   "strength": "Complete curl calls plus the weather-code table, so no lookup is needed, and a failure section for the three usual errors.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "Every step is a curl call to an internet host, but the agent's sandbox, per its configuration, permits only local connections; the skill names no other route."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "It names a tool, web_search, that the agent does not have; it is a tool name of the earlier gateway."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The remark on the machine's unstable line may be outdated; check whether drop-outs still occur."
+    }
+   ],
+   "proposal": "Say how a weather request leaves the machine under the current sandbox, or take the skill out of the agent's set.",
+   "verdict": "outdated"
+  },
+  "alita-storage": {
+   "does": [
+    "Copies finished QC pages, result folders and cluster transfer folders to the group drive with one tool.",
+    "Uploads data sets with rsync and compares checksum lists of both sides before reporting.",
+    "Forbids deleting on the drive and regenerating files that the researcher edits there."
+   ],
+   "when": "A QC page, result folder, data package or cluster input is finished or updated, or the researcher asks to put something on the group drive.",
+   "strength": "The data set path ends in a diff of two checksum lists, with the rule never to report success before the diff is empty.",
+   "findings": [
+    {
+     "point": 5,
+     "severity": "high",
+     "text": "Since 4 November the storage tool sends one project's QC pages, paper results and cluster inputs to a project folder; the skill names only the old folders."
+    },
+    {
+     "point": 3,
+     "severity": "medium",
+     "text": "Rule 1 demands checksums, but the tool path is checked by file count only, and the tool skips more file kinds than the skill lists, so counts need not match."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The manual rsync lacks the in-place option that the tool gained on 19 November, after files that were open on the share vanished during a copy."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The remote checksum command passes all file names on one command line; names with spaces or a very long list break it."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "Only the setup sessions load this skill, while the film skill that Clara loads also sends results to the group drive."
+    }
+   ],
+   "proposal": "Describe the tool's current project routes and replace the file-count check with a checksum comparison for every path.",
+   "verdict": "needs work"
+  },
+  "dataset-handover": {
+   "does": [
+    "Lays out one folder per case under derivatives, with file names that say what each file is.",
+    "Puts every derived map on the scan matrix and brings sequences together by header coordinates.",
+    "Builds another tool's input folders with that tool's own code; ships a script instead of duplicate files.",
+    "Verifies staged files, builds a QC page, uploads with checksums and writes a README."
+   ],
+   "when": "The researcher asks to prepare, restructure or hand over an MRI data set, or to add sequences, segmentations or masks to a cohort.",
+   "strength": "Each rule carries the error that caused it, for example a registration start that rotated one scan against another.",
+   "findings": [
+    {
+     "point": 7,
+     "severity": "medium",
+     "text": "The description promises any MRI data set, but layout, file suffixes and tool names belong to one microbleed cohort; other data need guessing."
+    },
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Step 1 rests on three private template scripts; the text does not say what each one does or what to change in it."
+    },
+    {
+     "point": 3,
+     "severity": "medium",
+     "text": "No step checks that ids, file headers and the file table hold no direct identifiers before the package goes to the recipient."
+    },
+    {
+     "point": 6,
+     "severity": "low",
+     "text": "Rules 4 and 5 fix settings for brain extraction, bias correction and SynthSeg that hirn-extraktion, bias-korrektur and gewebe-segmentierung also hold."
+    },
+    {
+     "point": 4,
+     "severity": "low",
+     "text": "The failure section covers partial coverage and CPU heat, but not a failed verification in step 2 or a failed upload."
+    }
+   ],
+   "proposal": "Split the general handover rules from the cohort recipe, and say for each template script what it does and what to adapt.",
+   "verdict": "usable"
+  },
+  "install-from-zero-check": {
+   "does": [
+    "Clones the repository fresh and installs it into a new environment with the installer.",
+    "Runs every bash block of the README as written, inside the clone, and logs one OK line per block.",
+    "Requires a test that fails on the old code for every bug found, then the fix.",
+    "Removes the test environment afterwards and deletes derived folders before the test suite."
+   ],
+   "when": "Before a push or release of code that others install, or when the researcher asks whether a repository installs from zero.",
+   "strength": "One script does clone, install and all README blocks, and the log is read with a single grep for the OK lines.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "The text says single lines are skipped, but the script skips every whole block that starts with clone, cd, install or source; such a block is never tested."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The script makes its work folder under a fixed temp folder of the setup sessions; for another agent or after a reboot it may be missing and the run stops."
+    },
+    {
+     "point": 7,
+     "severity": "low",
+     "text": "Clean-up and rules carry details of one repository (a derived folder, one test name) inside a skill meant for any repository."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The privacy search before a push points to a rule in the memory of the setup sessions; other agents that share the skill cannot read it, and no command is given."
+    },
+    {
+     "point": 3,
+     "severity": "low",
+     "text": "Rule 5 asks to remove environment and clone, but the clean-up command removes only the environment; the clone stays in the temp folder."
+    }
+   ],
+   "proposal": "Make the script skip lines instead of whole blocks, take the work folder as an argument, and add the clone removal to the clean-up.",
+   "verdict": "usable"
+  },
+  "wiki-update": {
+   "does": [
+    "Writes one entry with sources into the shared wiki and adds index row, summary paragraph and log line.",
+    "Runs the maintenance check, which must report zero dead links and zero entries without an index row.",
+    "Commits only its own files, rebases and pushes directly without asking."
+   ],
+   "when": "At the end of every task, or when the researcher asks to record a finding, rule or risk in the wiki.",
+   "strength": "The rule to stage only own files carries the incident that caused it and says what to do when the first pull fails.",
+   "findings": [
+    {
+     "point": 3,
+     "severity": "medium",
+     "text": "Rule 1 bans cohort names, but nothing says which names count, and no step checks an entry before the push."
+    },
+    {
+     "point": 5,
+     "severity": "medium",
+     "text": "The first failure case names a guard and a search tool of the earlier gateway; the current agent program has no tool of that name. May be outdated."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "Rule 1 asks for English, but the required field names and section headings are German and must be copied from a neighbour entry."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The wiki's own README asks to rebuild the HTML reading version after each entry; the skill does not name this step and relies on an installed commit hook."
+    },
+    {
+     "point": 7,
+     "severity": "low",
+     "text": "The folder holds a dated backup copy of an older SKILL.md next to the current one."
+    }
+   ],
+   "proposal": "Add a search of the staged diff for private names before the commit, and rewrite the first failure case for the current agent program.",
+   "verdict": "usable"
+  },
+  "usage-feedback": {
+   "does": [
+    "Runs a counting script over the session history since the last stored run and saves one line of numbers.",
+    "Reads the numbers against six points and against reference values from a published study.",
+    "Reports verdict first, a table of changed numbers, strong and weak points, at most two changes to try.",
+    "Never prints, quotes or stores the text of a prompt."
+   ],
+   "when": "The researcher asks how well they work with the setup sessions, or how to work better with them.",
+   "strength": "It states its own limits: counts only, a view that is not independent, too few prompts for a trend, and which sources were not verified.",
+   "findings": [
+    {
+     "point": 2,
+     "severity": "medium",
+     "text": "Two of the three reference values (verified success, abandoned sessions) have no counterpart in the script, so no number of the run can be set against them."
+    },
+    {
+     "point": 5,
+     "severity": "low",
+     "text": "The six points come from a post that was not found and a guide that was not read; the basis of the reading table is unverified, as the skill says itself."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "Rule 5 forbids new files, yet the standard run with the save option appends a line to a history file; the two statements are not reconciled."
+    },
+    {
+     "point": 2,
+     "severity": "low",
+     "text": "The script reads the history of one start folder by default; sessions started elsewhere are not counted, and the skill does not say so."
+    }
+   ],
+   "proposal": "Remove or mark the reference values that the script cannot match, and name the folder whose sessions are counted.",
+   "verdict": "usable"
+  }
+ }
+}
