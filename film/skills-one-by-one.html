@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The 39 skills, one by one</title>
+<meta name="description" content="A 15-minute narrated film in 11 chapters: what a skill is, what each of the 39 skills of the working station does, and what the review of 25.11.2026 found.">
+<meta property="og:title" content="The 39 skills, one by one">
+<meta property="og:image" content="thumbs/skills_one_by_one.jpg">
+<style>
+ :root{--bg:#080c0f;--ink:#e8f1f3;--muted:#7d99a2;--accent:#33c6b6}
+ *{box-sizing:border-box;margin:0;padding:0}
+ body{background:var(--bg);color:var(--ink);font-family:ui-monospace,monospace;font-size:14px;line-height:1.55;padding:28px 16px;max-width:1000px;margin:0 auto}
+ h1{font-size:24px;margin-bottom:6px}
+ p{color:var(--muted);font-size:13px;margin:8px 0 16px}
+ video{width:100%;height:auto;display:block;border-radius:10px;background:#000}
+ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+ ul.ch{list-style:none;color:var(--muted);font-size:13px;margin:18px 0 0;columns:2 320px}
+ ul.ch li{margin:3px 0;break-inside:avoid} ul.ch b{color:var(--ink);display:inline-block;min-width:3.4em}
+ ol.src{color:var(--muted);font-size:13px;margin:6px 0 0 22px}
+ h2{font-size:13px;color:var(--ink);margin:22px 0 0;font-weight:700}
+</style></head><body>
+<h1>The 39 skills, one by one</h1>
+<p>A 15-minute narrated film in 11 chapters (25.11.2026). English, 720p. What a skill is, then every skill of the working station by topic: what it does and which check it runs before it calls the work done. The last chapter gives the review: 1 good, 18 usable, 15 need work, 5 outdated, and what the repair of 20 skills changed. Drawings marked "schematic" are not data. Built in the setup sessions of the working station.</p>
+<video id="v" controls playsinline preload="metadata" poster="thumbs/skills_one_by_one.jpg" src="skills_one_by_one.mp4"></video>
+<ul class="ch">
+<li><a href="#t=0" data-t="0"><b>0:00</b> 1. What a skill is</a></li>
+<li><a href="#t=63" data-t="63.4"><b>1:03</b> 2. Running work: the job loop</a></li>
+<li><a href="#t=144" data-t="144.32"><b>2:24</b> 3. Running work: the agent itself</a></li>
+<li><a href="#t=212" data-t="212.25"><b>3:32</b> 4. Rules</a></li>
+<li><a href="#t=274" data-t="274.38"><b>4:34</b> 5. Converting data</a></li>
+<li><a href="#t=392" data-t="392.6"><b>6:32</b> 6. Preparing the image</a></li>
+<li><a href="#t=464" data-t="464.75"><b>7:44</b> 7. White matter lesions</a></li>
+<li><a href="#t=546" data-t="546.45"><b>9:06</b> 8. Pages and films</a></li>
+<li><a href="#t=657" data-t="657.93"><b>10:57</b> 9. Models and knowledge</a></li>
+<li><a href="#t=739" data-t="739.53"><b>12:19</b> 10. Keeping things</a></li>
+<li><a href="#t=828" data-t="828.08"><b>13:48</b> 11. How good are they?</a></li>
+</ul>
+<h2>Sources</h2>
+<ol class="src">
+<li><a href="../skills-overview.html" target="_blank" rel="noopener">Skills overview</a>: all 39 skills one by one with a review of each, state 25.11.2026. Every count in the film comes from this page.</li>
+<li><a href="https://agentskills.io/what-are-skills" target="_blank" rel="noopener">Agent Skills, open format</a>: what a skill is and how an agent loads it.</li>
+<li><a href="../skills.html" target="_blank" rel="noopener">Skills page</a>: where each skill lives and what it brings along.</li>
+</ol>
+<p style="margin-top:18px"><a href="skills_one_by_one.mp4" download>Download the video</a> · <a href="../skills-overview.html">Skills overview</a> · <a href="./">All films</a> · <a href="../">Working station home</a></p>
+<script>
+const v=document.getElementById("v");
+document.querySelectorAll("ul.ch a").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();v.currentTime=+a.dataset.t;v.play();}));
+const m=location.hash.match(/t=(\d+)/); if(m) v.addEventListener("loadedmetadata",()=>{v.currentTime=+m[1];},{once:true});
+</script>
+</body></html>

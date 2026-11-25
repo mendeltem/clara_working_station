@@ -21,6 +21,7 @@ portfolio: only what was produced here is listed.*
 [![The updated working station, November 2026](film/thumbs/clara_working_station_november.jpg)](https://mendeltem.github.io/clara_working_station/film/clara-november.html)
 
 - **The updated working station, November 2026 (23 min, 4 parts, clickable chapters): one Clara for phone and terminal, small staged work sessions, two safety doors, how Clara is tested:** https://mendeltem.github.io/clara_working_station/film/clara-november.html
+- **The 39 skills, one by one (15 min, 11 chapters, 25.11.2026): what a skill is, what each skill does, the review and the repair:** https://mendeltem.github.io/clara_working_station/film/skills-one-by-one.html
 - **The smuggling test (5 min, 07.11.2026), can patient data slip out? Two doors, 13 routing cases, 30 harmless and 15 sensitive searches:** https://mendeltem.github.io/clara_working_station/film/smuggling-test.html
 - **Carbon-X explained (8 min), a DNA language model running locally on the working station:** https://mendeltem.github.io/clara_working_station/film/carbon-x.html
 - **The film machine, with a voice (4 min, fast style, animation by Clara with Clé):** https://mendeltem.github.io/clara_working_station/film/film-machine-v3.html

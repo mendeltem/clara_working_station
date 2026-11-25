@@ -199,7 +199,7 @@ __NAV__<h1>All skills, <span class="a">one by one</span></h1>
 <div class="sub">Clara Working Station · review of __DATE__</div>
 <p class="s">Each of the <b>__N__ skills</b> was read in full and judged from its text against the seven points listed at the
 bottom of this page. A card says what the skill does, when it loads, what the review found and the one change proposed.
-The charts on the page <a class="gh" href="skills.html">Skills</a> show who loads which skill and how large each one is.</p>
+The charts on the page <a class="gh" href="skills.html">Skills</a> show who loads which skill and how large each one is. The film <a class="gh" href="film/skills-one-by-one.html">The 39 skills, one by one</a> (15:06) walks through all of them.</p>
 <div class="tiles4">__TILES__</div>
 __REPAIR__
 <div class="two">
