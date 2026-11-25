@@ -6,12 +6,12 @@
 # Rueckgabe 0 Text ausgegeben, 1 nichts erkannt, 2 Aufruf falsch.
 DATEI="${1:-}"; SPRACHE="${2:-}"
 [ -f "$DATEI" ] || { echo "hoeren: keine Datei: $DATEI" >&2; exit 2; }
-HF_HUB_OFFLINE=1 OMP_NUM_THREADS=8 exec /home/uchralt/miniconda3/envs/zonos3/bin/python -I - "$DATEI" "$SPRACHE" <<'EOF'
-import subprocess, sys
+HF_HUB_OFFLINE=1 OMP_NUM_THREADS=8 exec "$HOME/miniconda3/envs/zonos3/bin/python" -I - "$DATEI" "$SPRACHE" <<'EOF'
+import os, subprocess, sys
 import numpy as np
 from faster_whisper import WhisperModel
 datei, sprache = sys.argv[1], sys.argv[2] or None
-roh = subprocess.run(["/home/uchralt/miniconda3/envs/manim/bin/ffmpeg", "-v", "error", "-i", datei, "-f", "s16le", "-ac", "1", "-ar", "16000", "-"],
+roh = subprocess.run([os.path.expanduser("~/miniconda3/envs/manim/bin/ffmpeg"), "-v", "error", "-i", datei, "-f", "s16le", "-ac", "1", "-ar", "16000", "-"],
                      capture_output=True, check=True).stdout
 audio = np.frombuffer(roh, np.int16).astype(np.float32) / 32768.0
 m = WhisperModel("mobiuslabsgmbh/faster-whisper-large-v3-turbo", device="cpu", compute_type="int8", cpu_threads=8)
