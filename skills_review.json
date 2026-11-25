@@ -198,31 +198,40 @@
     {
      "point": 5,
      "severity": "medium",
-     "text": "The mode command is called in a folder where it does not exist; it lies one level higher and is on the search path."
+     "text": "The mode command is called in a folder where it does not exist; it lies one level higher and is on the search path.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "Step 6 lists a projects folder and a move plan that no longer exist, so it returns an error instead of a project state."
+     "text": "Step 6 lists a projects folder and a move plan that no longer exist, so it returns an error instead of a project state.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "Step 7 uses a session search tool of the earlier gateway; the current agent program has no tool of that name."
+     "text": "Step 7 uses a session search tool of the earlier gateway; the current agent program has no tool of that name.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "medium",
-     "text": "Status is answered in three places: here, in the status section of ziele-planen, and by built-in status tools of the agent program; none refers to the others."
+     "text": "Status is answered in three places: here, in the status section of ziele-planen, and by built-in status tools of the agent program; none refers to the others.",
+     "state": "fixed"
     },
     {
      "point": 7,
      "severity": "low",
-     "text": "A reference file on time gates and hang checks lies in the folder, but the main text never points to it; it also describes the earlier process tree."
+     "text": "A reference file on time gates and hang checks lies in the folder, but the main text never points to it; it also describes the earlier process tree.",
+     "state": "fixed"
     }
    ],
    "proposal": "Repair the three dead steps (mode command path, projects folder, session search) and link the reference file from the main text.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "arbeit-stoppen": {
    "does": [
@@ -237,31 +246,40 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "Reminders are removed with a scheduling tool of the earlier gateway; the current agent program has no tool of that name."
+     "text": "Reminders are removed with a scheduling tool of the earlier gateway; the current agent program has no tool of that name.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "high",
-     "text": "Process patterns and session name follow the earlier launcher; live sessions carry a number suffix and job rounds run under another name, so the check may miss them."
+     "text": "Process patterns and session name follow the earlier launcher; live sessions carry a number suffix and job rounds run under another name, so the check may miss them.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The library path it sets does not exist; with it set as written, the tmux binary fails to load two libraries, so the clean kill fails and only the PID fallback is left."
+     "text": "The library path it sets does not exist; with it set as written, the tmux binary fails to load two libraries, so the clean kill fails and only the PID fallback is left.",
+     "state": "fixed"
     },
     {
      "point": 1,
      "severity": "medium",
-     "text": "The description is one short line with one trigger word; 'stoppe', 'stop X' and 'stop reminder' stand only in the body."
+     "text": "The description is one short line with one trigger word; 'stoppe', 'stop X' and 'stop reminder' stand only in the body.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "low",
-     "text": "The agent program now has a built-in tool that stops a work session; the skill does not say when to use the tool and when these steps."
+     "text": "The agent program now has a built-in tool that stops a work session; the skill does not say when to use the tool and when these steps.",
+     "state": "fixed"
     }
    ],
    "proposal": "Rewrite the three components for the current agent program: its process names, its numbered sessions and its own scheduler; drop the gateway tool.",
-   "verdict": "outdated"
+   "verdict": "outdated",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "eigener-stack": {
    "does": [
@@ -276,31 +294,40 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "Checks, restart and the speed fix go through the earlier gateway (its service, its command line, its config file); that gateway is switched off."
+     "text": "Checks, restart and the speed fix go through the earlier gateway (its service, its command line, its config file); that gateway is switched off.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "high",
-     "text": "It restarts the model server directly; the machine now starts it on demand through a start tool that picks a profile by free GPU memory, with a watchdog beside it."
+     "text": "It restarts the model server directly; the machine now starts it on demand through a start tool that picks a profile by free GPU memory, with a watchdog beside it.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "It assumes the agent always thinks on the local model; the current agent reaches its model through a router that can also choose a hosted model."
+     "text": "It assumes the agent always thinks on the local model; the current agent reaches its model through a router that can also choose a hosted model.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The context fix points to a branch in the start script that is no longer there; context sizes now stand in a model registry file."
+     "text": "The context fix points to a branch in the start script that is no longer there; context sizes now stand in a model registry file.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "low",
-     "text": "It names three memory files of the earlier gateway, one of which no longer exists; these are statements, not commands, so it matters little."
+     "text": "It names three memory files of the earlier gateway, one of which no longer exists; these are statements, not commands, so it matters little.",
+     "state": "fixed"
     }
    ],
    "proposal": "Rewrite it around the current chain (agent program, router, on-demand model start, watchdog) and remove every gateway command.",
-   "verdict": "outdated"
+   "verdict": "outdated",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "llama-log": {
    "does": [
@@ -393,31 +420,40 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "The step marked 'first' uses an option that the session reader of the current agent program does not have; the same holds for the full-session option."
+     "text": "The step marked 'first' uses an option that the session reader of the current agent program does not have; the same holds for the full-session option.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "high",
-     "text": "New skills go into the profile folder of the earlier gateway; the current agent program discovers skills in a different folder, so a new skill is never offered."
+     "text": "New skills go into the profile folder of the earlier gateway; the current agent program discovers skills in a different folder, so a new skill is never offered.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "It says the trace lies in the database of the earlier gateway; sessions of the current agent program are stored as files in another place."
+     "text": "It says the trace lies in the database of the earlier gateway; sessions of the current agent program are stored as files in another place.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "medium",
-     "text": "The commit step stages every change in the whole system repository, not only the file of the lesson, so unrelated work lands in a lesson commit."
+     "text": "The commit step stages every change in the whole system repository, not only the file of the lesson, so unrelated work lands in a lesson commit.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "low",
-     "text": "A daily tool of the same name now exists and only reports; the skill does not say how the two relate."
+     "text": "A daily tool of the same name now exists and only reports; the skill does not say how the two relate.",
+     "state": "fixed"
     }
    ],
    "proposal": "Point reading, skill creation and commits at the session reader and skill folder of the current agent program, and commit only the changed file.",
-   "verdict": "outdated"
+   "verdict": "outdated",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "datenschutz": {
    "does": [
@@ -432,31 +468,41 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "Its premise is that all work is local; the agent can now be routed to a hosted model for requests without patient data, and the skill has no rule for that case."
+     "text": "Its premise is that all work is local; the agent can now be routed to a hosted model for requests without patient data, and the skill has no rule for that case.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The gate has a different command name than in aussenkontakt; that script sends the question itself and may be outdated: check it from inside the agent's sandbox."
+     "text": "The gate has a different command name than in aussenkontakt; that script sends the question itself and may be outdated: check it from inside the agent's sandbox.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "medium",
-     "text": "How to word an outside question is taught here and in aussenkontakt, with two different tables."
+     "text": "How to word an outside question is taught here and in aussenkontakt, with two different tables.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "low",
-     "text": "Anonymising and defacing are stated as duties without a command or a pointer to the conversion skill that handles identifiers."
+     "text": "Anonymising and defacing are stated as duties without a command or a pointer to the conversion skill that handles identifiers.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "low",
-     "text": "The data tree and the new-study script may be outdated; they were not checked because the data area was out of scope for this review."
+     "text": "The data tree and the new-study script may be outdated; they were not checked because the data area was out of scope for this review.",
+     "state": "open",
+     "open_why": "Not checked: the data tree and the new-study script lie in the data area, which the repair did not read."
     }
    ],
    "proposal": "Name the same gate command as aussenkontakt, add the rule for sessions routed to a hosted model, and leave question wording to aussenkontakt.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 4,
+    "of": 5
+   }
   },
   "aussenkontakt": {
    "does": [
@@ -510,31 +556,40 @@
     {
      "point": 2,
      "severity": "high",
-     "text": "The sidecar field list includes the acquisition date, while the privacy section of the same skill lists the examination date among the identifying header fields."
+     "text": "The sidecar field list includes the acquisition date, while the privacy section of the same skill lists the examination date among the identifying header fields.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "It says dcm2niix is not installed; a dcm2niix binary now exists in one conda environment of the machine, so the statement and the choice of main route may be outdated."
+     "text": "It says dcm2niix is not installed; a dcm2niix binary now exists in one conda environment of the machine, so the statement and the choice of main route may be outdated.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "medium",
-     "text": "Repetition, echo and inversion time are copied as stored in DICOM (milliseconds), while BIDS wants seconds; the English DICOM-to-BIDS skill has that conversion."
+     "text": "Repetition, echo and inversion time are copied as stored in DICOM (milliseconds), while BIDS wants seconds; the English DICOM-to-BIDS skill has that conversion.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "medium",
-     "text": "Overlaps the English DICOM-to-BIDS skill; this one adds privacy rules, the slice-count check and a CSV log, but lacks the human-checked series table and duplicate checks."
+     "text": "Overlaps the English DICOM-to-BIDS skill; this one adds privacy rules, the slice-count check and a CSV log, but lacks the human-checked series table and duplicate checks.",
+     "state": "fixed"
     },
     {
      "point": 4,
      "severity": "low",
-     "text": "No failure section: the table has an error column, but nothing says what to do with a series that cannot be read or has missing slices."
+     "text": "No failure section: the table has an error column, but nothing says what to do with a series that cannot be read or has missing slices.",
+     "state": "fixed"
     }
    ],
    "proposal": "Remove the acquisition date from the sidecar list, convert the three times to seconds, and re-check the statement that dcm2niix is missing.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "nifti-pruefen": {
    "does": [
@@ -616,31 +671,40 @@
     {
      "point": 2,
      "severity": "high",
-     "text": "The example dcm2niix call puts the patient id from the header into the file name (%i), against the skill's own rule not to derive ids from the clinic id."
+     "text": "The example dcm2niix call puts the patient id from the header into the file name (%i), against the skill's own rule not to derive ids from the clinic id.",
+     "state": "fixed"
     },
     {
      "point": 1,
      "severity": "medium",
-     "text": "The description promises numbered folders, spreadsheet lists and grown collections; the steps cover DICOM sources only."
+     "text": "The description promises numbered folders, spreadsheet lists and grown collections; the steps cover DICOM sources only.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "medium",
-     "text": "Same job as the English DICOM-to-BIDS skill; this one adds write protection, new ids and defacing, but lacks grouping by series UID, unit conversion and duplicate checks."
+     "text": "Same job as the English DICOM-to-BIDS skill; this one adds write protection, new ids and defacing, but lacks grouping by series UID, unit conversion and duplicate checks.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The install of dcm2niix into a new environment and the validator through npx need the network, which the agent's sandbox blocks; a dcm2niix binary already exists."
+     "text": "The install of dcm2niix into a new environment and the validator through npx need the network, which the agent's sandbox blocks; a dcm2niix binary already exists.",
+     "state": "fixed"
     },
     {
      "point": 4,
      "severity": "low",
-     "text": "No failure section: the pitfalls list covers naming and orientation traps, but not a failed conversion or validator errors."
+     "text": "No failure section: the pitfalls list covers naming and orientation traps, but not a failed conversion or validator errors.",
+     "state": "fixed"
     }
    ],
    "proposal": "Replace %i in the file name pattern with the new sequential id from the mapping table, then merge this skill with the English DICOM-to-BIDS skill.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "dicom-to-bids": {
    "does": [
@@ -655,31 +719,40 @@
     {
      "point": 2,
      "severity": "high",
-     "text": "No rule on patient identifiers: the inventory stores patient ID and study date; pseudonyms, sidecar content and defacing are not covered, unlike in the German skills."
+     "text": "No rule on patient identifiers: the inventory stores patient ID and study date; pseudonyms, sidecar content and defacing are not covered, unlike in the German skills.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "medium",
-     "text": "The step that renames converted files into the sub-/ses- layout and writes the dataset description and the participants table has no commands."
+     "text": "The step that renames converted files into the sub-/ses- layout and writes the dataset description and the participants table has no commands.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "dcm2niix is the default tool, but the German DICOM skill says it is not installed; on disk it sits only inside two environments that this skill does not name."
+     "text": "dcm2niix is the default tool, but the German DICOM skill says it is not installed; on disk it sits only inside two environments that this skill does not name.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "medium",
-     "text": "The millisecond-to-second code is not limited to the SimpleITK route; applied to a dcm2niix sidecar, which is already in seconds, it divides a second time."
+     "text": "The millisecond-to-second code is not limited to the SimpleITK route; applied to a dcm2niix sidecar, which is already in seconds, it divides a second time.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "medium",
-     "text": "Three skills cover this job. Only this one has UID grouping, duplicate detection and scan tables; only the German ones have slice-count, orientation and privacy rules."
+     "text": "Three skills cover this job. Only this one has UID grouping, duplicate detection and scan tables; only the German ones have slice-count, orientation and privacy rules.",
+     "state": "fixed"
     }
    ],
    "proposal": "Add the privacy rules of the German DICOM skill and commands for the placement step, and say where dcm2niix is installed.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "fnirs-eeg-to-bids": {
    "does": [
@@ -694,31 +767,40 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "The reference repositories it says are cloned next to the skill are not there: the folder holds only the instruction file, and a search of the machine found no copy."
+     "text": "The reference repositories it says are cloned next to the skill are not there: the folder holds only the instruction file, and a search of the machine found no copy.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "high",
-     "text": "The inventory code imports the snirf package and the fNIRS write step relies on cedalion; neither was found in a Python environment here, and no install step is given."
+     "text": "The inventory code imports the snirf package and the fNIRS write step relies on cedalion; neither was found in a Python environment here, and no install step is given.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "medium",
-     "text": "The fNIRS write step lists function names without calls or arguments, while the EEG step has runnable code; the agent must guess the fNIRS half."
+     "text": "The fNIRS write step lists function names without calls or arguments, while the EEG step has runnable code; the agent must guess the fNIRS half.",
+     "state": "fixed"
     },
     {
      "point": 3,
      "severity": "medium",
-     "text": "The only check is the validator fetched with npx, which needs the network on first use; there is no read-back of the written data and no offline note."
+     "text": "The only check is the validator fetched with npx, which needs the network on first use; there is no read-back of the written data and no offline note.",
+     "state": "fixed"
     },
     {
      "point": 4,
      "severity": "low",
-     "text": "There is no failure section: nothing on unreadable files, missing probe positions or a write that stops halfway."
+     "text": "There is no failure section: nothing on unreadable files, missing probe positions or a write that stops halfway.",
+     "state": "fixed"
     }
    ],
    "proposal": "Install or bundle the named tools and repositories, or remove the claim, and add one runnable fNIRS write example with a read-back check.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "bias-korrektur": {
    "does": [
@@ -809,31 +891,41 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "The 'does not run' list (recon-all, mri_convert, samseg) looks outdated: the shell and the library it names as missing are now present on the machine; re-test it."
+     "text": "The 'does not run' list (recon-all, mri_convert, samseg) looks outdated: the shell and the library it names as missing are now present on the machine; re-test it.",
+     "state": "fixed"
     },
     {
      "point": 7,
      "severity": "medium",
-     "text": "An appended second block contradicts the first part: a recon-all command versus 'does not run', and a second SynthSeg call with other flags and memory figures."
+     "text": "An appended second block contradicts the first part: a recon-all command versus 'does not run', and a second SynthSeg call with other flags and memory figures.",
+     "state": "fixed"
     },
     {
      "point": 1,
      "severity": "medium",
-     "text": "The BIANCA skill the agent loads depends on this skill for the WM mask, but this one is in the pool only and not linked into the agent's skill folder."
+     "text": "The BIANCA skill the agent loads depends on this skill for the WM mask, but this one is in the pool only and not linked into the agent's skill folder.",
+     "state": "open",
+     "open_why": "Waits for the researcher: only they link a pool skill into the agent's skill folder."
     },
     {
      "point": 6,
      "severity": "low",
-     "text": "The English BIANCA skill builds the SynthSeg WM mask from labels 2 and 41 only; this skill adds label 77, GM and CSF lists, the distance map and expected volume ranges."
+     "text": "The English BIANCA skill builds the SynthSeg WM mask from labels 2 and 41 only; this skill adds label 77, GM and CSF lists, the distance map and expected volume ranges.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "low",
-     "text": "The output folder of the recon-all fallback does not exist; it matters only if recon-all is used, and then the folder must be created first."
+     "text": "The output folder of the recon-all fallback does not exist; it matters only if recon-all is used, and then the folder must be created first.",
+     "state": "fixed"
     }
    ],
    "proposal": "Re-test recon-all, mri_convert and samseg, then merge the appended block into the first part so that each tool is described once.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 4,
+    "of": 5
+   }
   },
   "wmh-vorverarbeitung": {
    "does": [
@@ -921,31 +1013,40 @@
     {
      "point": 6,
      "severity": "high",
-     "text": "The SynthSeg white matter mask uses labels 2 and 41 only; the German BIANCA skill and the bundled library add label 77, without which large lesions are cut away."
+     "text": "The SynthSeg white matter mask uses labels 2 and 41 only; the German BIANCA skill and the bundled library add label 77, without which large lesions are cut away.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "medium",
-     "text": "It loads on the same words as the German BIANCA skill but offers make_bianca_mask and a cluster filter, both of which that skill excludes by a recorded decision."
+     "text": "It loads on the same words as the German BIANCA skill but offers make_bianca_mask and a cluster filter, both of which that skill excludes by a recorded decision.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "HD-BET is called on the GPU; the brain-extraction skill forbids that on this machine because the local model holds the GPU memory. Check which statement holds today."
+     "text": "HD-BET is called on the GPU; the brain-extraction skill forbids that on this machine because the local model holds the GPU memory. Check which statement holds today.",
+     "state": "fixed"
     },
     {
      "point": 1,
      "severity": "medium",
-     "text": "The description promises the path from DICOM to BIDS, but the body has one overview line for that stage and no instructions."
+     "text": "The description promises the path from DICOM to BIDS, but the body has one overview line for that stage and no instructions.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "low",
-     "text": "Only this skill has training, a FLAIR-only route, MNI warp, stroke-lesion removal and SLURM; only the German one has the fixed classifier settings and numeric checks."
+     "text": "Only this skill has training, a FLAIR-only route, MNI warp, stroke-lesion removal and SLURM; only the German one has the fixed classifier settings and numeric checks.",
+     "state": "fixed"
     }
    ],
    "proposal": "Align the mask rules with the German BIANCA skill (label 77, no cluster filter) and state in both descriptions which skill to load for which case.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "neuroflow": {
    "does": [
@@ -999,31 +1100,40 @@
     {
      "point": 6,
      "severity": "high",
-     "text": "It contradicts the overlay skill the agent also loads: JPEG and downscaling here, lossless PNG and cubic upsampling there; red and yellow here, five fixed colours there."
+     "text": "It contradicts the overlay skill the agent also loads: JPEG and downscaling here, lossless PNG and cubic upsampling there; red and yellow here, five fixed colours there.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "medium",
-     "text": "It loads on the same words as the QC-page skill. It lacks that skill's overlay switch, hover texts, template rule and storage step; it adds metrics, duplicates, sorting."
+     "text": "It loads on the same words as the QC-page skill. It lacks that skill's overlay switch, hover texts, template rule and storage step; it adds metrics, duplicates, sorting.",
+     "state": "fixed"
     },
     {
      "point": 3,
      "severity": "medium",
-     "text": "No check before done: nothing says to open the finished HTML, look at a rendered picture or compare the file size with the stated limit."
+     "text": "No check before done: nothing says to open the finished HTML, look at a rendered picture or compare the file size with the stated limit.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "medium",
-     "text": "The montage function is called but not defined, and no numeric rule says when a subject counts as flagged, so the agent must invent both."
+     "text": "The montage function is called but not defined, and no numeric rule says when a subject counts as flagged, so the agent must invent both.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "low",
-     "text": "It names the viewer skill as its companion, but that skill is in the pool only and not among the skills the agent loads."
+     "text": "It names the viewer skill as its companion, but that skill is in the pool only and not among the skills the agent loads.",
+     "state": "fixed"
     }
    ],
    "proposal": "Take picture format and colours from the overlay skill, and state in the description when to load this skill and when the QC-page skill.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "neuro-qc-viewer": {
    "does": [
@@ -1038,31 +1148,41 @@
     {
      "point": 2,
      "severity": "high",
-     "text": "The viewer page is given as a feature list and six lines of JavaScript; subject list, switches, slider and memory handling have no code and no template to copy."
+     "text": "The viewer page is given as a feature list and six lines of JavaScript; subject list, switches, slider and memory handling have no code and no template to copy.",
+     "state": "open",
+     "open_why": "Partly: the skill now points to the station's working viewer generator; a threshold slider still has no code."
     },
     {
      "point": 5,
      "severity": "high",
-     "text": "NiiVue is to be pinned or stored next to the page, but no version is named and no copy is in the skill folder; the agent's sandbox cannot fetch it from the network."
+     "text": "NiiVue is to be pinned or stored next to the page, but no version is named and no copy is in the skill folder; the agent's sandbox cannot fetch it from the network.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "medium",
-     "text": "The QC-page skill also loads on the word viewer. This skill adds in-browser volumes, the one-grid export and a slider; it lacks house colours, switch rule, storage."
+     "text": "The QC-page skill also loads on the word viewer. This skill adds in-browser volumes, the one-grid export and a slider; it lacks house colours, switch rule, storage.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "low",
-     "text": "The label overlay uses a colormap called custom, but no code defines the colour table for the offset label values."
+     "text": "The label overlay uses a colormap called custom, but no code defines the colour table for the offset label values.",
+     "state": "fixed"
     },
     {
      "point": 3,
      "severity": "low",
-     "text": "The data check is defined, but no step says to open the page and confirm that the overlays line up before reporting done."
+     "text": "The data check is defined, but no step says to open the page and confirm that the overlays line up before reporting done.",
+     "state": "fixed"
     }
    ],
    "proposal": "Bundle a working viewer page and a pinned local copy of NiiVue in the skill folder, so the agent copies a template instead of writing the page.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 4,
+    "of": 5
+   }
   },
   "qc-page-building": {
    "does": [
@@ -1187,31 +1307,40 @@
     {
      "point": 6,
      "severity": "high",
-     "text": "The deliver folder differs from film-making (file names, audio copies, a second page); an agent that follows both skills cannot satisfy both."
+     "text": "The deliver folder differs from film-making (file names, audio copies, a second page); an agent that follows both skills cannot satisfy both.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "medium",
-     "text": "Three start points compete (film-making, a wiki rule file to read first, a matplotlib example); which steps still hold for a normal explanation is unclear."
+     "text": "Three start points compete (film-making, a wiki rule file to read first, a matplotlib example); which steps still hold for a normal explanation is unclear.",
+     "state": "fixed"
     },
     {
      "point": 1,
      "severity": "medium",
-     "text": "The description still says the skill builds the video and shares trigger words with film-making; it does not say that film-making does the build."
+     "text": "The description still says the skill builds the video and shares trigger words with film-making; it does not say that film-making does the build.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "medium",
-     "text": "Red rings mark where to look on frames with real MRI data, but in mri-overlay-pages a red ring means a missed lesion; that skill is not named."
+     "text": "Red rings mark where to look on frames with real MRI data, but in mri-overlay-pages a red ring means a missed lesion; that skill is not named.",
+     "state": "fixed"
     },
     {
      "point": 4,
      "severity": "low",
-     "text": "There is no failure section, and the text does not say that the failure list of film-making applies."
+     "text": "There is no failure section, and the text does not say that the failure list of film-making applies.",
+     "state": "fixed"
     }
    ],
    "proposal": "Cut it down to what a task explanation must contain plus the MRI-frame recipe, and take the deliver folder from film-making.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "mb-arena": {
    "does": [
@@ -1226,31 +1355,40 @@
     {
      "point": 1,
      "severity": "high",
-     "text": "The description is one short label with no moment of use; a request in everyday words (microbleeds, detection, stuck job) will not hit it."
+     "text": "The description is one short label with no moment of use; a request in everyday words (microbleeds, detection, stuck job) will not hit it.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The '&' rule describes the terminal tool of the earlier agent program; the current agent runs commands through a different shell tool, so the rule may be outdated."
+     "text": "The '&' rule describes the terminal tool of the earlier agent program; the current agent runs commands through a different shell tool, so the rule may be outdated.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The start steps assume training on the workstation GPU fed by a local job queue; this may be outdated, so check whether queue service and local training are still used."
+     "text": "The start steps assume training on the workstation GPU fed by a local job queue; this may be outdated, so check whether queue service and local training are still used.",
+     "state": "fixed"
     },
     {
      "point": 7,
      "severity": "medium",
-     "text": "Cohort facts, measured values and a one-off folder repair recipe sit in the main text; they belong in the project state file or the reference files."
+     "text": "Cohort facts, measured values and a one-off folder repair recipe sit in the main text; they belong in the project state file or the reference files.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "low",
-     "text": "Two of the three reference files are never named in the main text, and the front matter lists a related skill that is not among the 39."
+     "text": "Two of the three reference files are never named in the main text, and the front matter lists a related skill that is not among the 39.",
+     "state": "fixed"
     }
    ],
    "proposal": "Rewrite the description to say what the skill does and when to load it, and move cohort numbers and one-off repair recipes into the reference files.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "pytorch": {
    "does": [
@@ -1265,31 +1403,40 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "The first section assumes the agent is the local model and always holds most GPU memory; the agent now answers through a relay, so the section may be outdated."
+     "text": "The first section assumes the agent is the local model and always holds most GPU memory; the agent now answers through a relay, so the section may be outdated.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The stop and start commands for the model server may not work as written: the unit is currently disabled and a watchdog service exists that can bring the server back."
+     "text": "The stop and start commands for the model server may not work as written: the unit is currently disabled and a watchdog service exists that can bring the server back.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "medium",
-     "text": "The text says BF16 needs no loss scaling, yet the training loop wraps the BF16 step in a gradient scaler; two different autocast spellings are used as well."
+     "text": "The text says BF16 needs no loss scaling, yet the training loop wraps the BF16 step in a gradient scaler; two different autocast spellings are used as well.",
+     "state": "fixed"
     },
     {
      "point": 7,
      "severity": "medium",
-     "text": "The description claims classifiers and transformers, the body covers one 2D U-Net; the general tutorial parts (model, loss, loop) could move to a reference file."
+     "text": "The description claims classifiers and transformers, the body covers one 2D U-Net; the general tutorial parts (model, loss, loop) could move to a reference file.",
+     "state": "fixed"
     },
     {
      "point": 3,
      "severity": "low",
-     "text": "There is no check before 'done': nothing says which numbers a finished training must report or how the held-out cases are evaluated."
+     "text": "There is no check before 'done': nothing says which numbers a finished training must report or how the held-out cases are evaluated.",
+     "state": "fixed"
     }
    ],
    "proposal": "Rewrite the GPU memory section for today's setup: who holds the GPU, how the agent asks for it, and which command frees it.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "flywire-connectome": {
    "does": [
@@ -1304,31 +1451,41 @@
     {
      "point": 1,
      "severity": "high",
-     "text": "The description is one German sentence without trigger words or a moment of use; a request about a connectome, Drosophila or an adjacency matrix will not hit it."
+     "text": "The description is one German sentence without trigger words or a moment of use; a request about a connectome, Drosophila or an adjacency matrix will not hit it.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "high",
-     "text": "It names local files that are no longer there: data folder, finished download, saved matrix and ID index. The download recipe changes into that folder first."
+     "text": "It names local files that are no longer there: data folder, finished download, saved matrix and ID index. The download recipe changes into that folder first.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The background-run instruction uses tool options of the earlier gateway; the agent's shell tool has only a timeout, and its sandbox blocks the download host."
+     "text": "The background-run instruction uses tool options of the earlier gateway; the agent's shell tool has only a timeout, and its sandbox blocks the download host.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "low",
-     "text": "The free GPU memory figure and the September state are dated and may be outdated; check current GPU use before relying on them."
+     "text": "The free GPU memory figure and the September state are dated and may be outdated; check current GPU use before relying on them.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "low",
-     "text": "The front matter names the earlier gateway as author and a related skill, huggingface-hub, that is not among the 39 skills."
+     "text": "The front matter names the earlier gateway as author and a related skill, huggingface-hub, that is not among the 39 skills.",
+     "state": "open",
+     "open_why": "Partly: the missing related skill is removed; whose name stands in the author line is the researcher's decision."
     }
    ],
    "proposal": "Rewrite the description with trigger words and a moment of use, and replace the local-files section by a check whether the data exist.",
-   "verdict": "outdated"
+   "verdict": "outdated",
+   "repair": {
+    "fixed": 4,
+    "of": 5
+   }
   },
   "papers": {
    "does": [
@@ -1343,31 +1500,40 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "Both scripts fetch from the internet directly, but the agent's sandbox, per its configuration, permits only local connections; the skill names no route for them."
+     "text": "Both scripts fetch from the internet directly, but the agent's sandbox, per its configuration, permits only local connections; the skill names no route for them.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The statements on speed and drop-outs of the machine's line may be outdated; check the current download rate before quoting one hour for 300 papers."
+     "text": "The statements on speed and drop-outs of the machine's line may be outdated; check the current download rate before quoting one hour for 300 papers.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "low",
-     "text": "Script paths are relative to the skill folder, which the text does not say; from another working directory the commands fail."
+     "text": "Script paths are relative to the skill folder, which the text does not say; from another working directory the commands fail.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "low",
-     "text": "The example output folder does not exist on disk; this does not matter, because the script creates the folder."
+     "text": "The example output folder does not exist on disk; this does not matter, because the script creates the folder.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "low",
-     "text": "The front matter lists three related skills (arxiv, ocr-and-documents, research-paper-writing) that are not among the 39 skills."
+     "text": "The front matter lists three related skills (arxiv, ocr-and-documents, research-paper-writing) that are not among the 39 skills.",
+     "state": "fixed"
     }
    ],
    "proposal": "State how the agent reaches the internet for these scripts under the current sandbox, or say that only the setup sessions run them.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "wetter": {
    "does": [
@@ -1382,21 +1548,28 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "Every step is a curl call to an internet host, but the agent's sandbox, per its configuration, permits only local connections; the skill names no other route."
+     "text": "Every step is a curl call to an internet host, but the agent's sandbox, per its configuration, permits only local connections; the skill names no other route.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "It names a tool, web_search, that the agent does not have; it is a tool name of the earlier gateway."
+     "text": "It names a tool, web_search, that the agent does not have; it is a tool name of the earlier gateway.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "low",
-     "text": "The remark on the machine's unstable line may be outdated; check whether drop-outs still occur."
+     "text": "The remark on the machine's unstable line may be outdated; check whether drop-outs still occur.",
+     "state": "fixed"
     }
    ],
    "proposal": "Say how a weather request leaves the machine under the current sandbox, or take the skill out of the agent's set.",
-   "verdict": "outdated"
+   "verdict": "outdated",
+   "repair": {
+    "fixed": 3,
+    "of": 3
+   }
   },
   "alita-storage": {
    "does": [
@@ -1410,31 +1583,40 @@
     {
      "point": 5,
      "severity": "high",
-     "text": "Since 4 November the storage tool sends one project's QC pages, paper results and cluster inputs to a project folder; the skill names only the old folders."
+     "text": "Since 4 November the storage tool sends one project's QC pages, paper results and cluster inputs to a project folder; the skill names only the old folders.",
+     "state": "fixed"
     },
     {
      "point": 3,
      "severity": "medium",
-     "text": "Rule 1 demands checksums, but the tool path is checked by file count only, and the tool skips more file kinds than the skill lists, so counts need not match."
+     "text": "Rule 1 demands checksums, but the tool path is checked by file count only, and the tool skips more file kinds than the skill lists, so counts need not match.",
+     "state": "fixed"
     },
     {
      "point": 5,
      "severity": "medium",
-     "text": "The manual rsync lacks the in-place option that the tool gained on 19 November, after files that were open on the share vanished during a copy."
+     "text": "The manual rsync lacks the in-place option that the tool gained on 19 November, after files that were open on the share vanished during a copy.",
+     "state": "fixed"
     },
     {
      "point": 2,
      "severity": "low",
-     "text": "The remote checksum command passes all file names on one command line; names with spaces or a very long list break it."
+     "text": "The remote checksum command passes all file names on one command line; names with spaces or a very long list break it.",
+     "state": "fixed"
     },
     {
      "point": 6,
      "severity": "low",
-     "text": "Only the setup sessions load this skill, while the film skill that Clara loads also sends results to the group drive."
+     "text": "Only the setup sessions load this skill, while the film skill that Clara loads also sends results to the group drive.",
+     "state": "fixed"
     }
    ],
    "proposal": "Describe the tool's current project routes and replace the file-count check with a checksum comparison for every path.",
-   "verdict": "needs work"
+   "verdict": "needs work",
+   "repair": {
+    "fixed": 5,
+    "of": 5
+   }
   },
   "dataset-handover": {
    "does": [
@@ -1586,5 +1768,6 @@
    "proposal": "Remove or mark the reference values that the script cannot match, and name the folder whose sessions are counted.",
    "verdict": "usable"
   }
- }
+ },
+ "repair_date": "2026-11-25"
 }

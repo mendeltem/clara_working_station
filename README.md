@@ -10,7 +10,8 @@ microbleeds, the system, skills, rebuild it, limits and data rules). The agents 
 `python3 skills_page.py --clara DIR --pool DIR --shared DIR --setup DIR` reads the skill folders and writes `skills.html`
 (only names, counts and the hand-checked purpose lines in `skills_purpose.json` are published).
 `python3 skills_overview_page.py` with the same four folders writes `skills-overview.html`: all skills one after another, each with what it
-does and what a review of its text found (the hand-checked lines are in `skills_review.json`; the skill texts are not published).
+does and what a review of its text found (the hand-checked lines are in `skills_review.json`; the skill texts are not published);
+since the repair of 25 November 2026 every finding of the 20 reworked skills also says whether it is repaired or still open.
 
 *Work computed on Alita by the local agent. This is a workbench, not a
 portfolio: only what was produced here is listed.*

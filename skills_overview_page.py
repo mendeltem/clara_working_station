@@ -39,6 +39,15 @@ def meter(value: int, limit: int, unit: str) -> str:
             f'{value:,} <span class="mu">of {limit:,} {unit}</span>')
 
 
+def state(f: dict) -> str:
+    """What the repair did with one finding; empty for a skill that was not repaired."""
+    if f.get("state") == "fixed":
+        return '<span class="fx">✓ repaired</span>'
+    if f.get("state") == "open":
+        return f'<span class="op">○ open: {E(f["open_why"])}</span>'
+    return ""
+
+
 def card(no: int, total: int, s: dict, r: dict, films: dict) -> str:
     key, label, icon, _ = next(v for v in VERDICTS if v[0] == r["verdict"])
     pts = sorted({f["point"] for f in r["findings"]})
@@ -46,7 +55,7 @@ def card(no: int, total: int, s: dict, r: dict, films: dict) -> str:
     if r["findings"]:
         finds = "<ul class=\"fd\">" + "".join(
             f'<li><span class="sv sv-{E(f["severity"])}">{E(f["severity"])}</span><span class="ft2">{E(f["text"])} '
-            f'<span class="pt">{E(POINTS[f["point"]][0])}</span></span></li>' for f in sorted(r["findings"], key=lambda f: SEVERITY.index(f["severity"]))) + "</ul>"
+            f'<span class="pt">{E(POINTS[f["point"]][0])}</span>{state(f)}</span></li>' for f in sorted(r["findings"], key=lambda f: SEVERITY.index(f["severity"]))) + "</ul>"
     else:
         finds = '<p class="none">No finding.</p>'
     brings = ", ".join(BRINGS[b] for b in s["has"]) if s["has"] else "instructions only"
@@ -54,8 +63,10 @@ def card(no: int, total: int, s: dict, r: dict, films: dict) -> str:
     film_row = f'<dt>Related film</dt><dd><a class="gh" href="{E(film["href"])}">{E(film["title"])}</a></dd>' if film else ""
     strength = f'<h4>Strength</h4><p>{E(r["strength"])}</p>' if r.get("strength") else ""
     proposal = f'<h4>Proposed change</h4><p>{E(r["proposal"])}</p>' if r.get("proposal") else ""
-    return f"""<article class="sk" id="s-{E(s['n'])}" data-v="{E(key)}" data-points="{' '.join(map(str, pts))}" tabindex="-1">
- <header><span class="no">{no:02d}<span class="of">/{total}</span></span><h3>{E(s['n'])}</h3><span class="vd v-{key.replace(' ', '-')}"><span aria-hidden="true">{icon}</span> {label}</span></header>
+    rp = r.get("repair")
+    repaired = f'<span class="rp" title="findings repaired after the review">repaired {rp["fixed"]}/{rp["of"]}</span>' if rp else ""
+    return f"""<article class="sk" id="s-{E(s['n'])}" data-v="{E(key)}" data-r="{'1' if rp else '0'}" data-points="{' '.join(map(str, pts))}" tabindex="-1">
+ <header><span class="no">{no:02d}<span class="of">/{total}</span></span><h3>{E(s['n'])}</h3>{repaired}<span class="vd v-{key.replace(' ', '-')}"><span aria-hidden="true">{icon}</span> {label}</span></header>
  <p class="pp">{E(s['p'])}</p>
  <div class="cols">
   <div><h4>Loads when</h4><p>{E(r['when'])}</p><h4>What it does</h4><ul class="do">{does}</ul>{strength}</div>
@@ -169,6 +180,8 @@ PAGE = r"""<!DOCTYPE html>
  .sv-high{border-color:var(--needs)}.sv-medium{border-color:#56707a}.sv-low{border-style:dashed}
  .pt{white-space:nowrap;font-size:10.5px;color:#5f7d87;margin-left:4px}
  p.none{font-style:italic}
+ .fx,.op{display:block;font-size:11px;margin-top:1px}.fx{color:var(--good)}.op{color:var(--ink)}
+ .rp{margin-left:auto;font-size:11.5px;color:var(--good);white-space:nowrap}.rp+.vd{margin-left:10px}
  dl.meta{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:5px 14px;font-size:11.5px;margin-top:14px;padding-top:11px;border-top:1px solid var(--line)}
  dl.meta dt{color:var(--muted)}dl.meta dd{color:var(--ink)}.mu{color:var(--muted)}
  .meter{display:inline-block;vertical-align:middle;width:110px;height:7px;border-radius:4px;background:var(--track);margin-right:8px;overflow:hidden}
@@ -179,7 +192,7 @@ PAGE = r"""<!DOCTYPE html>
       color:var(--muted);max-width:290px;display:none}
  #tip b{display:block;color:var(--ink);font-size:13px}
  kbd{border:1px solid var(--line);border-radius:4px;padding:0 5px;font:inherit;font-size:11px;color:var(--ink)}
- @media (max-width:820px){.two,.cols{grid-template-columns:1fr}.fbar{position:static}article.sk{scroll-margin-top:8px}dl.meta{grid-template-columns:auto 1fr}.vd{margin-left:0}}
+ @media (max-width:820px){.two,.cols{grid-template-columns:1fr}.fbar{position:static}article.sk{scroll-margin-top:8px}dl.meta{grid-template-columns:auto 1fr}.vd,.rp{margin-left:0}}
 </style>
 </head><body>
 __NAV__<h1>All skills, <span class="a">one by one</span></h1>
@@ -188,6 +201,7 @@ __NAV__<h1>All skills, <span class="a">one by one</span></h1>
 bottom of this page. A card says what the skill does, when it loads, what the review found and the one change proposed.
 The charts on the page <a class="gh" href="skills.html">Skills</a> show who loads which skill and how large each one is.</p>
 <div class="tiles4">__TILES__</div>
+__REPAIR__
 <div class="two">
 <div class="card"><h3>Verdict by topic</h3><div class="h">Number of skills. Click a segment to see only those skills.</div>__CHART_V__</div>
 <div class="card"><h3>Where the findings are</h3><div class="h">Skills with at least one finding under a review point. Click a bar to see them.</div>__CHART_P__</div>
@@ -206,6 +220,10 @@ Some findings also rest on a read-only look at the machine: does a named tool, f
 <li><b>What a verdict is not.</b> A reading of the text, not a measurement. Whether a description really loads its skill
 has to be measured with test requests, and the four reading passes may differ a little in strictness.
 “May be outdated” in a finding means: the text points to a setup that has changed, and the step was not re-tested.</li>
+<li><b>The repair.</b> After the review the __RN__ skills judged “needs work” or “outdated” were reworked along their
+findings; only the instruction texts were changed, nothing was removed or merged, and every command a text newly names
+was checked to exist on the machine. “Repaired” means the text was changed for that finding, not that the skill was
+run on a task. The verdict on a card is still the one of the review: the skills were not judged a second time.</li>
 <li><b>What is published.</b> Only names, counts and hand-checked lines; the skill texts stay on the machine.
 The limits shown (1,024 characters for a description, 500 lines recommended for the instructions) are those of the
 <a class="gh" href="https://agentskills.io/specification" target="_blank" rel="noopener">Agent Skills specification</a>.</li>
@@ -309,6 +327,12 @@ def main() -> None:
             .replace("__VERDICTS__", " ".join(f"<b>{E(lb)}</b>: {E(w)}." for _, lb, _, w in VERDICTS))
             .replace("__NAMES__", json.dumps(names).replace("</", "<\\/"))
             .replace("__C_good__", colors["good"]).replace("__C_usable__", colors["usable"]).replace("__C_needs__", colors["needs work"]).replace("__C_old__", colors["outdated"]))
+    done = [r["repair"] for r in reviews.values() if r.get("repair")]
+    fixed, of = sum(d["fixed"] for d in done), sum(d["of"] for d in done)
+    rd = datetime.date.fromisoformat(data["repair_date"]) if done else None
+    repair = (f'<p class="s rpl"><b>Repair, {rd.day} {rd:%B %Y}:</b> {len(done)} skills reworked, <b>{fixed} of {of}</b> of their findings repaired, '
+              f'{of - fixed} left open with the reason on the card. The verdicts and both charts show the state at the review.</p>') if done else ""
+    page = page.replace("__REPAIR__", repair).replace("__RN__", str(len(done)))
     a.out.write_text(page, encoding="utf-8")
     print(f"{a.out.name}: {len(order)} skills in {len(topics)} topics; " + ", ".join(f"{count[k]} {k}" for k, *_ in VERDICTS))
 
