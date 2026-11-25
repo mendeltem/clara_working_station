@@ -12,6 +12,8 @@ Commands: /neu (/new)  new session      /lokal (/local)  new session on the loca
           /stop interrupt        /modus (/mode) default|accept-edits|yolo        /status
 Approvals that System One escalates arrive as buttons; a question from the agent is answered by the next message.
 A document you send lands in <project>/eingang/ and the agent is told about it.
+A voice message is transcribed locally (werkzeuge/hoeren, faster-whisper on the CPU, no network) and goes on as text;
+the bridge first echoes what it heard (25.11.2026).
 
     python3 -I clara_telegram.py            (systemd: clara-telegram.service)
 """
@@ -355,6 +357,13 @@ class Bridge:
         c = self.chat(chat_id)
         if m.get("document"):
             text = self.fetch_document(c, m["document"]) + ("\n" + text if text else "")
+        if m.get("voice") or m.get("audio"):
+            heard = self.fetch_voice(m.get("voice") or m.get("audio"))
+            if not heard:
+                send(chat_id, "🎤 I could not understand the voice message; please send it again or type it.")
+                return
+            send(chat_id, "🎤 " + heard)
+            text = heard + ("\n" + text if text else "")
         if c.question and not text.startswith("/"):
             rid, c.question = c.question, None
             try:
@@ -408,6 +417,25 @@ class Bridge:
         with tg_open(f"{TG_FILE}/{info['file_path']}", timeout=120) as r, open(os.path.join(ziel, name), "wb") as f:
             f.write(r.read())
         return f"[File received: eingang/{name}]"
+
+    def fetch_voice(self, voice):
+        """Telegram voice/audio -> text, transcribed on this machine; the audio file is removed afterwards."""
+        import subprocess, tempfile
+        info = tg("getFile", file_id=voice["file_id"])
+        if not info:
+            return ""
+        with tempfile.TemporaryDirectory(prefix="clara-voice-") as d:
+            datei = os.path.join(d, "voice" + (os.path.splitext(info["file_path"])[1] or ".oga"))
+            with tg_open(f"{TG_FILE}/{info['file_path']}", timeout=120) as r, open(datei, "wb") as f:
+                f.write(r.read())
+            try:
+                r = subprocess.run([os.path.expanduser("~/local_agentic_system/system/werkzeuge/hoeren"), datei],
+                                   capture_output=True, text=True, timeout=600)
+            except subprocess.TimeoutExpired:
+                log("voice: transcription timed out")
+                return ""
+        log("voice:", (r.stderr or "").strip()[-200:])
+        return r.stdout.strip() if r.returncode == 0 else ""
 
     def on_callback(self, q):
         if str(q.get("from", {}).get("id")) not in ALLOWED:

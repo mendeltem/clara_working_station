@@ -1,0 +1,24 @@
+#!/bin/bash
+# hoeren <audiodatei> [sprache]  --  schreibt gesprochene Sprache als Text auf stdout (25.11.2026, fuer Telegram-Sprachnachrichten an Clara).
+# NUR LOKAL: faster-whisper 1.2.1 (conda env zonos3), Modell large-v3-turbo aus dem lokalen Cache, kein Netz (HF_HUB_OFFLINE=1).
+# Audio dekodiert ffmpeg (env manim): das PyAV in zonos3 passt nicht zu faster-whisper 1.2.1 (metadata_errors, 25.11.2026).
+# CPU, int8, damit die GPU frei bleibt. Sprache: ohne Angabe erkennt das Modell sie selbst (de, en, ...).
+# Rueckgabe 0 Text ausgegeben, 1 nichts erkannt, 2 Aufruf falsch.
+DATEI="${1:-}"; SPRACHE="${2:-}"
+[ -f "$DATEI" ] || { echo "hoeren: keine Datei: $DATEI" >&2; exit 2; }
+HF_HUB_OFFLINE=1 OMP_NUM_THREADS=8 exec /home/uchralt/miniconda3/envs/zonos3/bin/python -I - "$DATEI" "$SPRACHE" <<'EOF'
+import subprocess, sys
+import numpy as np
+from faster_whisper import WhisperModel
+datei, sprache = sys.argv[1], sys.argv[2] or None
+roh = subprocess.run(["/home/uchralt/miniconda3/envs/manim/bin/ffmpeg", "-v", "error", "-i", datei, "-f", "s16le", "-ac", "1", "-ar", "16000", "-"],
+                     capture_output=True, check=True).stdout
+audio = np.frombuffer(roh, np.int16).astype(np.float32) / 32768.0
+m = WhisperModel("mobiuslabsgmbh/faster-whisper-large-v3-turbo", device="cpu", compute_type="int8", cpu_threads=8)
+teile, info = m.transcribe(audio, language=sprache, beam_size=5, vad_filter=True)
+text = " ".join(t.text.strip() for t in teile).strip()
+print(f"hoeren: Sprache {info.language} ({info.language_probability:.2f}), {info.duration:.1f} s", file=sys.stderr)
+if not text:
+    sys.exit(1)
+print(text)
+EOF
