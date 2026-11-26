@@ -12,8 +12,8 @@ Commands: /neu (/new)  new session      /lokal (/local)  new session on the loca
           /stop interrupt        /modus (/mode) default|accept-edits|yolo        /status
 Approvals that System One escalates arrive as buttons; a question from the agent is answered by the next message.
 A document you send lands in <project>/eingang/ and the agent is told about it.
-A voice message is transcribed locally (werkzeuge/hoeren, faster-whisper on the CPU, no network) and goes on as text;
-the bridge first echoes what it heard (25.11.2026).
+A voice message is transcribed locally (werkzeuge/hoeren, faster-whisper on the CPU, no network) and goes on as text
+(25.11.2026; no echo of the heard text since 26.11., user).
 
     python3 -I clara_telegram.py            (systemd: clara-telegram.service)
 """
@@ -362,7 +362,6 @@ class Bridge:
             if not heard:
                 send(chat_id, "🎤 I could not understand the voice message; please send it again or type it.")
                 return
-            send(chat_id, "🎤 " + heard)
             text = heard + ("\n" + text if text else "")
         if c.question and not text.startswith("/"):
             rid, c.question = c.question, None

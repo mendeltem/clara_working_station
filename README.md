@@ -496,7 +496,7 @@ means one sandbox, one approval path and one session format to audit.
   Before, every question was refused while the large model was off.
 - **Phone.** A Telegram bridge talks to `clara serve`; approvals that System One escalates arrive as buttons.
   Since 25 Nov 2026 a voice message is transcribed on the workstation (`werkzeuge/hoeren`, faster-whisper
-  large-v3-turbo on the CPU, no network); the bridge echoes what it heard and passes it on as text.
+  large-v3-turbo on the CPU, no network, German or English) and passed on to Clara as text.
 - **Continuous runs.** The job queue and its driver now start `clara -p` per round; the round summary, the time
   fence and the loop check read clara-agent's session files.
 
