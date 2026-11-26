@@ -86,8 +86,13 @@ NEIN_RX = re.compile(r"\b(nein|nee|nicht|keine?n?|no|nope|don.?t|stop+)\b", re.I
 
 class StartWork(Tool):
     name = "start_work"
-    description = ("Give a long job to a background work session; you stay free to talk. place lokal if patient data. "
-                   "The task must be self-contained.")
+    # 26.11.2026 (user): use the local 27B as little as possible. lokal only when the session itself reads patient data
+    # to process, pre-digest or anonymise it; GPU compute, viewers, tests on public data run on Clé.
+    description = ("Give a long job to a background work session; you stay free to talk. The task must be self-contained. "
+                   "place cle (default) for everything, also jobs that use the graphics card, build viewers or run on "
+                   "public or synthetic data. place lokal ONLY when the session itself reads patient data (scans, tables "
+                   "of own cohorts) to process, pre-digest or anonymise them; lokal loads the 27B model, about 20 GB of the card. "
+                   "Skill ort-waehlen has the details.")
     parameters = {"type": "object",
                   "properties": {"name": {"type": "string"}, "task": {"type": "string"},
                                  "place": {"type": "string", "enum": ["cle", "lokal"]}},

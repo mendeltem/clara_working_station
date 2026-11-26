@@ -494,6 +494,9 @@ means one sandbox, one approval path and one session format to audit.
   checks instead and lets a question out only at p(ok) >= 0.9 (8 of 8 test questions judged correctly). The open
   literature APIs answer first; an external model with web search answers only when they do not, and the answer names who answered.
   Before, every question was refused while the large model was off.
+- **Where a work session runs.** Clé by default; the local 27B only when the session itself reads patient data
+  (scans, tables with one row per person) to process, pre-digest or anonymise it (since 26 Nov 2026). Local and Clé
+  sessions have separate slots, so a local session no longer waits behind a queue of Clé sessions.
 - **Phone.** A Telegram bridge talks to `clara serve`; approvals that System One escalates arrive as buttons.
   Since 25 Nov 2026 a voice message is transcribed on the workstation (`werkzeuge/hoeren`, faster-whisper
   large-v3-turbo on the CPU, no network, German or English) and passed on to Clara as text.
