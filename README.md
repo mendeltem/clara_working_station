@@ -500,6 +500,10 @@ means one sandbox, one approval path and one session format to audit.
 - **Phone.** A Telegram bridge talks to `clara serve`; approvals that System One escalates arrive as buttons.
   Since 25 Nov 2026 a voice message is transcribed on the workstation (`werkzeuge/hoeren`, faster-whisper
   large-v3-turbo on the CPU, no network, German or English) and passed on to Clara as text.
+  Since 27 Nov 2026 Clara also answers a voice message by voice: `stimme/stimme_dienst.py` keeps the hearing and the
+  voice (Qwen3-TTS 0.6B, speaker Serena) loaded on the graphics card while you talk and unloads them after 20 minutes
+  of silence; Clara answers in one or two spoken sentences, the text comes first and the voice a few seconds later.
+  When the card is full, the hearing runs on the CPU and Piper speaks.
 - **Continuous runs.** The job queue and its driver now start `clara -p` per round; the round summary, the time
   fence and the loop check read clara-agent's session files.
 

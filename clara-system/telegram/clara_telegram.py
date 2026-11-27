@@ -13,7 +13,8 @@ Commands: /neu (/new)  new session      /lokal (/local)  new session on the loca
 Approvals that System One escalates arrive as buttons; a question from the agent is answered by the next message.
 A document you send lands in <project>/eingang/ and the agent is told about it.
 A voice message is transcribed locally (werkzeuge/hoeren, faster-whisper on the CPU, no network) and goes on as text
-(25.11.2026; no echo of the heard text since 26.11., user).
+(25.11.2026; no echo of the heard text since 26.11., user). Since 27.11. a voice message is also answered by voice
+(Serena via stimme-dienst :8790, system/stimme; text answer first, voice a few seconds later).
 
     python3 -I clara_telegram.py            (systemd: clara-telegram.service)
 """
@@ -80,6 +81,50 @@ def send(chat, text, **kw):
     for i in range(0, len(text), 3900):
         out = tg("sendMessage", chat_id=chat, text=text[i:i + 3900], disable_web_page_preview=True, **kw)
     return out
+
+
+# ---------------------------------------------------------------- voice (27.11.2026)
+# User 27.11.2026: talk with Clara by voice, "muss sehr schnell sein"; voice Serena. A voice message gets the text answer
+# plus a spoken one. stimme-dienst (system/stimme, 127.0.0.1:8790) keeps hearing and voice loaded on this machine.
+STIMME = os.environ.get("CLARA_STIMME", "http://127.0.0.1:8790")
+SPRECH_HINWEIS = ("[Spoken message from the researcher. Answer in one or two short sentences, as you would say them "
+                  "aloud: no lists, no tables, no paths. Do the work it asks for as usual.]\n")
+
+
+def stimme(path, body, timeout=120):
+    req = urllib.request.Request(STIMME + path, json.dumps(body).encode(), {"Content-Type": "application/json"})
+    with lo_open(req, timeout=timeout) as r:
+        return json.load(r)
+
+
+def send_voice(chat, datei):
+    """sendVoice needs a multipart upload (tg() sends JSON)."""
+    grenze = "clara" + str(time.time_ns())
+    teile = [f"--{grenze}\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n{chat}\r\n".encode(),
+             f"--{grenze}\r\nContent-Disposition: form-data; name=\"voice\"; filename=\"clara.ogg\"\r\n"
+             f"Content-Type: audio/ogg\r\n\r\n".encode(), open(datei, "rb").read(), f"\r\n--{grenze}--\r\n".encode()]
+    req = urllib.request.Request(f"{TG}/sendVoice", b"".join(teile),
+                                 {"Content-Type": f"multipart/form-data; boundary={grenze}"})
+    for attempt in range(3):
+        try:
+            with tg_open(req, timeout=60) as r:
+                return json.load(r).get("ok")
+        except Exception as e:  # noqa: BLE001 -- unstable line: retry, then give up (the text answer is already there)
+            log("sendVoice", type(e).__name__, e)
+            time.sleep(2 + 3 * attempt)
+    return False
+
+
+def antwort_sprechen(chat, text, sprache):
+    t0 = time.time()
+    try:
+        r = stimme("/sprechen", {"text": text, "sprache": sprache})
+        ok = send_voice(chat, r["datei"])
+        os.unlink(r["datei"])
+        log("voice answer", r.get("stimme"), f"{r.get('sekunden')} s speech, made in {r.get('dauer_s')} s, "
+            f"sent {ok}, total {time.time() - t0:.1f} s")
+    except Exception as e:  # noqa: BLE001 -- no voice: the text answer stands alone
+        log("voice answer failed", type(e).__name__, e)
 
 
 # ---------------------------------------------------------------- clara serve
@@ -263,6 +308,10 @@ class Chat:
         elif k == "turn_end":
             fuss = getattr(self, "fuss", "")
             send(self.chat, (ev.get("text") or self.text) + (f"\n\n— {fuss}" if fuss else ""))
+            if getattr(self, "sprache", None):      # the turn began with a voice message: answer by voice too
+                threading.Thread(target=antwort_sprechen, args=(self.chat, ev.get("text") or self.text, self.sprache),
+                                 daemon=True).start()
+                self.sprache = None
             if self.status_msg:      # the working line has done its job
                 tg("deleteMessage", chat_id=self.chat, message_id=self.status_msg)
             self.text, self.tools, self.status_msg, self.seit = "", [], None, None
@@ -358,11 +407,14 @@ class Bridge:
         if m.get("document"):
             text = self.fetch_document(c, m["document"]) + ("\n" + text if text else "")
         if m.get("voice") or m.get("audio"):
-            heard = self.fetch_voice(m.get("voice") or m.get("audio"))
+            heard, sprache = self.fetch_voice(m.get("voice") or m.get("audio"))
             if not heard:
                 send(chat_id, "🎤 I could not understand the voice message; please send it again or type it.")
                 return
             text = heard + ("\n" + text if text else "")
+            if not c.question and not text.startswith("/"):
+                c.sprache = sprache
+                text = SPRECH_HINWEIS + text
         if c.question and not text.startswith("/"):
             rid, c.question = c.question, None
             try:
@@ -418,23 +470,31 @@ class Bridge:
         return f"[File received: eingang/{name}]"
 
     def fetch_voice(self, voice):
-        """Telegram voice/audio -> text, transcribed on this machine; the audio file is removed afterwards."""
+        """Telegram voice/audio -> (text, "de"|"en"), transcribed on this machine; the audio file is removed afterwards.
+        27.11.2026: stimme-dienst first (model kept loaded, 0.5 s on the card); werkzeuge/hoeren (CPU, ~4 s) if it is down."""
         import subprocess, tempfile
         info = tg("getFile", file_id=voice["file_id"])
         if not info:
-            return ""
+            return "", "de"
         with tempfile.TemporaryDirectory(prefix="clara-voice-") as d:
             datei = os.path.join(d, "voice" + (os.path.splitext(info["file_path"])[1] or ".oga"))
             with tg_open(f"{TG_FILE}/{info['file_path']}", timeout=120) as r, open(datei, "wb") as f:
                 f.write(r.read())
             try:
+                h = stimme("/hoeren", {"datei": datei})
+                log("voice:", h.get("sprache"), h.get("geraet"), f"{h.get('dauer_s')} s")
+                return h.get("text", "").strip(), h.get("sprache") or "de"
+            except Exception as e:  # noqa: BLE001 -- service down: the old tool
+                log("voice: stimme-dienst failed, using hoeren", type(e).__name__, e)
+            try:
                 r = subprocess.run([os.path.expanduser("~/local_agentic_system/system/werkzeuge/hoeren"), datei],
                                    capture_output=True, text=True, timeout=600)
             except subprocess.TimeoutExpired:
                 log("voice: transcription timed out")
-                return ""
+                return "", "de"
         log("voice:", (r.stderr or "").strip()[-200:])
-        return r.stdout.strip() if r.returncode == 0 else ""
+        sprache = "en" if "Sprache en" in (r.stderr or "") else "de"
+        return (r.stdout.strip() if r.returncode == 0 else ""), sprache
 
     def on_callback(self, q):
         if str(q.get("from", {}).get("id")) not in ALLOWED:
